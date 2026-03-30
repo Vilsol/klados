@@ -1,0 +1,28 @@
+[tools]
+go = "1.25"
+node = "latest"
+
+[tasks."build:go"]
+description = "Build plugin.wasm using standard Go WASI toolchain"
+run = "GOOS=wasip1 GOARCH=wasm go build -o dist/plugin.wasm ."
+
+[tasks."build:tinygo"]
+description = "Build plugin-tiny.wasm using TinyGo (smaller binary)"
+run = "tinygo build -target=wasip1 -o dist/plugin-tiny.wasm ."
+
+[tasks."build:ui"]
+description = "Build NodeAnnotation Svelte component"
+run = "cd ui && npm ci && npx vite build"
+
+[tasks.build]
+description = "Build all artifacts (Go wasm, TinyGo wasm, UI)"
+depends = ["build:go", "build:tinygo", "build:ui"]
+
+[tasks.test]
+description = "Run enricher tests against built wasm binaries"
+run = "go test ./... -v"
+
+[tasks.pack]
+description = "Build and pack the plugin into an OCI archive"
+depends = ["build:tinygo", "build:ui"]
+run = "go run ../../cmd/pluginpack/main.go ."

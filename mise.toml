@@ -1,0 +1,14 @@
+[tools]
+"go:github.com/wailsapp/wails/v3/cmd/wails3" = "v3.0.0-alpha.74"
+# GitHub: github.com/omissis/go-jsonschema — Go module path is atombender (not yet updated in their go.mod)
+"go:github.com/atombender/go-jsonschema" = "latest"
+node = "25.8.1"
+"aqua:tinygo-org/tinygo" = "latest"
+
+[tasks."generate:plugin-types"]
+description = "Generate Go + TypeScript types from JSON Schemas"
+run = [
+  "go-jsonschema --tags json -p types -o internal/plugin/types/manifest.go schemas/manifest.v1.json",
+  "node_modules/.bin/json2ts -i schemas/manifest.v1.json -o frontend/src/lib/plugins/types/manifest.d.ts",
+  "node_modules/.bin/json2ts -i schemas/plugin_context.v1.json -o frontend/src/lib/plugins/types/context.d.ts",
+]

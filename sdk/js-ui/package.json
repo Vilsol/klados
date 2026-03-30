@@ -1,0 +1,18 @@
+{
+  "name": "@klados/plugin-ui",
+  "version": "0.1.0",
+  "description": "Shared UI components and tokens for klados plugins (provided by the klados host at runtime)",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "peerDependencies": {
+    "bits-ui": "^1",
+    "lucide-svelte": "^0.474",
+    "svelte": "^5"
+  },
+  "keywords": ["klados", "plugin", "ui"],
+  "license": "MIT"
+}

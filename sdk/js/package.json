@@ -1,0 +1,15 @@
+{
+  "name": "@klados/plugin-sdk",
+  "version": "0.1.0",
+  "description": "Klados plugin SDK — TypeScript types and Vite config helper for plugin authors",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "keywords": ["klados", "plugin", "kubernetes"],
+  "license": "MIT"
+}

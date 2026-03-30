@@ -1,0 +1,1 @@
+{"version":3,"file":"NodeHeaderWidget.js","sources":["src/NodeHeaderWidget.svelte"],"sourcesContent":["<span\n  class=\"flex items-center gap-1 text-xs text-muted px-1 select-none\"\n  title=\"Node Annotator plugin active\"\n>\n  ◈ Annotator\n</span>\n"],"names":[],"mappings":";;;;MAAC,OAAI,KAAA;qBAAJ,IAAI;;"}

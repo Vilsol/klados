@@ -1,0 +1,310 @@
+<script lang="ts">
+  import { createVirtualizer } from '@tanstack/svelte-virtual'
+  import { ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw } from 'lucide-svelte'
+  import ConfirmDialog from './ConfirmDialog.svelte'
+  import { notificationStore } from '$lib/stores/notification.svelte'
+  import { evalExpr, type ColumnDef, type RenderType } from '$lib/registry/index'
+  import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
+  import { formatAge } from '$lib/utils/age'
+  import { onMount } from 'svelte'
+  import { slotRegistry } from '$lib/plugins/slots.svelte.js'
+  import { loadPluginComponent } from '$lib/plugins/loader.js'
+  import { streamingStore } from '$lib/stores/streaming.svelte.js'
+
+  let now = $state(Date.now())
+  onMount(() => {
+    const id = setInterval(() => { now = Date.now() }, 10_000)
+    return () => clearInterval(id)
+  })
+
+  let {
+    items,
+    columns,
+    contextName,
+    gvr,
+    selectedNamespaces = [],
+    loading = false,
+    error = null,
+    selectedName = null,
+    scrollContainer = $bindable<HTMLDivElement | undefined>(undefined),
+    onrefresh,
+    onselect,
+  }: {
+    items: Record<string, any>[]
+    columns: ColumnDef[]
+    contextName: string
+    gvr: string
+    selectedNamespaces?: string[]
+    loading?: boolean
+    error?: string | null
+    selectedName?: string | null
+    scrollContainer?: HTMLDivElement
+    onrefresh?: () => void
+    onselect?: (item: Record<string, any>) => void
+  } = $props()
+
+  let filterText = $state('')
+  let sortCol = $state<number>(-1)
+  let sortDir = $state<'asc' | 'desc'>('asc')
+  let deleteTarget = $state<{ namespace: string; name: string } | null>(null)
+  let confirmOpen = $state(false)
+  let ctxMenu = $state<{ x: number; y: number; item: Record<string, any> } | null>(null)
+
+  const pluginColumns = $derived(slotRegistry.getListColumns(gvr))
+  const pluginMenuItems = $derived(slotRegistry.getContextMenuItems(gvr))
+  const basePluginURL = $derived(
+    streamingStore.config
+      ? `http://127.0.0.1:${streamingStore.config.port}/${streamingStore.config.token}/plugins`
+      : null
+  )
+
+  $effect(() => {
+    if (!ctxMenu) return
+    const close = () => { ctxMenu = null }
+    window.addEventListener('click', close, { once: true })
+    return () => window.removeEventListener('click', close)
+  })
+
+  // Scroll to top when GVR changes
+  $effect(() => {
+    gvr
+    filterText = ''
+    sortCol = -1
+    if (scrollContainer) scrollContainer.scrollTop = 0
+  })
+
+
+  const filtered = $derived.by(() => {
+    let result = items
+    if (selectedNamespaces.length > 1) {
+      result = result.filter((item) => selectedNamespaces.includes(item.metadata?.namespace ?? ''))
+    }
+    if (filterText.trim()) {
+      const q = filterText.trim().toLowerCase()
+      result = result.filter((item) => {
+        const labels = item.metadata?.labels ?? {}
+        const labelsStr = Object.entries(labels)
+          .map(([k, v]) => `${k}=${v}`)
+          .join(',')
+        return labelsStr.includes(q) || (item.metadata?.name ?? '').toLowerCase().includes(q)
+      })
+    }
+    if (sortCol >= 0) {
+      const col = columns[sortCol]
+      result = [...result].sort((a, b) => {
+        const av = String(evalExpr(col.expr, a) ?? '')
+        const bv = String(evalExpr(col.expr, b) ?? '')
+        return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+      })
+    }
+    return result
+  })
+
+  const ROW_HEIGHT = 36
+
+  const virtualizer = $derived(
+    createVirtualizer({
+      count: filtered.length,
+      getScrollElement: () => scrollContainer ?? null,
+      estimateSize: () => ROW_HEIGHT,
+      overscan: 10,
+    }),
+  )
+
+  function toggleSort(idx: number) {
+    if (sortCol === idx) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc'
+    } else {
+      sortCol = idx
+      sortDir = 'asc'
+    }
+  }
+
+  function renderCell(col: ColumnDef, item: Record<string, any>) {
+    return evalExpr(col.expr, item)
+  }
+
+  function renderValue(value: any, renderType: RenderType): string {
+    if (value == null) return ''
+    if (renderType === 'age') return formatAge(String(value), now)
+    return String(value)
+  }
+
+  function badgeClass(value: any): string {
+    const v = String(value ?? '').toLowerCase()
+    if (['running', 'active', 'bound', 'available', 'true'].includes(v))
+      return 'bg-accent/20 text-accent border-accent/30'
+    if (['error', 'crashloopbackoff', 'failed', 'oomkilled'].includes(v))
+      return 'bg-destructive/20 text-destructive border-destructive/30'
+    if (['pending', 'terminating'].includes(v))
+      return 'bg-muted/20 text-muted border-muted/30'
+    return 'bg-muted/10 text-fg border-border'
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    const { namespace, name } = deleteTarget
+    try {
+      await ResourceService.DeleteResource(contextName, gvr, namespace, name)
+      notificationStore.push(`Deleted ${name}`, 'success')
+    } catch (e: any) {
+      notificationStore.push(`Failed to delete: ${e?.message ?? e}`, 'error')
+    }
+    deleteTarget = null
+  }
+
+  function requestDelete(item: Record<string, any>) {
+    deleteTarget = {
+      namespace: item.metadata?.namespace ?? '',
+      name: item.metadata?.name ?? '',
+    }
+    confirmOpen = true
+  }
+</script>
+
+<div class="flex flex-col h-full">
+  <div class="flex items-center gap-2 px-3 py-2 border-b border-border shrink-0">
+    <input
+      type="text"
+      placeholder="Filter by name or label (key=value)..."
+      bind:value={filterText}
+      class="flex-1 text-sm bg-transparent outline-none placeholder-muted"
+    />
+    <span class="text-xs text-muted">{filtered.length} items</span>
+    {#if onrefresh}
+      <button
+        onclick={onrefresh}
+        class="p-1 rounded hover:bg-surface-hover transition-colors"
+        title="Refresh"
+        aria-label="Refresh"
+      >
+        <RefreshCw size={14} class={loading ? 'animate-spin' : ''} />
+      </button>
+    {/if}
+  </div>
+
+  {#if error}
+    <div class="p-4 text-sm text-destructive">{error}</div>
+  {:else}
+    <div class="grid text-xs font-semibold uppercase tracking-wider text-muted border-b border-border shrink-0 px-2"
+      style="grid-template-columns: {columns.map((c) => c.width ? `${c.width}px` : '1fr').join(' ')}{pluginColumns.length ? ' ' + pluginColumns.map(() => '1fr').join(' ') : ''} 36px"
+    >
+      {#each columns as col, i}
+        <button
+          onclick={() => toggleSort(i)}
+          class="flex items-center gap-1 py-2 px-1 hover:text-fg transition-colors text-left"
+        >
+          {col.name}
+          {#if sortCol === i}
+            {#if sortDir === 'asc'}<ArrowUp size={10} />{:else}<ArrowDown size={10} />{/if}
+          {:else}
+            <ArrowUpDown size={10} class="opacity-30" />
+          {/if}
+        </button>
+      {/each}
+      {#each pluginColumns as pcol (pcol.id)}
+        <div class="py-2 px-1">{pcol.label}</div>
+      {/each}
+      <div></div>
+    </div>
+
+    <div bind:this={scrollContainer} class="flex-1 overflow-y-auto">
+      {#if loading}
+        <div class="flex items-center justify-center py-12 text-sm text-muted">Loading...</div>
+      {:else if filtered.length === 0}
+        <div class="flex items-center justify-center py-12 text-sm text-muted">No resources found</div>
+      {:else}
+        <div style="height: {$virtualizer.getTotalSize()}px; position: relative;">
+          {#each $virtualizer.getVirtualItems() as row (row.index)}
+            {@const item = filtered[row.index]}
+            {@const isSelected = selectedName === `${item.metadata?.name ?? ''}/${item.metadata?.namespace ?? ''}`}
+            <div
+              class="absolute top-0 left-0 right-0 flex items-center px-2 transition-colors group
+                {isSelected ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-surface-hover border-l-2 border-transparent'}
+                {onselect ? 'cursor-pointer' : ''}"
+              style="transform: translateY({row.start}px); height: {ROW_HEIGHT}px;"
+              role={onselect ? 'button' : undefined}
+              tabindex={onselect ? 0 : undefined}
+              onclick={() => onselect?.(item)}
+              onkeydown={(e) => { if (e.key === 'Enter') onselect?.(item) }}
+              oncontextmenu={(e) => { e.preventDefault(); e.stopPropagation(); ctxMenu = { x: e.clientX, y: e.clientY, item } }}
+            >
+              <div
+                class="grid flex-1 min-w-0"
+                style="grid-template-columns: {columns.map((c) => c.width ? `${c.width}px` : '1fr').join(' ')}{pluginColumns.length ? ' ' + pluginColumns.map(() => '1fr').join(' ') : ''} 36px"
+              >
+                {#each columns as col}
+                  {@const value = renderCell(col, item)}
+                  <div class="px-1 truncate text-sm">
+                    {#if col.renderType === 'badge'}
+                      <span class="px-1.5 py-0.5 text-xs rounded border {badgeClass(value)}">
+                        {renderValue(value, col.renderType)}
+                      </span>
+                    {:else}
+                      <span class={col.renderType === 'age' ? 'text-muted' : ''}>
+                        {renderValue(value, col.renderType)}
+                      </span>
+                    {/if}
+                  </div>
+                {/each}
+                {#each pluginColumns as pcol (pcol.id)}
+                  <div class="px-1 flex items-center overflow-hidden text-sm">
+                    {#if basePluginURL}
+                      {#await loadPluginComponent(pcol.pluginName, pcol.component, basePluginURL) then Cmp}
+                        {#if Cmp}<svelte:component this={Cmp} resource={item} />{/if}
+                      {/await}
+                    {/if}
+                  </div>
+                {/each}
+                <div class="flex items-center justify-end">
+                  <button
+                    onclick={(e) => { e.stopPropagation(); requestDelete(item) }}
+                    class="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-destructive transition-all"
+                    title="Delete"
+                    aria-label="Delete {item.metadata?.name}"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/if}
+</div>
+
+{#if ctxMenu}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    class="fixed z-50 bg-surface border border-border rounded shadow-lg py-1 min-w-36"
+    style="left:{ctxMenu.x}px; top:{ctxMenu.y}px"
+    onclick={(e) => e.stopPropagation()}
+  >
+    {#each pluginMenuItems as mi (mi.id)}
+      {#if basePluginURL}
+        {#await loadPluginComponent(mi.pluginName, mi.component, basePluginURL) then Cmp}
+          {#if Cmp}
+            {@const menuItem = ctxMenu}
+            <svelte:component this={Cmp} resource={menuItem.item} onclose={() => { ctxMenu = null }} />
+          {/if}
+        {/await}
+      {/if}
+    {/each}
+    <button
+      class="w-full text-left px-3 py-1.5 text-sm text-destructive hover:bg-surface-hover"
+      onclick={() => { requestDelete(ctxMenu!.item); ctxMenu = null }}
+    >
+      Delete
+    </button>
+  </div>
+{/if}
+
+<ConfirmDialog
+  bind:open={confirmOpen}
+  title="Delete resource"
+  message="Delete {deleteTarget?.name}? This action cannot be undone."
+  confirmLabel="Delete"
+  onconfirm={confirmDelete}
+/>

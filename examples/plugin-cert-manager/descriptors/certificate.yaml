@@ -1,0 +1,50 @@
+group: cert-manager.io
+version: v1
+resource: certificates
+kind: Certificate
+columns:
+  - name: Name
+    expr: "metadata.name"
+    renderType: text
+  - name: Namespace
+    expr: "metadata.namespace"
+    renderType: text
+  - name: Ready
+    expr: "status.conditions != null ? status.conditions[0].status : 'Unknown'"
+    renderType: badge
+    width: 80
+  - name: Secret
+    expr: "spec.secretName"
+    renderType: text
+  - name: Issuer
+    expr: "spec.issuerRef.name"
+    renderType: text
+  - name: DNS Names
+    expr: "spec.dnsNames != null ? spec.dnsNames[0] : ''"
+    renderType: text
+  - name: Age
+    expr: "metadata.creationTimestamp"
+    renderType: age
+    width: 80
+overviewFields:
+  - label: Namespace
+    expr: "metadata.namespace"
+    renderType: text
+  - label: Secret
+    expr: "spec.secretName"
+    renderType: text
+  - label: Issuer
+    expr: "spec.issuerRef.name"
+    renderType: text
+  - label: Issuer Kind
+    expr: "spec.issuerRef.kind"
+    renderType: text
+  - label: Age
+    expr: "metadata.creationTimestamp"
+    renderType: age
+detailPanels:
+  - overview
+  - yaml
+  - events
+actions:
+  - delete

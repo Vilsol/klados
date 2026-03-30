@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://klados.dev/schemas/host_api.v1.json",
+  "title": "HostAPI",
+  "description": "Klados plugin host API request/response types",
+  "type": "object",
+  "properties": {},
+  "$defs": {
+    "K8sListRequest": {
+      "type": "object",
+      "required": ["gvr"],
+      "additionalProperties": false,
+      "properties": {
+        "gvr": { "type": "string" },
+        "namespace": { "type": "string" }
+      }
+    },
+    "K8sListResponse": {
+      "type": "object",
+      "required": ["items"],
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "K8sGetRequest": {
+      "type": "object",
+      "required": ["gvr", "namespace", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "gvr": { "type": "string" },
+        "namespace": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    },
+    "K8sGetResponse": {
+      "type": "object",
+      "required": ["object"],
+      "additionalProperties": false,
+      "properties": {
+        "object": { "type": "object" }
+      }
+    },
+    "K8sWatchRequest": {
+      "type": "object",
+      "required": ["gvr"],
+      "additionalProperties": false,
+      "properties": {
+        "gvr": { "type": "string" },
+        "namespace": { "type": "string" }
+      }
+    },
+    "K8sCreateRequest": {
+      "type": "object",
+      "required": ["gvr", "object"],
+      "additionalProperties": false,
+      "properties": {
+        "gvr": { "type": "string" },
+        "namespace": { "type": "string" },
+        "object": { "type": "object" }
+      }
+    },
+    "K8sUpdateRequest": {
+      "type": "object",
+      "required": ["gvr", "object"],
+      "additionalProperties": false,
+      "properties": {
+        "gvr": { "type": "string" },
+        "namespace": { "type": "string" },
+        "object": { "type": "object" }
+      }
+    },
+    "K8sDeleteRequest": {
+      "type": "object",
+      "required": ["gvr", "namespace", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "gvr": { "type": "string" },
+        "namespace": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    },
+    "K8sMutateResponse": {
+      "type": "object",
+      "required": ["object"],
+      "additionalProperties": false,
+      "properties": {
+        "object": { "type": "object" }
+      }
+    },
+    "StorageGetRequest": {
+      "type": "object",
+      "required": ["key"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string" }
+      }
+    },
+    "StorageGetResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "string" }
+      }
+    },
+    "StorageSetRequest": {
+      "type": "object",
+      "required": ["key", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    },
+    "StorageDeleteRequest": {
+      "type": "object",
+      "required": ["key"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string" }
+      }
+    },
+    "LogsStreamRequest": {
+      "type": "object",
+      "required": ["pod", "namespace", "container"],
+      "additionalProperties": false,
+      "properties": {
+        "pod": { "type": "string" },
+        "namespace": { "type": "string" },
+        "container": { "type": "string" },
+        "follow": { "type": "boolean" },
+        "previous": { "type": "boolean" },
+        "tailLines": { "type": "integer" }
+      }
+    },
+    "LogsStreamResponse": {
+      "type": "object",
+      "required": ["streamId"],
+      "additionalProperties": false,
+      "properties": {
+        "streamId": { "type": "string" }
+      }
+    },
+    "ExecOpenRequest": {
+      "type": "object",
+      "required": ["pod", "namespace", "container"],
+      "additionalProperties": false,
+      "properties": {
+        "pod": { "type": "string" },
+        "namespace": { "type": "string" },
+        "container": { "type": "string" },
+        "command": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "ExecOpenResponse": {
+      "type": "object",
+      "required": ["sessionId"],
+      "additionalProperties": false,
+      "properties": {
+        "sessionId": { "type": "string" }
+      }
+    },
+    "EventSubscribeRequest": {
+      "type": "object",
+      "required": ["event"],
+      "additionalProperties": false,
+      "properties": {
+        "event": { "type": "string" }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "required": ["error"],
+      "additionalProperties": false,
+      "properties": {
+        "error": { "type": "string" },
+        "code": { "type": "string" }
+      }
+    }
+  }
+}

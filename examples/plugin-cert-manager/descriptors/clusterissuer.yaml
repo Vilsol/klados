@@ -1,0 +1,26 @@
+group: cert-manager.io
+version: v1
+resource: clusterissuers
+kind: ClusterIssuer
+columns:
+  - name: Name
+    expr: "metadata.name"
+    renderType: text
+  - name: Ready
+    expr: "status.conditions != null ? status.conditions[0].status : 'Unknown'"
+    renderType: badge
+    width: 80
+  - name: Age
+    expr: "metadata.creationTimestamp"
+    renderType: age
+    width: 80
+overviewFields:
+  - label: Age
+    expr: "metadata.creationTimestamp"
+    renderType: age
+detailPanels:
+  - overview
+  - yaml
+  - events
+actions:
+  - delete

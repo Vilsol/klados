@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://klados.dev/schemas/plugin_context.v1.json",
+  "title": "PluginContext",
+  "description": "Frontend PluginContext interface — constructed from manifest permissions",
+  "type": "object",
+  "required": ["cluster", "namespace"],
+  "properties": {
+    "cluster": {
+      "type": "object",
+      "required": ["name", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    },
+    "namespace": {
+      "type": "string"
+    },
+    "k8s": {
+      "description": "Only present if permissions.resources declared",
+      "$ref": "#/$defs/K8sContext"
+    },
+    "logs": {
+      "description": "Only present if permissions.logs: true",
+      "$ref": "#/$defs/LogsContext"
+    },
+    "exec": {
+      "description": "Only present if permissions.exec: true",
+      "$ref": "#/$defs/ExecContext"
+    },
+    "storage": {
+      "description": "Only present if permissions.storage: true",
+      "$ref": "#/$defs/StorageContext"
+    }
+  },
+  "$defs": {
+    "K8sContext": {
+      "type": "object",
+      "required": ["list", "get", "watch"],
+      "properties": {
+        "list": {
+          "description": "List resources by GVR and optional namespace"
+        },
+        "get": {
+          "description": "Get a single resource by GVR, namespace, and name"
+        },
+        "watch": {
+          "description": "Subscribe to resource changes, returns unsubscribe function"
+        }
+      }
+    },
+    "LogsContext": {
+      "type": "object",
+      "required": ["stream"],
+      "properties": {
+        "stream": {
+          "description": "Start a log stream for a container"
+        }
+      }
+    },
+    "ExecContext": {
+      "type": "object",
+      "required": ["open"],
+      "properties": {
+        "open": {
+          "description": "Open an exec session for a container"
+        }
+      }
+    },
+    "StorageContext": {
+      "type": "object",
+      "required": ["get", "set", "delete"],
+      "properties": {
+        "get": {
+          "description": "Read a value from plugin-local storage"
+        },
+        "set": {
+          "description": "Write a value to plugin-local storage"
+        },
+        "delete": {
+          "description": "Delete a key from plugin-local storage"
+        }
+      }
+    },
+    "ListOpts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "labelSelector": { "type": "string" },
+        "fieldSelector": { "type": "string" }
+      }
+    },
+    "LogOpts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "follow": { "type": "boolean" },
+        "previous": { "type": "boolean" },
+        "tailLines": { "type": "integer" }
+      }
+    }
+  }
+}

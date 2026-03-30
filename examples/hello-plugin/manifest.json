@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "name": "hello-plugin",
+  "version": "0.1.0",
+  "displayName": "Hello Plugin",
+  "description": "Sample plugin for klados — demonstrates detail tabs, k8s API access, and command palette integration.",
+  "minHostVersion": "0.1.0",
+  "permissions": {
+    "resources": [
+      {
+        "group": "apps",
+        "version": "v1",
+        "resource": "deployments",
+        "verbs": ["list", "get"]
+      },
+      {
+        "group": "",
+        "version": "v1",
+        "resource": "pods",
+        "verbs": ["list"]
+      }
+    ]
+  },
+  "extensions": {
+    "detailTabs": [
+      {
+        "gvr": "apps.v1.deployments",
+        "id": "hello-inspector",
+        "label": "Hello",
+        "component": "ui/HelloTab.js"
+      }
+    ],
+    "commands": [
+      {
+        "id": "hello-greet",
+        "label": "Hello Plugin: Greet Cluster"
+      }
+    ]
+  }
+}

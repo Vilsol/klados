@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "name": "cert-manager",
+  "version": "1.0.0",
+  "displayName": "Cert-Manager",
+  "description": "Certificate lifecycle management for Kubernetes",
+  "minHostVersion": "2.0.0",
+
+  "permissions": {
+    "resources": [
+      {
+        "group": "cert-manager.io",
+        "version": "v1",
+        "resource": "certificates",
+        "verbs": ["list", "get", "watch"]
+      },
+      {
+        "group": "cert-manager.io",
+        "version": "v1",
+        "resource": "issuers",
+        "verbs": ["list", "get", "watch"]
+      },
+      {
+        "group": "cert-manager.io",
+        "version": "v1",
+        "resource": "clusterissuers",
+        "verbs": ["list", "get", "watch"]
+      }
+    ]
+  },
+
+  "extensions": {
+    "descriptors": [
+      "descriptors/certificate.yaml",
+      "descriptors/issuer.yaml",
+      "descriptors/clusterissuer.yaml"
+    ],
+    "sidebar": [
+      {
+        "category": "Certificates",
+        "label": "Certificates",
+        "gvr": "cert-manager.io.v1.certificates",
+        "icon": "shield-check"
+      },
+      {
+        "category": "Certificates",
+        "label": "Issuers",
+        "gvr": "cert-manager.io.v1.issuers",
+        "icon": "key"
+      },
+      {
+        "category": "Certificates",
+        "label": "Cluster Issuers",
+        "gvr": "cert-manager.io.v1.clusterissuers",
+        "icon": "key"
+      }
+    ]
+  }
+}

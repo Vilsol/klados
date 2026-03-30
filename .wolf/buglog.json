@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "bugs": [
+    {
+      "id": "bug-001",
+      "timestamp": "2026-03-29T17:00:10.241Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../.claude/plugins/marketplaces/anthropic-agent-skills/skills/tech-brainstorm/SKILL.md",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 18→18 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-29T17:00:10.241Z"
+    },
+    {
+      "id": "bug-002",
+      "timestamp": "2026-03-29T17:24:50.511Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../.claude/skills/phase-planner/SKILL.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 9→22 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-29T17:24:50.511Z"
+    },
+    {
+      "id": "bug-003",
+      "timestamp": "2026-03-29T21:07:44.993Z",
+      "error_message": "Significant refactor of ",
+      "file": "main.go",
+      "root_cause": "109 lines replaced/restructured",
+      "fix": "Rewrote 150→14 lines (109 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "go"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-29T21:07:44.993Z"
+    },
+    {
+      "id": "bug-002",
+      "timestamp": "2026-03-30T00:00:00.000Z",
+      "error_message": "errors.Is(err, ErrAuthRequired) returned false for 401 responses",
+      "file": "internal/plugin/remote.go",
+      "root_cause": "ORAS v2 returns 'basic credential not found' (not 'unauthorized') when auth client has no credentials after 401 challenge. isAuthError only checked for 'unauthorized' and 'authentication required'.",
+      "fix": "Added 'credential not found', 'credentials not found', 'status 401', 'status 403' to isAuthError string checks",
+      "tags": [
+        "oras",
+        "auth",
+        "401",
+        "isAuthError"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-30T00:00:00.000Z"
+    },
+    {
+      "id": "bug-005",
+      "timestamp": "2026-03-29T22:26:30.973Z",
+      "error_message": "Significant refactor of ",
+      "file": "cmd/plugin_install_test.go",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 11→19 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "go"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-29T22:26:30.973Z"
+    },
+    {
+      "id": "bug-006",
+      "timestamp": "2026-03-29T22:43:11.356Z",
+      "error_message": "Incorrect value in code",
+      "file": "internal/config/config.go",
+      "root_cause": "Had `\n\tInsecureSkipTLSVerify bool    `",
+      "fix": "Changed to `\n\tInsecureRegistries    []string `",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "go"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-29T22:43:11.356Z"
+    },
+    {
+      "id": "bug-007",
+      "timestamp": "2026-03-29T22:43:43.271Z",
+      "error_message": "Significant refactor of ",
+      "file": "internal/services/plugin.go",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 53→86 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "go"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-03-29T22:43:43.271Z"
+    }
+  ]
+}

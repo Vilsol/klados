@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://klados.dev/schemas/manifest.v1.json",
+  "title": "PluginManifest",
+  "description": "Klados plugin manifest schema (v1)",
+  "type": "object",
+  "required": ["schemaVersion", "name", "version", "displayName", "minHostVersion"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+      "description": "Unique plugin identifier (lowercase, hyphens)"
+    },
+    "version": {
+      "type": "string",
+      "description": "Plugin version (semver)"
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "minHostVersion": {
+      "type": "string",
+      "description": "Minimum klados host version required (semver)"
+    },
+    "permissions": {
+      "$ref": "#/$defs/Permissions"
+    },
+    "extensions": {
+      "$ref": "#/$defs/Extensions"
+    }
+  },
+  "$defs": {
+    "Permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ResourcePermission" }
+        },
+        "logs": { "type": "boolean" },
+        "exec": { "type": "boolean" },
+        "storage": { "type": "boolean" },
+        "events": { "type": "boolean" },
+        "wasi": { "$ref": "#/$defs/WasiPermissions" }
+      }
+    },
+    "ResourcePermission": {
+      "type": "object",
+      "required": ["group", "version", "resource", "verbs"],
+      "additionalProperties": false,
+      "properties": {
+        "group": { "type": "string" },
+        "version": { "type": "string" },
+        "resource": { "type": "string" },
+        "verbs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["list", "get", "watch", "create", "update", "delete"]
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "WasiPermissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clock": { "type": "boolean" },
+        "filesystem": { "type": "boolean" },
+        "network": { "type": "boolean" },
+        "env": { "type": "boolean" }
+      }
+    },
+    "Extensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "descriptors": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Relative paths to descriptor YAML files"
+        },
+        "enrichers": { "$ref": "#/$defs/EnricherConfig" },
+        "sidebar": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/SidebarEntry" }
+        },
+        "detailTabs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/DetailTab" }
+        },
+        "commands": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Command" }
+        },
+        "overviewFields": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ComponentRef" }
+        },
+        "listColumns": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ComponentRef" }
+        },
+        "contextMenu": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ComponentRef" }
+        },
+        "headerWidgets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ComponentRef" }
+        },
+        "statusBar": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ComponentRef" }
+        }
+      }
+    },
+    "EnricherConfig": {
+      "type": "object",
+      "required": ["wasm", "gvrs"],
+      "additionalProperties": false,
+      "properties": {
+        "wasm": {
+          "type": "string",
+          "description": "Relative path to the Wasm module"
+        },
+        "gvrs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "GVR strings this enricher handles (dot-separated format)"
+        }
+      }
+    },
+    "SidebarEntry": {
+      "type": "object",
+      "required": ["category", "label", "gvr"],
+      "additionalProperties": false,
+      "properties": {
+        "category": { "type": "string" },
+        "label": { "type": "string" },
+        "gvr": { "type": "string" },
+        "icon": { "type": "string" }
+      }
+    },
+    "DetailTab": {
+      "type": "object",
+      "required": ["gvr", "id", "label", "component"],
+      "additionalProperties": false,
+      "properties": {
+        "gvr": { "type": "string" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "component": {
+          "type": "string",
+          "description": "Relative path to the Svelte component JS bundle"
+        }
+      }
+    },
+    "Command": {
+      "type": "object",
+      "required": ["id", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "icon": { "type": "string" }
+      }
+    },
+    "ComponentRef": {
+      "type": "object",
+      "required": ["id", "label", "component"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "gvr": { "type": "string", "description": "GVR filter (omit for global slots)" },
+        "component": { "type": "string", "description": "Relative path to the Svelte component JS bundle" }
+      }
+    }
+  }
+}

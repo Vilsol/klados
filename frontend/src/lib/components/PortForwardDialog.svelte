@@ -1,0 +1,221 @@
+<script lang="ts">
+  import { X } from 'lucide-svelte'
+  import Select from '$lib/components/Select.svelte'
+  import * as PortForwardService from '../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js'
+  import { Browser, Events } from '@wailsio/runtime'
+  import { notificationStore } from '$lib/stores/notification.svelte'
+  import { clusterStore } from '$lib/stores/cluster.svelte'
+
+  let {
+    onclose,
+    // Quick mode: all context pre-filled, only ask about local port
+    prefillContext = '',
+    prefillNamespace = '',
+    prefillTargetKind = '',
+    prefillTarget = '',
+    prefillGVR = '',
+    prefillRemotePort = 0,
+  }: {
+    onclose: () => void
+    prefillContext?: string
+    prefillNamespace?: string
+    prefillTargetKind?: string
+    prefillTarget?: string
+    prefillGVR?: string
+    prefillRemotePort?: number
+  } = $props()
+
+  const isQuickMode = $derived(!!prefillTarget && prefillRemotePort > 0)
+
+  // Quick mode state
+  let localPortMode = $state<'auto' | 'custom'>('auto')
+  let customLocalPort = $state('')
+
+  // Full mode state
+  let targetKind = $state(prefillGVR ? 'selector' : (prefillTargetKind || 'pod'))
+  let targetName = $state(prefillTarget)
+  let targetGVR = $state(prefillGVR)
+  let localPort = $state('')
+  let remotePort = $state(prefillRemotePort > 0 ? String(prefillRemotePort) : '')
+  let namespace = $state(prefillNamespace || (clusterStore.getSelectedNamespaces(clusterStore.activeContext ?? '')[0] ?? 'default'))
+  let submitting = $state(false)
+  let openInBrowser = $state(true)
+
+  async function submit() {
+    submitting = true
+    try {
+      const ctx = isQuickMode ? prefillContext : (clusterStore.activeContext ?? '')
+      const ns = isQuickMode ? prefillNamespace : namespace
+      const kind = isQuickMode ? prefillTargetKind : targetKind
+      const name = isQuickMode ? prefillTarget : targetName
+      const gvr = isQuickMode ? prefillGVR : targetGVR
+      const remote = isQuickMode ? prefillRemotePort : parseInt(remotePort)
+      const local = isQuickMode
+        ? (localPortMode === 'auto' ? 0 : (parseInt(customLocalPort) || 0))
+        : (localPort ? parseInt(localPort) : 0)
+
+      if (!name || isNaN(remote) || remote <= 0 || !ns) return
+
+      const spec = await PortForwardService.StartForward(ctx, ns, kind, name, gvr, local, remote)
+      if (openInBrowser) {
+        const unsub = Events.On(`portforward:${ctx}:${spec.id}`, (e: any) => {
+          const fw = e.data
+          if (fw?.status === 'active' && fw?.localPort > 0) {
+            unsub()
+            Browser.OpenURL(`http://localhost:${fw.localPort}`)
+          }
+        })
+      }
+      onclose()
+    } catch (e: any) {
+      notificationStore.error(String(e))
+    } finally {
+      submitting = false
+    }
+  }
+</script>
+
+<!-- Backdrop -->
+<div
+  class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center"
+  role="dialog"
+  aria-modal="true"
+>
+  <div class="bg-surface border border-border rounded-lg {isQuickMode ? 'w-80' : 'w-[26rem]'} shadow-xl z-50">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+      <h2 class="text-sm font-semibold">
+        {isQuickMode ? 'Forward Port' : 'Start Port Forward'}
+      </h2>
+      <button onclick={onclose} class="p-1 rounded hover:bg-surface-hover transition-colors">
+        <X size={14} />
+      </button>
+    </div>
+
+    <div class="p-4 flex flex-col gap-3">
+      {#if isQuickMode}
+        <div class="bg-surface-hover border border-border rounded px-3 py-2">
+          <p class="text-xs text-muted mb-0.5">Target</p>
+          <p class="text-sm font-mono">{prefillTarget} <span class="text-muted">→ :{prefillRemotePort}</span></p>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <p class="text-xs text-muted font-medium">Local port</p>
+          <label class="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              name="local-port-mode"
+              value="auto"
+              bind:group={localPortMode}
+              class="accent-accent"
+            />
+            Auto-assign
+          </label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              name="local-port-mode"
+              value="custom"
+              bind:group={localPortMode}
+              class="accent-accent"
+            />
+            Custom:
+            <input
+              bind:value={customLocalPort}
+              placeholder={String(prefillRemotePort)}
+              disabled={localPortMode !== 'custom'}
+              onclick={() => localPortMode = 'custom'}
+              class="w-20 text-sm bg-surface border border-border rounded px-2 py-0.5 font-mono disabled:opacity-40"
+            />
+          </label>
+        </div>
+      {:else}
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-muted">Target type</label>
+          <Select
+            bind:value={targetKind}
+            options={[
+              { value: 'pod', label: 'Pod (direct)' },
+              { value: 'statefulpod', label: 'StatefulSet pod (stable name)' },
+              { value: 'selector', label: 'Service / Workload (auto-select pod)' },
+            ]}
+          />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-muted" for="pf-target-name">
+            {targetKind === 'selector' ? 'Service / workload name' : 'Pod name'}
+          </label>
+          <input
+            id="pf-target-name"
+            bind:value={targetName}
+            placeholder={targetKind === 'selector' ? 'my-service' : 'my-pod-abc123'}
+            class="text-sm bg-surface-hover border border-border rounded px-2 py-1.5 font-mono"
+          />
+        </div>
+
+        {#if targetKind === 'selector'}
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-muted" for="pf-gvr">Resource type (GVR)</label>
+            <input
+              id="pf-gvr"
+              bind:value={targetGVR}
+              placeholder="core.v1.services"
+              class="text-sm bg-surface-hover border border-border rounded px-2 py-1.5 font-mono"
+            />
+          </div>
+        {/if}
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs text-muted" for="pf-namespace">Namespace</label>
+          <input
+            id="pf-namespace"
+            bind:value={namespace}
+            placeholder="default"
+            class="text-sm bg-surface-hover border border-border rounded px-2 py-1.5 font-mono"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-muted" for="pf-local">Local port</label>
+            <input
+              id="pf-local"
+              bind:value={localPort}
+              placeholder="auto"
+              class="text-sm bg-surface-hover border border-border rounded px-2 py-1.5 font-mono w-full"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-muted" for="pf-remote">Remote port</label>
+            <input
+              id="pf-remote"
+              bind:value={remotePort}
+              placeholder="8080"
+              class="text-sm bg-surface-hover border border-border rounded px-2 py-1.5 font-mono w-full"
+            />
+          </div>
+        </div>
+      {/if}
+      <label class="flex items-center gap-2 text-sm cursor-pointer">
+        <input type="checkbox" bind:checked={openInBrowser} class="accent-accent" />
+        Open in browser after connecting
+      </label>
+    </div>
+
+    <div class="flex justify-end gap-2 px-4 py-3 border-t border-border">
+      <button
+        onclick={onclose}
+        class="px-3 py-1.5 text-xs rounded border border-border hover:bg-surface-hover transition-colors"
+      >
+        Cancel
+      </button>
+      <button
+        onclick={submit}
+        disabled={submitting || (!isQuickMode && (!targetName || !remotePort))}
+        class="px-3 py-1.5 text-xs rounded bg-accent text-white hover:bg-accent/90 transition-colors disabled:opacity-50"
+      >
+        {submitting ? 'Starting…' : 'Start'}
+      </button>
+    </div>
+  </div>
+</div>

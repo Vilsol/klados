@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "name": "node-annotator",
+  "version": "0.1.0",
+  "displayName": "Node Annotator",
+  "description": "Enriches nodes with taint count and readiness summary. Demonstrates all SDK capabilities.",
+  "minHostVersion": "0.1.0",
+  "permissions": {
+    "resources": [
+      {
+        "group": "",
+        "version": "v1",
+        "resource": "nodes",
+        "verbs": ["list", "get", "watch"]
+      }
+    ],
+    "storage": true,
+    "events": true
+  },
+  "extensions": {
+    "enrichers": {
+      "gvrs": ["core.v1.nodes"],
+      "wasm": "dist/plugin-tiny.wasm"
+    },
+    "descriptors": [
+      "descriptors/nodes.yaml"
+    ],
+    "detailTabs": [
+      {
+        "gvr": "core.v1.nodes",
+        "id": "node-annotator-info",
+        "label": "Annotations",
+        "component": "ui/NodeAnnotation.js"
+      }
+    ],
+    "sidebar": [
+      { "category": "Cluster", "label": "Nodes", "gvr": "core.v1.nodes" }
+    ],
+    "commands": [
+      { "id": "node-annotator-taint-report", "label": "Node Annotator: Taint Report" }
+    ],
+    "overviewFields": [
+      { "id": "node-taint-overview", "label": "Taints", "gvr": "core.v1.nodes", "component": "ui/NodeTaintBadge.js" }
+    ],
+    "listColumns": [
+      { "id": "node-taint-column", "label": "Taints", "gvr": "core.v1.nodes", "component": "ui/NodeTaintBadge.js" }
+    ],
+    "contextMenu": [
+      { "id": "node-copy-name", "label": "Copy Node Name", "gvr": "core.v1.nodes", "component": "ui/NodeContextItem.js" }
+    ],
+    "headerWidgets": [
+      { "id": "node-annotator-header", "label": "Node Annotator", "component": "ui/NodeHeaderWidget.js" }
+    ],
+    "statusBar": [
+      { "id": "node-annotator-status", "label": "Node Annotator", "component": "ui/NodeStatusWidget.js" }
+    ]
+  }
+}
