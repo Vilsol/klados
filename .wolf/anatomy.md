@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T06:18:05.792Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T14:32:54.705Z
 > Files: 496 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../tmp/crd_group_poc/
@@ -333,18 +333,18 @@
 - `CRDTreeNode.svelte` — Svelte: CRDTreeNode (~323 tok)
 - `CreateResourceDialog.svelte` — Svelte: CreateResourceDialog (~1289 tok)
 - `DetailDrawer.svelte` — Svelte: DetailDrawer (~952 tok)
-- `Header.svelte` — Svelte: Header (~2590 tok)
-- `KubeconfigImportDialog.svelte` — Svelte: KubeconfigImportDialog (~1089 tok)
+- `Header.svelte` — Svelte: Header (~2728 tok)
+- `KubeconfigImportDialog.svelte` — Svelte: KubeconfigImportDialog (~1178 tok)
 - `Layout.svelte` — Svelte: Layout (~430 tok)
 - `LogViewer.svelte` — Svelte: LogViewer (~973 tok)
 - `Notification.svelte` — Svelte: Notification (~576 tok)
 - `PortButton.svelte` — Svelte: PortButton (~116 tok)
-- `PortForwardDialog.svelte` — Svelte: PortForwardDialog (~2304 tok)
+- `PortForwardDialog.svelte` — Svelte: PortForwardDialog (~2320 tok)
 - `PortForwardDialog.svelte` — Svelte: PortForwardDialog (~1376 tok)
-- `ResourceDetail.svelte` — Svelte: ResourceDetail (~2684 tok)
+- `ResourceDetail.svelte` — Svelte: ResourceDetail (~2943 tok)
 - `ResourceList.svelte` — Svelte: ResourceList (~4014 tok)
 - `Select.svelte` — Svelte: Select (~420 tok)
-- `Sidebar.svelte` — Svelte: Sidebar (~3735 tok)
+- `Sidebar.svelte` — Svelte: Sidebar (~3802 tok)
 - `TabBar.svelte` — Svelte: TabBar (~520 tok)
 - `Terminal.svelte` — Svelte: Terminal (~708 tok)
 - `VirtualLogViewer.svelte` — Svelte: VirtualLogViewer (~4734 tok)
@@ -406,7 +406,7 @@
 ## frontend/src/lib/stores/
 
 - `cluster.svelte.ts` — Set the currently-viewed cluster context (called by route components on mount) (~1658 tok)
-- `notification.svelte.ts` — Exports ToastAction, Toast, notificationStore (~309 tok)
+- `notification.svelte.ts` — Declares Toast (~22 tok)
 - `resource.svelte.ts` — Exports createResourceStore (~791 tok)
 - `session.svelte.ts` — Exports TabState, sessionStore (~626 tok)
 - `shortcuts.svelte.ts` — Exports FocusMode, ShortcutDef, ShortcutStore, shortcutStore (~509 tok)
@@ -415,7 +415,7 @@
 ## frontend/src/lib/utils/
 
 - `age.ts` — Exports formatAge (~141 tok)
-- `async.ts` — Exports withBusy (~143 tok)
+- `async.ts` — Exports unwrapError, withBusy (~268 tok)
 - `collections.ts` — Exports toggleSet (~47 tok)
 - `crdTree.ts` — Exports GVREntry, CRDTreeNode, extractGroup, buildCRDTree (~681 tok)
 - `termlog.ts` — Exports termlog (~86 tok)
@@ -629,7 +629,7 @@
 - `KeyValueBadge.svelte` — Svelte: KeyValueBadge (~163 tok)
 - `KeyValuePairEditor.svelte` — Svelte: KeyValuePairEditor (~321 tok)
 - `LogViewer.svelte` — Svelte: LogViewer (~974 tok)
-- `Notification.svelte` — Svelte: Notification (~575 tok)
+- `Notification.svelte` — Svelte: Notification (~578 tok)
 - `SectionHeader.svelte` — Svelte: SectionHeader (~85 tok)
 - `Select.svelte` — Svelte: Select (~420 tok)
 - `StatusBadge.svelte` — Svelte: StatusBadge (~314 tok)
@@ -656,7 +656,7 @@
 
 ## packages/ui/src/lib/stores/
 
-- `notification.svelte.ts` — Exports ToastAction, Toast, notificationStore (~281 tok)
+- `notification.svelte.ts` — Exports ToastAction, Toast, notificationStore (~309 tok)
 - `session.svelte.ts` — Exports TabState, sessionStore (~626 tok)
 
 ## phases/metrics/

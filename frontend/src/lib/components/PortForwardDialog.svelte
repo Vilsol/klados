@@ -5,6 +5,7 @@
   import { TargetKind } from '../../../bindings/github.com/Vilsol/klados/internal/portforward/models.js'
   import { Browser, Events } from '@wailsio/runtime'
   import { notificationStore } from '$lib/stores/notification.svelte'
+  import { unwrapError } from '$lib/utils/async.js'
   import { clusterStore } from '$lib/stores/cluster.svelte'
 
   let {
@@ -74,7 +75,7 @@
       }
       onclose()
     } catch (e: any) {
-      notificationStore.error(String(e))
+      notificationStore.error(unwrapError(e))
     } finally {
       submitting = false
     }

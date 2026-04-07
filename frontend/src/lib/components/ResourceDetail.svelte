@@ -7,6 +7,9 @@
   import { clusterStore } from '$lib/stores/cluster.svelte.js'
   import { streamingStore } from '$lib/stores/streaming.svelte.js'
   import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
+  import * as SchemaService from '../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js'
+  import { notificationStore } from '$lib/stores/notification.svelte.js'
+  import { unwrapError } from '$lib/utils/async.js'
 
   import OverviewPanel from './panels/OverviewPanel.svelte'
   import EventsPanel from './panels/EventsPanel.svelte'
@@ -219,7 +222,20 @@
           <PanelCmp bind:obj {descriptor} {gvr} {ctxName} {namespace} {name} />
         {:else if panel === 'yaml'}
           {#key uid}
-            <PanelCmp bind:obj {ctxName} {gvr} {namespace} {name} kind={descriptor.kind ?? ''} onrefresh={onrefresh} />
+            <PanelCmp
+              bind:obj
+              {ctxName} {gvr} {namespace} {name}
+              kind={descriptor.kind ?? ''}
+              {onrefresh}
+              onSave={(ctx: string, g: string, ns: string, parsed: Record<string, any>) => ResourceService.UpdateResource(ctx, g, ns, parsed)}
+              onGetResource={(ctx: string, g: string, ns: string, n: string) => ResourceService.GetResource(ctx, g, ns, n)}
+              onGetSchema={(ctx: string, g: string, k: string) => SchemaService.GetSchema(ctx, g, k)}
+              onNotify={(msg: string, type: 'info' | 'success' | 'error') => {
+                if (type === 'success') notificationStore.success(msg)
+                else if (type === 'error') notificationStore.error(unwrapError(msg))
+                else notificationStore.push(msg, type)
+              }}
+            />
           {/key}
         {:else if panel === 'events'}
           <PanelCmp {ctxName} {namespace} {uid} />

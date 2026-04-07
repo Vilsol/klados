@@ -8,6 +8,8 @@
   import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
   import * as PortForwardService from '../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js'
   import * as PluginService from '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
+  import { notificationStore } from '$lib/stores/notification.svelte.js'
+  import { unwrapError } from '$lib/utils/async.js'
   import PortForwardDialog from './PortForwardDialog.svelte'
   import { descriptorRegistry } from '$lib/registry/index'
   import { registryLoaded } from '$lib/registry/loaded.svelte'
@@ -191,8 +193,9 @@
     try {
       await PortForwardService.StopForward(id)
       await loadForwards()
-    } catch {
-      // ignore
+      notificationStore.success('Port forward stopped')
+    } catch (e: any) {
+      notificationStore.error('Failed to stop port forward', unwrapError(e))
     }
   }
 

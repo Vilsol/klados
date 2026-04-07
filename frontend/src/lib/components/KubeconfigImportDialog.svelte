@@ -2,6 +2,8 @@
   import { Dialog } from 'bits-ui'
   import * as ClusterService from '../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js'
   import * as AppService from '../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js'
+  import { notificationStore } from '$lib/stores/notification.svelte.js'
+  import { unwrapError } from '$lib/utils/async.js'
 
   let {
     open = $bindable(false),
@@ -41,9 +43,12 @@
       open = false
       filePath = ''
       yamlContent = ''
+      const count = (contexts ?? []).length
+      notificationStore.success(`Imported ${count} context${count !== 1 ? 's' : ''}`)
       onsuccess(contexts ?? [])
     } catch (e: any) {
       error = e?.message ?? String(e)
+      notificationStore.error('Failed to import kubeconfig', unwrapError(e))
     } finally {
       loading = false
     }

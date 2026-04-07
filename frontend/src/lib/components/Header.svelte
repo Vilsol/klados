@@ -10,6 +10,8 @@
   import { streamingStore } from '$lib/stores/streaming.svelte.js'
   import { Events } from '@wailsio/runtime'
   import * as DrainService from '../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js'
+  import { notificationStore } from '$lib/stores/notification.svelte.js'
+  import { unwrapError } from '$lib/utils/async.js'
 
   function cycleTheme() {
     const current = getTheme()
@@ -28,19 +30,29 @@
   async function createNs() {
     if (!ctx || !newNsName.trim()) return
     nsCreateError = ''
+    const name = newNsName.trim()
     try {
-      await clusterStore.createNamespace(ctx, newNsName.trim())
+      await clusterStore.createNamespace(ctx, name)
       newNsName = ''
+      notificationStore.success(`Created namespace "${name}"`)
     } catch (e: any) {
-      nsCreateError = e?.message ?? String(e)
+      nsCreateError = unwrapError(e)
+      notificationStore.error(`Failed to create namespace "${name}"`, unwrapError(e))
     }
   }
 
   async function confirmDelete() {
     if (!ctx || !deleteTarget) return
-    await clusterStore.deleteNamespace(ctx, deleteTarget)
-    deleteTarget = null
-    confirmDeleteOpen = false
+    const name = deleteTarget
+    try {
+      await clusterStore.deleteNamespace(ctx, name)
+      notificationStore.success(`Deleted namespace "${name}"`)
+    } catch (e: any) {
+      notificationStore.error(`Failed to delete namespace "${name}"`, unwrapError(e))
+    } finally {
+      deleteTarget = null
+      confirmDeleteOpen = false
+    }
   }
 
   const ctx = $derived(clusterStore.activeContext)

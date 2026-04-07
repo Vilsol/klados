@@ -20,6 +20,10 @@ class NotificationStore {
     setTimeout(() => this.dismiss(id), 5000)
   }
 
+  success(message: string, details?: string) {
+    this.push(message, 'success', { details })
+  }
+
   error(message: string, details?: string) {
     this.push(message, 'error', {
       details,

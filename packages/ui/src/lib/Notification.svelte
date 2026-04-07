@@ -5,7 +5,7 @@
   const typeClass: Record<Toast['type'], string> = {
     info: 'bg-surface border-border text-fg',
     success: 'bg-surface border-accent text-fg',
-    error: 'bg-destructive/10 border-destructive text-fg',
+    error: 'bg-destructive border-destructive text-destructive-fg',
   }
 
   let expanded = $state<Record<string, boolean>>({})
