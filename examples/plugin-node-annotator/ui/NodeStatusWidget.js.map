@@ -1,1 +1,0 @@
-{"version":3,"file":"NodeStatusWidget.js","sources":["src/NodeStatusWidget.svelte"],"sourcesContent":["<span class=\"text-xs text-muted px-2 select-none\">Node Annotator v0.1.0</span>\n"],"names":[],"mappings":";;;;MAAC,OAAI,KAAA;qBAAJ,IAAI;;"}
