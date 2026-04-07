@@ -7,6 +7,7 @@ const descriptor: DescriptorDef = {
   group: 'apps',
   version: 'v1',
   resource: 'deployments',
+  kind: '',
   gvr: 'apps.v1.deployments',
   columns: [],
   overviewFields: [

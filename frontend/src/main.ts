@@ -1,5 +1,6 @@
 import { mount } from 'svelte'
 import App from './App.svelte'
+import '@fontsource/jetbrains-mono'
 import './app.css'
 import { streamingStore } from '$lib/stores/streaming.svelte.js'
 

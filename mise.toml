@@ -4,6 +4,7 @@
 "go:github.com/atombender/go-jsonschema" = "latest"
 node = "25.8.1"
 "aqua:tinygo-org/tinygo" = "latest"
+pnpm = "latest"
 
 [tasks."generate:plugin-types"]
 description = "Generate Go + TypeScript types from JSON Schemas"

@@ -1,0 +1,6 @@
+packages:
+  - 'frontend'
+  - 'packages/*'
+  - 'apps/*'
+allowBuilds:
+  esbuild: false

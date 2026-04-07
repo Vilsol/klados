@@ -8,7 +8,7 @@ import (
 
 type PodEnricher struct{}
 
-func (e *PodEnricher) Enrich(obj *unstructured.Unstructured) error {
+func (e *PodEnricher) Enrich(_ string, obj *unstructured.Unstructured) error {
 	containerStatuses, _, _ := unstructured.NestedSlice(obj.Object, "status", "containerStatuses")
 
 	ready := 0

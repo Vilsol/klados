@@ -1,5 +1,5 @@
 [tools]
-go = "1.25"
+go = "1.25.7"
 node = "latest"
 
 [tasks."build:go"]
@@ -25,4 +25,9 @@ run = "go test ./... -v"
 [tasks.pack]
 description = "Build and pack the plugin into an OCI archive"
 depends = ["build:tinygo", "build:ui"]
-run = "go run ../../cmd/pluginpack/main.go ."
+run = "../../bin/klados plugin pack ."
+
+[tasks.install]
+description = "Install the plugin into local system"
+depends = ["pack"]
+run = "../../bin/klados plugin install node-annotator-0.1.0.oci.tar.gz"

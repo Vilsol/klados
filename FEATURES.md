@@ -27,7 +27,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [ ] `v2` Cluster resource usage summary (allocatable vs requested vs used)
 - [x] `MVP` Node overview — list, status, conditions, taints, labels
 - [x] `MVP` Node resource utilization (CPU, memory, pods, ephemeral storage)
-- [ ] `v2` Node cordon / uncordon / drain actions
+- [x] `v2` Node cordon / uncordon / drain actions
 - [ ] `v2` Cluster API version / feature gate discovery
 - [ ] `Future` Workspace grouping — organize clusters into named workspaces
 - [ ] `Future` Hotbar — pinnable quick-access bar for frequently used clusters/resources
@@ -55,21 +55,21 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Deployment detail — strategy, selectors, conditions
 - [x] `MVP` Scale replicas (slider or input)
 - [x] `MVP` Restart (rollout restart)
-- [ ] `v2` Rollout history and rollback to specific revision
-- [ ] `v2` Pause / resume rollout
+- [x] `v2` Rollout history and rollback to specific revision
+- [x] `v2` Pause / resume rollout
 - [x] `MVP` Edit deployment YAML / apply
 
 ### StatefulSets
 - [x] `MVP` List with replicas, status
 - [x] `MVP` Detail view — update strategy, volume claim templates
-- [ ] `v2` Scale replicas
-- [ ] `v2` Restart rollout
-- [ ] `v2` Rollout history
+- [x] `v2` Scale replicas
+- [x] `v2` Restart rollout
+- [x] `v2` Rollout history
 
 ### DaemonSets
 - [x] `MVP` List with desired/current/ready counts
 - [x] `MVP` Detail view — update strategy, node selector
-- [ ] `v2` Rollout history and rollback
+- [x] `v2` Rollout history and rollback
 
 ### ReplicaSets
 - [x] `MVP` List with desired/current/ready
@@ -80,13 +80,13 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` List with completions, duration, status
 - [x] `MVP` Detail view — parallelism, backoff limit, active deadline
 - [x] `MVP` View owned pods
-- [ ] `v2` Delete job (with/without owned pods)
+- [x] `v2` Delete job (with/without owned pods)
 
 ### CronJobs
 - [x] `MVP` List with schedule, last run, active, suspended
 - [x] `MVP` Detail view — concurrency policy, history limits
-- [ ] `v2` Trigger manual run
-- [ ] `v2` Suspend / resume
+- [x] `v2` Trigger manual run
+- [x] `v2` Suspend / resume
 - [x] `MVP` View job history
 
 ## 3. Networking
@@ -172,34 +172,34 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 ### PersistentVolumeClaims (PVC)
 - [x] `MVP` List PVCs with status, capacity, storage class, bound PV
 - [x] `MVP` Detail view — access modes, volume mode
-- [ ] `v2` Expand PVC (if storage class allows)
-- [ ] `v2` Delete PVC
+- [x] `v2` Expand PVC (if storage class allows)
+- [x] `v2` Delete PVC
 
 ### StorageClasses
-- [ ] `v2` List with provisioner, reclaim policy, volume binding mode
-- [ ] `v2` Default class indicator
-- [ ] `v2` Parameters display
+- [x] `v2` List with provisioner, reclaim policy, volume binding mode
+- [x] `v2` Default class indicator
+- [x] `v2` Parameters display
 
 ### CSI Drivers
-- [ ] `v2` List installed CSI drivers
-- [ ] `v2` Capabilities (volume snapshot, expansion, etc.)
+- [x] `v2` List installed CSI drivers
+- [x] `v2` Capabilities (volume snapshot, expansion, etc.)
 
 ## 6. RBAC & Security
 
 ### ServiceAccounts
-- [ ] `v2` List service accounts
-- [ ] `v2` Detail view — secrets, image pull secrets, automount token
-- [ ] `v2` Associated roles/bindings
+- [x] `v2` List service accounts
+- [x] `v2` Detail view — secrets, image pull secrets, automount token
+- [x] `v2` Associated roles/bindings
 
 ### Roles / ClusterRoles
-- [ ] `v2` List roles
-- [ ] `v2` Detail view — rules (apiGroups, resources, verbs)
-- [ ] `v2` Rule table with expandable details
+- [x] `v2` List roles
+- [x] `v2` Detail view — rules (apiGroups, resources, verbs)
+- [x] `v2` Rule table with expandable details
 
 ### RoleBindings / ClusterRoleBindings
-- [ ] `v2` List bindings
-- [ ] `v2` Detail view — subjects, role reference
-- [ ] `v2` Linked subjects and roles
+- [x] `v2` List bindings
+- [x] `v2` Detail view — subjects, role reference
+- [x] `v2` Linked subjects and roles
 
 ### RBAC Visualization
 - [ ] `Future` Who-can query — "who can GET pods in namespace X?"
@@ -210,12 +210,12 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 ## 7. Custom Resources
 
 ### CRD Management
-- [ ] `v2` List all CRDs in cluster
-- [ ] `v2` CRD detail — group, versions, scope, schema
-- [ ] `v2` OpenAPI schema viewer for CRD spec
-- [ ] `v2` List instances of any CRD
-- [ ] `v2` View/edit/delete CRD instances
-- [ ] `v2` Auto-discover and render custom resources in sidebar
+- [x] `v2` List all CRDs in cluster
+- [x] `v2` CRD detail — group, versions, scope, schema
+- [x] `v2` OpenAPI schema viewer for CRD spec
+- [x] `v2` List instances of any CRD
+- [x] `v2` View/edit/delete CRD instances
+- [x] `v2` Auto-discover and render custom resources in sidebar
 
 ### Common CRD Integrations
 - [ ] `Plugin` Prometheus: ServiceMonitor, PodMonitor, PrometheusRule
@@ -268,7 +268,14 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [ ] `v2` Namespace resource usage aggregation
 - [ ] `v2` Historical metric trends (if metrics available)
 - [ ] `v2` Prometheus auto-detection — discover in-cluster Prometheus and wire up metrics automatically
-- [ ] `v2` Custom Prometheus endpoint configuration
+- [ ] `v2` Custom Prometheus endpoint configuration (supports Thanos, Mimir, VictoriaMetrics)
+- [ ] `v2` Resource requests/limits overlay on CPU/memory graphs
+- [ ] `v2` OOMKill / CPU throttling / warning event annotations on graphs
+- [ ] `v2` Multi-container overlay charts with legend toggle
+- [ ] `v2` Sparkline columns in resource lists (opt-in, batch-queried)
+- [ ] `v2` Plugin-extensible metric queries via descriptor templates
+- [ ] `Future` Alerting rules viewer — show firing Prometheus alerts per resource (Plugin candidate)
+- [ ] `Future` GPU metrics — NVIDIA DCGM exporter integration (Plugin candidate)
 
 ### Cluster Health
 - [ ] `Future` Pulse view — live cluster-wide activity dashboard showing resource churn and recent events
@@ -313,12 +320,12 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 
 ### YAML Editor
 - [x] `MVP` Syntax highlighting
-- [ ] `v2` Schema validation (real-time)
-- [ ] `v2` Diff view before applying changes
+- [x] `v2` Schema validation (real-time)
+- [x] `v2` Diff view before applying changes
 - [x] `MVP` Undo/redo
-- [ ] `v2` Format/prettify
+- [x] `v2` Format/prettify
 - [x] `MVP` Line numbers
-- [ ] `v2` Code folding
+- [x] `v2` Code folding
 - [x] `MVP` Find and replace
 
 ### Resource Relationships
@@ -391,30 +398,30 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 ## 13. Plugin System (Wasm + Svelte)
 
 ### Plugin Runtime
-- [ ] `v2` Wasm plugin loading via wazero
-- [ ] `v2` Plugin manifest format (metadata, permissions, entry points)
-- [ ] `v2` Plugin lifecycle management (install, enable, disable, uninstall)
-- [ ] `v2` Plugin sandboxing — scoped API access
-- [ ] `v2` Plugin-to-host API (k8s client access, UI registration, storage)
+- [x] `v2` Wasm plugin loading via wazero
+- [x] `v2` Plugin manifest format (metadata, permissions, entry points)
+- [x] `v2` Plugin lifecycle management (install, enable, disable, uninstall)
+- [x] `v2` Plugin sandboxing — scoped API access
+- [x] `v2` Plugin-to-host API (k8s client access, UI registration, storage)
 
 ### Plugin Capabilities
-- [ ] `v2` Register new sidebar entries
-- [ ] `v2` Register new resource views / detail tabs
-- [ ] `v2` Register custom actions on resources
-- [ ] `v2` Register status bar widgets
-- [ ] `v2` Register command palette commands
-- [ ] `v2` Access cluster data via host-provided k8s API
-- [ ] `v2` Plugin local storage (preferences, cache)
+- [x] `v2` Register new sidebar entries
+- [x] `v2` Register new resource views / detail tabs
+- [x] `v2` Register custom actions on resources
+- [x] `v2` Register status bar widgets
+- [x] `v2` Register command palette commands
+- [x] `v2` Access cluster data via host-provided k8s API
+- [x] `v2` Plugin local storage (preferences, cache)
 - [ ] `Future` Inter-plugin communication (optional)
 
 ### Plugin UI
-- [ ] `v2` Svelte component bundles loaded at runtime
-- [ ] `v2` Plugin UI slots (sidebar, detail tabs, modals, status bar)
-- [ ] `v2` Host-provided UI component library for consistency
+- [x] `v2` Svelte component bundles loaded at runtime
+- [x] `v2` Plugin UI slots (sidebar, detail tabs, modals, status bar)
+- [x] `v2` Host-provided UI component library for consistency
 - [ ] `v2` Plugin settings page
 
 ### Plugin Distribution
-- [ ] `v2` Local plugin loading (from filesystem)
+- [x] `v2` Local plugin loading (from filesystem)
 - [ ] `Future` Plugin registry / marketplace (future)
 - [ ] `Future` Plugin versioning and updates
 - [ ] `Future` Plugin dependency declaration

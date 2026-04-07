@@ -1,10 +1,9 @@
 <script lang="ts">
   import { onDestroy, untrack } from 'svelte'
-  import { ChevronDown } from 'lucide-svelte'
   import * as LogService from '../../../../bindings/github.com/Vilsol/klados/internal/services/logservice.js'
   import { LogOptions } from '../../../../bindings/github.com/Vilsol/klados/internal/logs/models.js'
   import { streamingStore } from '$lib/stores/streaming.svelte'
-  import LogViewer from '$lib/components/LogViewer.svelte'
+  import { LogViewer, Combobox } from '@klados/ui'
 
   let { obj, ctxName, namespace, name }: {
     obj: Record<string, any>
@@ -19,14 +18,13 @@
   ])
 
   let selectedContainer = $state('')
-  let containerDropdownOpen = $state(false)
   let timestamps = $state(false)
   let previous = $state(false)
 
   const showTimestamps = $derived(timestamps)
   let streamID = $state<string | null>(null)
   let starting = $state(false)
-  let logViewer: ReturnType<typeof LogViewer>
+  let logViewer = $state<ReturnType<typeof LogViewer>>()
   let downloadDropdownOpen = $state(false)
 
   // Validated container: always valid for the current pod's container list
@@ -83,14 +81,8 @@
     }
   })
 
-  function selectContainer(n: string) {
-    selectedContainer = n
-    containerDropdownOpen = false
-  }
-
   function handleClickOutside(e: MouseEvent) {
     const t = e.target as HTMLElement
-    if (!t.closest('[data-container-dropdown]')) containerDropdownOpen = false
     if (!t.closest('[data-download-dropdown]')) downloadDropdownOpen = false
   }
 
@@ -137,11 +129,13 @@
     }
   }
 
-  const containerLabel = $derived(() => {
-    if (!selectedContainer) return 'All'
-    const c = containers.find(c => c.name === selectedContainer)
-    return c ? `${c.name}${c.init ? ' (init)' : ''}` : selectedContainer
-  })
+  const containerOptions = $derived([
+    { value: '', label: 'All' },
+    ...containers.map((c) => ({
+      value: c.name,
+      label: c.init ? `${c.name} (init)` : c.name,
+    })),
+  ])
 
   onDestroy(() => {
     if (streamID) LogService.StopLogStream(streamID)
@@ -158,33 +152,13 @@
   <div class="flex flex-col h-full overflow-hidden">
     <!-- Control bar -->
     <div class="flex items-center gap-2 px-3 py-1.5 border-b border-border bg-surface shrink-0 text-xs flex-wrap">
-      <!-- Container dropdown -->
-      <div class="relative" data-container-dropdown>
-        <button
-          onclick={() => (containerDropdownOpen = !containerDropdownOpen)}
-          class="flex items-center gap-1 text-xs bg-bg text-fg border border-border rounded px-2 py-1 hover:bg-surface-hover transition-colors"
-        >
-          <span class="max-w-[8rem] truncate">{containerLabel()}</span>
-          <ChevronDown size={12} class="shrink-0 text-muted" />
-        </button>
-        {#if containerDropdownOpen}
-          <div class="absolute top-full left-0 mt-1 min-w-[8rem] rounded border border-border bg-bg shadow-lg z-50">
-            <button
-              onclick={() => selectContainer('')}
-              class="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-hover transition-colors
-                {selectedContainer === '' ? 'font-medium text-fg' : 'text-muted'}"
-            >All</button>
-            {#each containers as c}
-              <button
-                onclick={() => selectContainer(c.name)}
-                class="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-hover transition-colors
-                  {selectedContainer === c.name ? 'font-medium text-fg' : 'text-muted'}"
-              >
-                {c.name}{c.init ? ' (init)' : ''}
-              </button>
-            {/each}
-          </div>
-        {/if}
+      <div class="w-36">
+        <Combobox
+          bind:value={selectedContainer}
+          options={containerOptions}
+          placeholder="All"
+          size="xs"
+        />
       </div>
 
       <label class="flex items-center gap-1 text-xs text-muted select-none cursor-pointer">

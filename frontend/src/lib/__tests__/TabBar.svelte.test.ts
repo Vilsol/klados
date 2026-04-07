@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/svelte'
-import TabBar from '$lib/components/TabBar.svelte'
-import { sessionStore } from '$lib/stores/session.svelte'
+import { TabBar, sessionStore } from '@klados/ui'
 
 describe('TabBar', () => {
   beforeEach(() => {

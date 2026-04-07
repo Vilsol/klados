@@ -20,9 +20,11 @@ class ResourceStore {
   private namespace = ''
   private eventName = ''
   private unsub: (() => void) | null = null
+  private generation = 0
 
   async start(contextName: string, gvr: string, namespace: string) {
     this.stop()
+    const gen = this.generation  // captured after stop() bumped it
 
     this.contextName = contextName
     this.gvr = gvr
@@ -38,6 +40,8 @@ class ResourceStore {
 
     try {
       const list = await ResourceService.ListResources(contextName, gvr, namespace)
+      if (gen !== this.generation) return  // superseded by a newer start/stop
+
       const map = new Map<string, Record<string, any>>()
       for (const obj of list ?? []) {
         map.set(resourceKey(obj), obj)
@@ -46,13 +50,15 @@ class ResourceStore {
 
       await ResourceService.StartWatch(contextName, gvr, namespace)
     } catch (e: any) {
+      if (gen !== this.generation) return
       this.error = e?.message ?? String(e)
     } finally {
-      this.loading = false
+      if (gen === this.generation) this.loading = false
     }
   }
 
   stop() {
+    this.generation++
     if (this.unsub) {
       this.unsub()
       this.unsub = null

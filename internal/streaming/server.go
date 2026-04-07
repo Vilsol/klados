@@ -92,7 +92,15 @@ func (s *Server) Start(ctx context.Context) error {
 	}))
 
 	s.app.Post("/:token/log", func(c *fiber.Ctx) error {
+		c.Set("Access-Control-Allow-Origin", "*")
 		slox.Info(s.ctx, "frontend", "msg", string(c.Body()))
+		return c.SendStatus(fiber.StatusNoContent)
+	})
+
+	s.app.Options("/:token/log", func(c *fiber.Ctx) error {
+		c.Set("Access-Control-Allow-Origin", "*")
+		c.Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		c.Set("Access-Control-Allow-Headers", "Content-Type")
 		return c.SendStatus(fiber.StatusNoContent)
 	})
 

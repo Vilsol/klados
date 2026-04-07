@@ -162,6 +162,108 @@ func TestRegistrySetStatus(t *testing.T) {
 	testza.AssertEqual(t, "disabled", plugins[0].Status)
 }
 
+func makePluginWithMetrics(name string, metricsGroups []types.MetricTemplateGroup) *LoadedPlugin {
+	desc := "desc"
+	return &LoadedPlugin{
+		Dir: "/tmp/" + name,
+		Manifest: &types.ManifestV1Json{
+			SchemaVersion:  1,
+			Name:           name,
+			Version:        "1.0.0",
+			DisplayName:    name,
+			Description:    &desc,
+			MinHostVersion: "1.0.0",
+			Extensions: &types.Extensions{
+				Metrics: metricsGroups,
+			},
+		},
+	}
+}
+
+func TestRegistryMetricQueries(t *testing.T) {
+	reg := NewRegistry()
+	descReg := newDescReg(t)
+
+	p := makePluginWithMetrics("istio-metrics", []types.MetricTemplateGroup{
+		{
+			Gvr: "core.v1.pods",
+			Queries: []types.MetricTemplateQuery{
+				{Name: "HTTP Request Rate", Query: `sum(rate(http_requests_total{namespace="{{namespace}}", pod="{{name}}"}[5m])) by (code)`, Unit: "req/s"},
+				{Name: "HTTP Error Rate", Query: `sum(rate(http_requests_total{namespace="{{namespace}}", pod="{{name}}", code=~"5.."}[5m]))`, Unit: "req/s"},
+			},
+		},
+	})
+
+	testza.AssertNoError(t, reg.Register(p, descReg))
+
+	queries := reg.GetMetricQueries("core.v1.pods")
+	testza.AssertLen(t, queries, 2)
+	testza.AssertEqual(t, "istio-metrics", queries[0].PluginName)
+	testza.AssertEqual(t, "core.v1.pods", queries[0].GVR)
+	testza.AssertEqual(t, "HTTP Request Rate", queries[0].Name)
+	testza.AssertEqual(t, "req/s", queries[0].Unit)
+
+	// No queries for unrelated GVR
+	testza.AssertLen(t, reg.GetMetricQueries("apps.v1.deployments"), 0)
+}
+
+func TestRegistryMetricQueriesNoField(t *testing.T) {
+	reg := NewRegistry()
+	descReg := newDescReg(t)
+
+	p := makePlugin("plain-plugin", nil, nil)
+	testza.AssertNoError(t, reg.Register(p, descReg))
+	testza.AssertLen(t, reg.GetMetricQueries(""), 0)
+}
+
+func TestRegistryMetricQueriesDeactivate(t *testing.T) {
+	reg := NewRegistry()
+	descReg := newDescReg(t)
+	enricherReg := resource.NewEnricherRegistry()
+
+	p := makePluginWithMetrics("istio-metrics", []types.MetricTemplateGroup{
+		{Gvr: "core.v1.pods", Queries: []types.MetricTemplateQuery{
+			{Name: "RPS", Query: "rate(requests[5m])", Unit: "req/s"},
+		}},
+	})
+	testza.AssertNoError(t, reg.Register(p, descReg))
+	testza.AssertLen(t, reg.GetMetricQueries("core.v1.pods"), 1)
+
+	reg.Deactivate("istio-metrics", enricherReg)
+	testza.AssertLen(t, reg.GetMetricQueries("core.v1.pods"), 0)
+	// Plugin entry still present
+	testza.AssertLen(t, reg.GetPlugins(), 1)
+}
+
+func TestRegistryMetricQueriesMultiplePlugins(t *testing.T) {
+	reg := NewRegistry()
+	descReg := newDescReg(t)
+
+	p1 := makePluginWithMetrics("istio-metrics", []types.MetricTemplateGroup{
+		{Gvr: "core.v1.pods", Queries: []types.MetricTemplateQuery{
+			{Name: "RPS", Query: "rate(requests[5m])", Unit: "req/s"},
+		}},
+	})
+	p2 := makePluginWithMetrics("linkerd-metrics", []types.MetricTemplateGroup{
+		{Gvr: "core.v1.pods", Queries: []types.MetricTemplateQuery{
+			{Name: "Latency", Query: "histogram_quantile(0.99, rate(latency_bucket[5m]))", Unit: "ms"},
+		}},
+	})
+
+	testza.AssertNoError(t, reg.Register(p1, descReg))
+	testza.AssertNoError(t, reg.Register(p2, descReg))
+
+	queries := reg.GetMetricQueries("core.v1.pods")
+	testza.AssertLen(t, queries, 2)
+
+	pluginNames := map[string]bool{}
+	for _, q := range queries {
+		pluginNames[q.PluginName] = true
+	}
+	testza.AssertTrue(t, pluginNames["istio-metrics"])
+	testza.AssertTrue(t, pluginNames["linkerd-metrics"])
+}
+
 func TestRegistrySidebarEntries(t *testing.T) {
 	reg := NewRegistry()
 	descReg := newDescReg(t)

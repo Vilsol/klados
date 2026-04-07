@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import * as ResourceService from '../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
   import PortForwardDialog from '$lib/components/PortForwardDialog.svelte'
+  import { SectionHeader, KeyValueBadge, EmptyState } from '@klados/ui'
 
   let { obj, ctxName }: { obj: Record<string, any>; ctxName: string } = $props()
 
@@ -42,24 +43,18 @@
 <div class="flex flex-col gap-4 p-4 overflow-auto h-full">
   <!-- Selector -->
   <section>
-    <h3 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Selector</h3>
+    <SectionHeader>Selector</SectionHeader>
     {#if Object.keys(selector).length > 0}
-      <div class="flex flex-wrap gap-1.5">
-        {#each Object.entries(selector) as [k, v]}
-          <span class="text-xs bg-surface-hover border border-border rounded px-2 py-0.5 font-mono">
-            {k}={v}
-          </span>
-        {/each}
-      </div>
+      <KeyValueBadge entries={Object.entries(selector)} />
     {:else}
-      <p class="text-sm text-muted">No selector</p>
+      <EmptyState message="No selector" size="sm" />
     {/if}
   </section>
 
   <!-- Ports -->
   {#if ports.length > 0}
     <section>
-      <h3 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Ports</h3>
+      <SectionHeader>Ports</SectionHeader>
       <table class="w-full text-sm">
         <thead>
           <tr class="text-left text-muted text-xs border-b border-border">
@@ -94,13 +89,13 @@
 
   <!-- Endpoints / backing pods -->
   <section>
-    <h3 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Endpoints</h3>
+    <SectionHeader>Endpoints</SectionHeader>
     {#if endpointError}
-      <p class="text-sm text-muted">{endpointError}</p>
+      <EmptyState message={endpointError} size="sm" />
     {:else if endpoints === null}
-      <p class="text-sm text-muted">Loading…</p>
+      <EmptyState message="Loading…" size="sm" />
     {:else if backingPods.length === 0}
-      <p class="text-sm text-muted">No endpoints</p>
+      <EmptyState message="No endpoints" size="sm" />
     {:else}
       <div class="flex flex-col gap-1">
         {#each backingPods as pod}

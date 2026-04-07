@@ -3,6 +3,8 @@
 package main
 
 import (
+	"fmt"
+
 	sdk "github.com/Vilsol/klados-plugin-sdk"
 )
 
@@ -14,6 +16,42 @@ func init() {
 	sdk.OnEvent("cluster:connected", func(payload []byte) {
 		prefix, _, _ := sdk.Storage.Get("annotation-prefix")
 		sdk.Log.Info("cluster connected, using annotation prefix: " + prefix)
+	})
+
+	// Taint report: aggregate taint keys across all nodes and save to storage.
+	sdk.OnCommand("node-annotator-taint-report", func() {
+		nodes, err := sdk.K8s.List("core.v1.nodes", "")
+		if err != nil {
+			sdk.Log.Error("taint report: " + err.Error())
+			return
+		}
+
+		// taintKey → set of node names
+		keyNodes := map[string][]string{}
+		for _, node := range nodes {
+			meta, _ := node["metadata"].(map[string]any)
+			nodeName, _ := meta["name"].(string)
+			spec, _ := node["spec"].(map[string]any)
+			taints, _ := spec["taints"].([]any)
+			for _, t := range taints {
+				taint, ok := t.(map[string]any)
+				if !ok {
+					continue
+				}
+				key, _ := taint["key"].(string)
+				keyNodes[key] = append(keyNodes[key], nodeName)
+			}
+		}
+
+		sdk.Log.Info(fmt.Sprintf("taint report: %d node(s), %d unique taint key(s)", len(nodes), len(keyNodes)))
+		for key, affected := range keyNodes {
+			sdk.Log.Info(fmt.Sprintf("  %s → %d node(s): %v", key, len(affected), affected))
+		}
+
+		// Persist last-run summary to storage so it can be read by other SDK calls.
+		summary := fmt.Sprintf("nodes:%d taint-keys:%d", len(nodes), len(keyNodes))
+		_ = sdk.Storage.Set("last-taint-report", summary)
+		sdk.Log.Info("taint report: saved to storage (key=last-taint-report)")
 	})
 
 	sdk.RegisterEnricher("core.v1.nodes", enrichNode)

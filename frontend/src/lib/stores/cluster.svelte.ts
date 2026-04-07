@@ -71,6 +71,13 @@ class ClusterStore {
       )
       if (connected && !this.activeContext) {
         await this.restoreContext(connected.name)
+      } else if (this.activeContext) {
+        // activeContext already set by routing (e.g. page refresh) — still load namespaces
+        try {
+          const saved = await ClusterService.GetActiveNamespace(this.activeContext)
+          if (saved) this.selectedNamespaces[this.activeContext] = [saved]
+        } catch {}
+        await this.loadNamespaces(this.activeContext)
       }
     } catch (e) {
       console.error('Failed to load contexts:', e)

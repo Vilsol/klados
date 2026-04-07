@@ -10,6 +10,23 @@ vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/resourcese
   ForceDeleteResource: vi.fn().mockResolvedValue(undefined),
   ScaleResource: vi.fn().mockResolvedValue(undefined),
   RestartResource: vi.fn().mockResolvedValue(undefined),
+  PauseRollout: vi.fn().mockResolvedValue(undefined),
+  ResumeRollout: vi.fn().mockResolvedValue(undefined),
+  RollbackToRevision: vi.fn().mockResolvedValue(undefined),
+  DeleteJobCascade: vi.fn().mockResolvedValue(undefined),
+  DeleteJobOrphan: vi.fn().mockResolvedValue(undefined),
+  TriggerCronJob: vi.fn().mockResolvedValue(undefined),
+  SuspendCronJob: vi.fn().mockResolvedValue(undefined),
+  ResumeCronJob: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js', () => ({
+  StartDrain: vi.fn().mockResolvedValue(undefined),
+  CancelDrain: vi.fn().mockResolvedValue(undefined),
+  CordonNode: vi.fn().mockResolvedValue(undefined),
+  UncordonNode: vi.fn().mockResolvedValue(undefined),
+  IsActive: vi.fn().mockResolvedValue(false),
+  ListActive: vi.fn().mockResolvedValue([]),
 }))
 
 vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js', () => ({
@@ -17,8 +34,17 @@ vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/schemaserv
 }))
 
 // CodeMirror DOM operations don't work in jsdom — skip by mocking YAMLEditor
-vi.mock('$lib/components/YAMLEditor.svelte', () => ({
-  default: { render: () => {} },
+// ConfirmDialog and Tooltip are used by ActionsToolbar (child of ResourceDetail)
+vi.mock('@klados/ui', () => ({
+  YAMLEditor: vi.fn(),
+  ConfirmDialog: vi.fn(),
+  Tooltip: vi.fn(),
+  SectionHeader: vi.fn(),
+  KeyValueBadge: vi.fn(),
+  EmptyState: vi.fn(),
+  StatusBadge: vi.fn(),
+  KeyValuePairEditor: vi.fn(),
+  DataTable: vi.fn(),
 }))
 
 import ResourceDetail from '$lib/components/ResourceDetail.svelte'
@@ -27,13 +53,18 @@ const deployDescriptor: DescriptorDef = {
   group: 'apps',
   version: 'v1',
   resource: 'deployments',
+  kind: '',
   gvr: 'apps.v1.deployments',
   columns: [],
   overviewFields: [
     { label: 'Namespace', expr: 'metadata.namespace', renderType: 'text' },
   ],
   detailPanels: ['overview', 'events'],
-  actions: ['scale', 'restart', 'delete'],
+  actions: [
+    { name: 'scale', label: 'Scale' },
+    { name: 'restart', label: 'Restart' },
+    { name: 'delete', label: 'Delete' },
+  ],
 }
 
 const obj = {

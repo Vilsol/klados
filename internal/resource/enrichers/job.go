@@ -9,7 +9,7 @@ import (
 
 type JobEnricher struct{}
 
-func (e *JobEnricher) Enrich(obj *unstructured.Unstructured) error {
+func (e *JobEnricher) Enrich(_ string, obj *unstructured.Unstructured) error {
 	succeeded, _, _ := unstructured.NestedInt64(obj.Object, "status", "succeeded")
 	completionsDesired, _, _ := unstructured.NestedInt64(obj.Object, "spec", "completions")
 

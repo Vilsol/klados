@@ -23,4 +23,5 @@ detailPanels:
   - yaml
   - events
 actions:
-  - delete
+  - name: delete
+    label: Delete

@@ -26,7 +26,7 @@ func (e *PluginEnricher) GetPluginName() string {
 	return e.PluginName
 }
 
-func (e *PluginEnricher) Enrich(obj *unstructured.Unstructured) error {
+func (e *PluginEnricher) Enrich(_ string, obj *unstructured.Unstructured) error {
 	ctx := e.Ctx
 	if ctx == nil {
 		ctx = context.Background()

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Browser } from '@wailsio/runtime'
+  import { SectionHeader, EmptyState } from '@klados/ui'
 
   let { obj }: { obj: Record<string, any> } = $props()
 
@@ -14,9 +15,9 @@
 <div class="flex flex-col gap-4 p-4 overflow-auto h-full">
   <!-- Rules -->
   <section>
-    <h3 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Rules</h3>
+    <SectionHeader>Rules</SectionHeader>
     {#if rules.length === 0}
-      <p class="text-sm text-muted">No rules</p>
+      <EmptyState message="No rules" size="sm" />
     {:else}
       <div class="flex flex-col gap-3">
         {#each rules as rule}
@@ -68,7 +69,7 @@
   <!-- TLS -->
   {#if tls.length > 0}
     <section>
-      <h3 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">TLS</h3>
+      <SectionHeader>TLS</SectionHeader>
       <div class="flex flex-col gap-2">
         {#each tls as entry}
           <div class="bg-surface border border-border rounded p-3 text-sm">

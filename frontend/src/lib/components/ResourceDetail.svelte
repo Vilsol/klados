@@ -20,8 +20,17 @@
   import ConfigMapPanel from './panels/ConfigMapPanel.svelte'
   import SecretPanel from './panels/SecretPanel.svelte'
   import NodePanel from './panels/NodePanel.svelte'
+  import NodeDrainTab from './panels/NodeDrainTab.svelte'
+  import RulesPanel from './panels/RulesPanel.svelte'
+  import BindingPanel from './panels/BindingPanel.svelte'
+  import ServiceAccountPanel from './panels/ServiceAccountPanel.svelte'
+  import StorageClassParametersPanel from './panels/StorageClassParametersPanel.svelte'
+  import CSICapabilitiesPanel from './panels/CSICapabilitiesPanel.svelte'
+  import CRDPanel from './panels/CRDPanel.svelte'
+  import CRDSchemaPanel from './panels/CRDSchemaPanel.svelte'
   import ActionsToolbar from './panels/ActionsToolbar.svelte'
-  import YAMLEditor from './YAMLEditor.svelte'
+  import MetricsTab from './charts/MetricsTab.svelte'
+  import { YAMLEditor } from '@klados/ui'
 
   type PanelComponent = Component<any>
 
@@ -39,6 +48,15 @@
     ['configmap', ConfigMapPanel as PanelComponent],
     ['secret', SecretPanel as PanelComponent],
     ['node', NodePanel as PanelComponent],
+    ['drain', NodeDrainTab as PanelComponent],
+    ['rules', RulesPanel as PanelComponent],
+    ['binding', BindingPanel as PanelComponent],
+    ['serviceaccount', ServiceAccountPanel as PanelComponent],
+    ['sc-parameters', StorageClassParametersPanel as PanelComponent],
+    ['csi-capabilities', CSICapabilitiesPanel as PanelComponent],
+    ['crd', CRDPanel as PanelComponent],
+    ['crd-schema', CRDSchemaPanel as PanelComponent],
+    ['metrics', MetricsTab as PanelComponent],
   ])
 
   const panelLabels: Record<string, string> = {
@@ -55,6 +73,15 @@
     configmap: 'Data',
     secret: 'Data',
     node: 'Conditions',
+    drain: 'Drain',
+    rules: 'Rules',
+    binding: 'Binding',
+    serviceaccount: 'Token & Secrets',
+    'sc-parameters': 'Parameters',
+    'csi-capabilities': 'Capabilities',
+    crd: 'CRD',
+    'crd-schema': 'Schema',
+    metrics: 'Metrics',
   }
 
   let {
@@ -75,7 +102,8 @@
     onrefresh: () => void
   } = $props()
 
-  const visiblePanels = $derived(descriptor.detailPanels.filter((p) => panelComponents.has(p)))
+  const foldedIntoOverview = new Set(['labels', 'containers'])
+  const visiblePanels = $derived(descriptor.detailPanels.filter((p) => panelComponents.has(p) && !foldedIntoOverview.has(p)))
   const pluginTabs = $derived(slotRegistry.getDetailTabs(gvr))
   let activePanel = $state('')
   $effect(() => {
@@ -92,7 +120,7 @@
   )
 
   function makePluginCtx(tab: import('$lib/plugins/slots.svelte.js').RegisteredDetailTab) {
-    const ns = clusterStore.selectedNamespaces[0] ?? namespace
+    const ns = clusterStore.getSelectedNamespaces(ctxName)[0] ?? namespace
     const manifest = {
       schemaVersion: 1 as const,
       name: tab.pluginName,
@@ -100,12 +128,16 @@
       displayName: '',
       minHostVersion: '',
       permissions: {
-        resources: tab.resourcePerms.map((p) => ({
+        resources: tab.perms.resources?.map((p) => ({
           group: p.group,
           version: p.version,
           resource: p.resource,
           verbs: p.verbs as any,
         })),
+        logs: tab.perms.logs || undefined,
+        exec: tab.perms.exec || undefined,
+        storage: tab.perms.storage || undefined,
+        events: tab.perms.events || undefined,
       },
     }
     return createPluginContext(manifest, {
@@ -165,10 +197,10 @@
     {#each pluginTabs as pt}
       {#if activePanel === pt.id}
         {#if basePluginURL}
-          {#await loadPluginComponent(pt.pluginName, pt.component, basePluginURL) then cmp}
-            {#if cmp}
+          {#await loadPluginComponent(pt.pluginName, pt.component, basePluginURL) then Cmp}
+            {#if Cmp}
               {@const ptCtx = makePluginCtx(pt)}
-              <svelte:component this={cmp} resource={obj} ctx={ptCtx} />
+              <Cmp resource={obj} ctx={ptCtx} />
             {:else}
               <div class="flex items-center justify-center h-full text-sm text-muted">
                 Plugin component failed to load
@@ -176,7 +208,7 @@
             {/if}
           {/await}
         {:else}
-          <div class="h-full bg-surface animate-pulse rounded" />
+          <div class="h-full bg-surface animate-pulse rounded"></div>
         {/if}
       {/if}
     {/each}
@@ -184,9 +216,7 @@
       {#if activePanel === panel}
         {@const PanelCmp = panelComponents.get(panel)!}
         {#if panel === 'overview'}
-          <div class="overflow-auto h-full">
-            <PanelCmp {obj} {descriptor} {gvr} />
-          </div>
+          <PanelCmp bind:obj {descriptor} {gvr} {ctxName} {namespace} {name} />
         {:else if panel === 'yaml'}
           {#key uid}
             <PanelCmp bind:obj {ctxName} {gvr} {namespace} {name} kind={descriptor.kind ?? ''} onrefresh={onrefresh} />
@@ -209,10 +239,32 @@
           <PanelCmp {obj} {ctxName} namespace={namespace} {name} />
         {:else if panel === 'service'}
           <PanelCmp {obj} ctxName={ctxName} />
-        {:else if panel === 'ingress' || panel === 'configmap' || panel === 'secret' || panel === 'node'}
+        {:else if panel === 'ingress' || panel === 'configmap' || panel === 'secret' || panel === 'node' || panel === 'rules'}
           <div class="overflow-auto h-full">
             <PanelCmp {obj} />
           </div>
+        {:else if panel === 'serviceaccount' || panel === 'binding'}
+          <div class="overflow-auto h-full">
+            <PanelCmp {obj} {ctxName} />
+          </div>
+        {:else if panel === 'sc-parameters'}
+          <div class="overflow-auto h-full">
+            <PanelCmp {obj} />
+          </div>
+        {:else if panel === 'csi-capabilities'}
+          <div class="overflow-auto h-full">
+            <PanelCmp {obj} {ctxName} />
+          </div>
+        {:else if panel === 'crd'}
+          <div class="overflow-auto h-full">
+            <PanelCmp {obj} {ctxName} />
+          </div>
+        {:else if panel === 'crd-schema'}
+          <div class="h-full">
+            <PanelCmp {obj} />
+          </div>
+        {:else if panel === 'metrics'}
+          <PanelCmp {obj} {ctxName} {gvr} {namespace} {name} />
         {/if}
       {/if}
     {/each}

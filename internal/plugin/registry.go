@@ -2,7 +2,7 @@ package plugin
 
 import (
 	"fmt"
-	"sync"
+	"github.com/sasha-s/go-deadlock"
 
 	"github.com/Vilsol/klados/internal/plugin/types"
 	"github.com/Vilsol/klados/internal/resource"
@@ -32,19 +32,21 @@ type ResourcePerm struct {
 }
 
 type DetailTabEntry struct {
-	PluginName    string         `json:"pluginName"`
-	GVR           string         `json:"gvr"`
-	ID            string         `json:"id"`
-	Label         string         `json:"label"`
-	Component     string         `json:"component"`
-	ResourcePerms []ResourcePerm `json:"resourcePerms,omitempty"`
+	PluginName string       `json:"pluginName"`
+	GVR        string       `json:"gvr"`
+	ID         string       `json:"id"`
+	Label      string       `json:"label"`
+	Component  string       `json:"component"`
+	Perms      PermsSummary `json:"perms"`
 }
 
 type CommandEntry struct {
-	PluginName string  `json:"pluginName"`
-	ID         string  `json:"id"`
-	Label      string  `json:"label"`
-	Icon       *string `json:"icon,omitempty"`
+	PluginName string       `json:"pluginName"`
+	ID         string       `json:"id"`
+	Label      string       `json:"label"`
+	Icon       *string      `json:"icon,omitempty"`
+	Component  *string      `json:"component,omitempty"`
+	Perms      PermsSummary `json:"perms"`
 }
 
 type OverviewFieldEntry struct {
@@ -83,6 +85,14 @@ type StatusBarEntry struct {
 	Component  string `json:"component"`
 }
 
+type MetricQueryEntry struct {
+	PluginName string `json:"pluginName"`
+	GVR        string `json:"gvr"`
+	Name       string `json:"name"`
+	Query      string `json:"query"`
+	Unit       string `json:"unit"`
+}
+
 type PermsSummary struct {
 	Resources []ResourcePerm `json:"resources,omitempty"`
 	Logs      bool           `json:"logs,omitempty"`
@@ -105,7 +115,7 @@ type PluginInfo struct {
 }
 
 type Registry struct {
-	mu              sync.RWMutex
+	mu              deadlock.RWMutex
 	plugins         []*LoadedPlugin
 	sidebarEntries  []SidebarEntry
 	detailTabs      []DetailTabEntry
@@ -115,6 +125,7 @@ type Registry struct {
 	contextMenuItems []ContextMenuEntry
 	headerWidgets   []HeaderWidgetEntry
 	statusBarWidgets []StatusBarEntry
+	metricQueries    []MetricQueryEntry
 	pluginNames     map[string]struct{}
 }
 
@@ -145,26 +156,25 @@ func (r *Registry) Register(p *LoadedPlugin, descReg *resource.Registry) error {
 		for _, se := range p.Manifest.Extensions.Sidebar {
 			r.sidebarEntries = append(r.sidebarEntries, toSidebarEntry(se, name))
 		}
+		perms := derefPermsSummary(buildPermsSummary(p.Manifest.Permissions))
 		for _, dt := range p.Manifest.Extensions.DetailTabs {
 			r.detailTabs = append(r.detailTabs, DetailTabEntry{
-				PluginName:    name,
-				GVR:           dt.Gvr,
-				ID:            dt.Id,
-				Label:         dt.Label,
-				Component:     dt.Component,
-				ResourcePerms: toResourcePerms(p.Manifest.Permissions),
+				PluginName: name,
+				GVR:        dt.Gvr,
+				ID:         dt.Id,
+				Label:      dt.Label,
+				Component:  dt.Component,
+				Perms:      perms,
 			})
 		}
 		for _, cmd := range p.Manifest.Extensions.Commands {
-			var icon *string
-			if cmd.Icon != nil {
-				icon = cmd.Icon
-			}
 			r.commands = append(r.commands, CommandEntry{
 				PluginName: name,
 				ID:         cmd.Id,
 				Label:      cmd.Label,
-				Icon:       icon,
+				Icon:       cmd.Icon,
+				Component:  cmd.Component,
+				Perms:      perms,
 			})
 		}
 		for _, of := range p.Manifest.Extensions.OverviewFields {
@@ -204,6 +214,13 @@ func (r *Registry) Register(p *LoadedPlugin, descReg *resource.Registry) error {
 				PluginName: name, ID: sb.Id, Component: sb.Component,
 			})
 		}
+		for _, mg := range p.Manifest.Extensions.Metrics {
+			for _, q := range mg.Queries {
+				r.metricQueries = append(r.metricQueries, MetricQueryEntry{
+					PluginName: name, GVR: mg.Gvr, Name: q.Name, Query: q.Query, Unit: q.Unit,
+				})
+			}
+		}
 	}
 
 	p.Status = StatusActive
@@ -226,6 +243,7 @@ func (r *Registry) Deactivate(name string, enricherReg *resource.EnricherRegistr
 	r.contextMenuItems = filterContextMenuItems(r.contextMenuItems, name)
 	r.headerWidgets = filterHeaderWidgets(r.headerWidgets, name)
 	r.statusBarWidgets = filterStatusBarWidgets(r.statusBarWidgets, name)
+	r.metricQueries = filterMetricQueries(r.metricQueries, name)
 
 	if enricherReg != nil {
 		enricherReg.UnregisterPlugin(name)
@@ -254,6 +272,7 @@ func (r *Registry) Remove(name string) {
 	r.contextMenuItems = filterContextMenuItems(r.contextMenuItems, name)
 	r.headerWidgets = filterHeaderWidgets(r.headerWidgets, name)
 	r.statusBarWidgets = filterStatusBarWidgets(r.statusBarWidgets, name)
+	r.metricQueries = filterMetricQueries(r.metricQueries, name)
 }
 
 // SetStatus updates the status of a registered plugin.
@@ -331,6 +350,13 @@ func toPluginInfo(p *LoadedPlugin) PluginInfo {
 		Dir:              p.Dir,
 		Permissions:      buildPermsSummary(p.Manifest.Permissions),
 	}
+}
+
+func derefPermsSummary(p *PermsSummary) PermsSummary {
+	if p == nil {
+		return PermsSummary{}
+	}
+	return *p
 }
 
 func buildPermsSummary(perms *types.Permissions) *PermsSummary {
@@ -537,4 +563,29 @@ func (r *Registry) GetStatusBarWidgets() []StatusBarEntry {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return r.statusBarWidgets
+}
+
+func (r *Registry) GetMetricQueries(gvr string) []MetricQueryEntry {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if gvr == "" {
+		return r.metricQueries
+	}
+	var out []MetricQueryEntry
+	for _, e := range r.metricQueries {
+		if e.GVR == gvr {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+func filterMetricQueries(entries []MetricQueryEntry, name string) []MetricQueryEntry {
+	var out []MetricQueryEntry
+	for _, e := range entries {
+		if e.PluginName != name {
+			out = append(out, e)
+		}
+	}
+	return out
 }

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"github.com/sasha-s/go-deadlock"
 
 	"github.com/Vilsol/slox"
 	fiberws "github.com/gofiber/websocket/v2"
@@ -42,7 +43,7 @@ type ConnectionProvider interface {
 }
 
 type Streamer struct {
-	mu      sync.Mutex
+	mu      deadlock.Mutex
 	streams map[string]*logStream
 	connMgr ConnectionProvider
 	ctx     context.Context

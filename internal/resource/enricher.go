@@ -3,7 +3,7 @@ package resource
 import "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 type Enricher interface {
-	Enrich(obj *unstructured.Unstructured) error
+	Enrich(contextName string, obj *unstructured.Unstructured) error
 }
 
 type EnricherRegistry struct {

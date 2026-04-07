@@ -16,7 +16,7 @@ func TestDeploymentEnricher(t *testing.T) {
 	}}
 
 	e := &enrichers.DeploymentEnricher{}
-	testza.AssertNoError(t, e.Enrich(obj))
+	testza.AssertNoError(t, e.Enrich("", obj))
 
 	readyDisplay, _, _ := unstructured.NestedString(obj.Object, "status", "readyDisplay")
 	testza.AssertEqual(t, "2/3", readyDisplay)

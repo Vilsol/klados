@@ -3,11 +3,13 @@
   import { getTheme, setTheme } from '$lib/theme.svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
   import ConnectionIndicator from './ConnectionIndicator.svelte'
-  import ConfirmDialog from './ConfirmDialog.svelte'
+  import { ConfirmDialog } from '@klados/ui'
   import { push } from 'svelte-spa-router'
   import { slotRegistry } from '$lib/plugins/slots.svelte.js'
   import { loadPluginComponent } from '$lib/plugins/loader.js'
   import { streamingStore } from '$lib/stores/streaming.svelte.js'
+  import { Events } from '@wailsio/runtime'
+  import * as DrainService from '../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js'
 
   function cycleTheme() {
     const current = getTheme()
@@ -17,6 +19,7 @@
 
   let currentTheme = $derived(getTheme())
   let nsDropdownOpen = $state(false)
+  let nsSearch = $state('')
   let newNsName = $state('')
   let deleteTarget = $state<string | null>(null)
   let confirmDeleteOpen = $state(false)
@@ -43,6 +46,24 @@
   const ctx = $derived(clusterStore.activeContext)
   const selected = $derived(ctx ? clusterStore.getSelectedNamespaces(ctx) : [])
 
+  let activeDrains = $state<string[]>([])
+
+  $effect(() => {
+    const currentCtx = ctx
+    if (!currentCtx) { activeDrains = []; return }
+
+    DrainService.ListActive(currentCtx).then((nodes: string[]) => {
+      activeDrains = nodes ?? []
+    })
+
+    const unsub = Events.On(`drain:${currentCtx}:updated`, () => {
+      DrainService.ListActive(currentCtx).then((nodes: string[]) => {
+        activeDrains = nodes ?? []
+      })
+    })
+    return unsub
+  })
+
   const label = $derived(
     selected.length === 0
       ? 'All Namespaces'
@@ -62,13 +83,24 @@
     clusterStore.setNamespaces(ctx, next)
   }
 
+  const filteredNamespaces = $derived(
+    nsSearch === ''
+      ? (ctx ? clusterStore.getNamespaces(ctx) : [])
+      : (ctx ? clusterStore.getNamespaces(ctx) : []).filter((ns) =>
+          ns.toLowerCase().includes(nsSearch.toLowerCase()),
+        ),
+  )
+
   function selectAll() {
     if (ctx) clusterStore.setNamespaces(ctx, [])
     nsDropdownOpen = false
   }
 
   function handleClickOutside(e: MouseEvent) {
-    if (!(e.target as HTMLElement).closest('[data-ns-dropdown]')) nsDropdownOpen = false
+    if (!(e.target as HTMLElement).closest('[data-ns-dropdown]')) {
+      nsDropdownOpen = false
+      nsSearch = ''
+    }
   }
 
   const basePluginURL = $derived(
@@ -121,6 +153,18 @@
         <div
           class="absolute top-full left-0 mt-1 w-64 max-h-72 overflow-y-auto rounded border border-border bg-bg shadow-lg z-50"
         >
+          <!-- Search input -->
+          <div class="px-2 py-1.5">
+            <input
+              type="text"
+              bind:value={nsSearch}
+              placeholder="Search namespaces…"
+              class="w-full text-xs px-2 py-1 rounded border border-border bg-surface focus:outline-none focus:border-accent"
+            />
+          </div>
+
+          <div class="border-t border-border my-0.5"></div>
+
           <!-- All Namespaces row -->
           <button
             onclick={selectAll}
@@ -135,7 +179,7 @@
 
           <div class="border-t border-border my-0.5"></div>
 
-          {#each clusterStore.getNamespaces(ctx) as ns}
+          {#each filteredNamespaces as ns}
             {@const isSelected = selected.includes(ns)}
             <div class="flex items-stretch hover:bg-surface-hover transition-colors group">
               <!-- checkbox area — toggles multi-select -->
@@ -207,10 +251,17 @@
     {#each slotRegistry.getHeaderWidgets() as widget (widget.id)}
       {#await loadPluginComponent(widget.pluginName, widget.component, basePluginURL) then Cmp}
         {#if Cmp}
-          <svelte:component this={Cmp} />
+          <Cmp />
         {/if}
       {/await}
     {/each}
+  {/if}
+
+  {#if activeDrains.length > 0}
+    <div class="flex items-center gap-1.5 text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+      <span class="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+      Draining {activeDrains.length} node{activeDrains.length === 1 ? '' : 's'}
+    </div>
   {/if}
 
   <div class="ml-auto">

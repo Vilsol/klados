@@ -1,7 +1,8 @@
 <script lang="ts">
   import { X } from 'lucide-svelte'
-  import Select from '$lib/components/Select.svelte'
+  import { Combobox } from '@klados/ui'
   import * as PortForwardService from '../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js'
+  import { TargetKind } from '../../../bindings/github.com/Vilsol/klados/internal/portforward/models.js'
   import { Browser, Events } from '@wailsio/runtime'
   import { notificationStore } from '$lib/stores/notification.svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
@@ -32,11 +33,16 @@
   let customLocalPort = $state('')
 
   // Full mode state
+  // svelte-ignore state_referenced_locally
   let targetKind = $state(prefillGVR ? 'selector' : (prefillTargetKind || 'pod'))
+  // svelte-ignore state_referenced_locally
   let targetName = $state(prefillTarget)
+  // svelte-ignore state_referenced_locally
   let targetGVR = $state(prefillGVR)
   let localPort = $state('')
+  // svelte-ignore state_referenced_locally
   let remotePort = $state(prefillRemotePort > 0 ? String(prefillRemotePort) : '')
+  // svelte-ignore state_referenced_locally
   let namespace = $state(prefillNamespace || (clusterStore.getSelectedNamespaces(clusterStore.activeContext ?? '')[0] ?? 'default'))
   let submitting = $state(false)
   let openInBrowser = $state(true)
@@ -56,7 +62,7 @@
 
       if (!name || isNaN(remote) || remote <= 0 || !ns) return
 
-      const spec = await PortForwardService.StartForward(ctx, ns, kind, name, gvr, local, remote)
+      const spec = await PortForwardService.StartForward(ctx, ns, kind as TargetKind, name, gvr, local, remote)
       if (openInBrowser) {
         const unsub = Events.On(`portforward:${ctx}:${spec.id}`, (e: any) => {
           const fw = e.data
@@ -130,8 +136,9 @@
         </div>
       {:else}
         <div class="flex flex-col gap-1">
+          <!-- svelte-ignore a11y_label_has_associated_control -->
           <label class="text-xs text-muted">Target type</label>
-          <Select
+          <Combobox
             bind:value={targetKind}
             options={[
               { value: 'pod', label: 'Pod (direct)' },

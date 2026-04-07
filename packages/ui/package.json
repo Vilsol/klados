@@ -1,0 +1,50 @@
+{
+  "name": "@klados/ui",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "build": "svelte-package -i src/lib -o package",
+    "test": "vitest run"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/lib/index.ts",
+      "svelte": "./src/lib/index.ts",
+      "default": "./src/lib/index.ts"
+    },
+    "./theme.css": "./src/lib/theme.css"
+  },
+  "peerDependencies": {
+    "svelte": "^5",
+    "bits-ui": "^2",
+    "tailwindcss": "^4",
+    "lucide-svelte": ">=0.300.0",
+    "@codemirror/view": ">=6",
+    "@codemirror/state": ">=6",
+    "@codemirror/language": ">=6",
+    "@codemirror/theme-one-dark": ">=6",
+    "@codemirror/lang-yaml": ">=6",
+    "@codemirror/lang-json": ">=6",
+    "@codemirror/legacy-modes": ">=6",
+    "@codemirror/commands": ">=6",
+    "@codemirror/search": ">=6",
+    "@tanstack/svelte-virtual": ">=3",
+    "ansi_up": ">=5",
+    "strip-ansi": ">=7",
+    "@xterm/xterm": ">=5",
+    "@xterm/addon-fit": ">=0.10",
+    "@xterm/addon-webgl": ">=0.18",
+    "@xterm/addon-clipboard": ">=0.1",
+    "@codemirror/merge": ">=6",
+    "codemirror-json-schema": ">=0.7",
+    "yaml": ">=2"
+  },
+  "devDependencies": {
+    "@sveltejs/package": "^2",
+    "@sveltejs/vite-plugin-svelte": "^7",
+    "@testing-library/svelte": "^5",
+    "jsdom": "^29",
+    "vitest": "^4"
+  }
+}

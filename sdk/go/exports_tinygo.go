@@ -39,3 +39,8 @@ func pluginEnrich(gvrPtr, gvrLen, objPtr, objLen uint32) uint64 {
 func pluginOnEvent(typePtr, typeLen, payloadPtr, payloadLen uint32) {
 	DispatchOnEvent(typePtr, typeLen, payloadPtr, payloadLen)
 }
+
+//export plugin_command
+func pluginCommand(idPtr, idLen uint32) {
+	DispatchCommand(idPtr, idLen)
+}

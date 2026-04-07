@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CodeBlock from '$lib/components/CodeBlock.svelte'
+  import { CodeBlock, SectionHeader } from '@klados/ui'
 
   let { obj }: { obj: Record<string, any> } = $props()
 
@@ -26,9 +26,7 @@
 
   {#if dataEntries.length > 0}
     <section>
-      <h3 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">
-        Data ({dataEntries.length} {dataEntries.length === 1 ? 'key' : 'keys'})
-      </h3>
+      <SectionHeader>Data ({dataEntries.length} {dataEntries.length === 1 ? 'key' : 'keys'})</SectionHeader>
       <div class="flex flex-col gap-3">
         {#each dataEntries as [key, value]}
           {@const lang = detectLang(value)}
@@ -46,9 +44,7 @@
 
   {#if binaryKeys.length > 0}
     <section>
-      <h3 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">
-        Binary Data ({binaryKeys.length} {binaryKeys.length === 1 ? 'key' : 'keys'})
-      </h3>
+      <SectionHeader>Binary Data ({binaryKeys.length} {binaryKeys.length === 1 ? 'key' : 'keys'})</SectionHeader>
       <div class="flex flex-col gap-1">
         {#each binaryKeys as key}
           <div class="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded text-sm">

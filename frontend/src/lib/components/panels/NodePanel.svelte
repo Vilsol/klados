@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { SectionHeader, EmptyState, StatusBadge, DataTable } from '@klados/ui'
+
   let { obj }: { obj: Record<string, any> } = $props()
 
   const conditions = $derived<any[]>(obj.status?.conditions ?? [])
@@ -7,46 +9,30 @@
 
 <div class="p-4 space-y-6">
   <section>
-    <h3 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Conditions</h3>
+    <SectionHeader>Conditions</SectionHeader>
     {#if conditions.length === 0}
-      <p class="text-sm text-muted">No conditions</p>
+      <EmptyState message="No conditions" size="sm" />
     {:else}
-      <div class="border border-border rounded overflow-hidden">
-        <table class="w-full text-xs">
-          <thead class="bg-surface">
-            <tr>
-              <th class="px-3 py-2 text-left font-medium text-muted">Type</th>
-              <th class="px-3 py-2 text-left font-medium text-muted w-20">Status</th>
-              <th class="px-3 py-2 text-left font-medium text-muted w-32">Reason</th>
-              <th class="px-3 py-2 text-left font-medium text-muted">Message</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each conditions as cond}
-              <tr class="border-t border-border">
-                <td class="px-3 py-2 font-medium">{cond.type ?? ''}</td>
-                <td class="px-3 py-2">
-                  <span class="px-1.5 py-0.5 rounded text-xs font-medium
-                    {cond.status === 'True' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                     cond.status === 'False' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                     'bg-surface text-muted border border-border'}">
-                    {cond.status ?? ''}
-                  </span>
-                </td>
-                <td class="px-3 py-2 text-muted">{cond.reason ?? ''}</td>
-                <td class="px-3 py-2 text-muted truncate max-w-xs" title={cond.message ?? ''}>{cond.message ?? ''}</td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={[{ label: 'Type' }, { label: 'Status', width: '5rem' }, { label: 'Reason', width: '8rem' }, { label: 'Message' }]}
+        items={conditions}
+      >
+        {#snippet row(cond)}
+          <td class="px-3 py-2 font-medium">{cond.type ?? ''}</td>
+          <td class="px-3 py-2">
+            <StatusBadge status={cond.status} mode="pill">{cond.status ?? ''}</StatusBadge>
+          </td>
+          <td class="px-3 py-2 text-muted">{cond.reason ?? ''}</td>
+          <td class="px-3 py-2 text-muted truncate max-w-xs" title={cond.message ?? ''}>{cond.message ?? ''}</td>
+        {/snippet}
+      </DataTable>
     {/if}
   </section>
 
   <section>
-    <h3 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Taints</h3>
+    <SectionHeader>Taints</SectionHeader>
     {#if taints.length === 0}
-      <p class="text-sm text-muted">No taints</p>
+      <EmptyState message="No taints" size="sm" />
     {:else}
       <div class="border border-border rounded overflow-hidden">
         <table class="w-full text-xs">

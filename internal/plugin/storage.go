@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"sync"
+	"github.com/sasha-s/go-deadlock"
 	"time"
 
 	"github.com/adrg/xdg"
@@ -13,10 +13,10 @@ import (
 // PluginStorage is a thread-safe, debounced key-value store backed by a JSON file.
 // Each plugin gets its own isolated storage at $XDG_DATA_HOME/klados/plugins/{name}/storage.json.
 type PluginStorage struct {
-	mu       sync.RWMutex
+	mu       deadlock.RWMutex
 	data     map[string]string
 	path     string
-	dmu      sync.Mutex
+	dmu      deadlock.Mutex
 	debounce *time.Timer
 }
 

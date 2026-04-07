@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"sync"
+	"github.com/sasha-s/go-deadlock"
 	"time"
 
 	"github.com/Vilsol/slox"
@@ -59,7 +59,7 @@ type forwardEntry struct {
 }
 
 type Manager struct {
-	mu        sync.Mutex
+	mu        deadlock.Mutex
 	forwards  map[string]*forwardEntry
 	connMgr   ConnectionProvider
 	emitEvent func(string, any)

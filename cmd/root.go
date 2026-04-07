@@ -36,13 +36,16 @@ func Execute(assets embed.FS) {
 			appSvc := services.NewAppService(cfg, sess, ctx)
 			clusterSvc := services.NewClusterService(appSvc, sess)
 			configSvc := services.NewConfigService(cfg)
-			resourceSvc := services.NewResourceService(appSvc)
+			drainSvc := services.NewDrainService(appSvc)
+			resourceSvc := services.NewResourceService(appSvc, drainSvc)
 			schemaSvc := services.NewSchemaService(appSvc)
 			logSvc := services.NewLogService(appSvc)
 			execSvc := services.NewExecService(appSvc)
 			portForwardSvc := services.NewPortForwardService(appSvc)
+			metricsSvc := services.NewMetricsService(appSvc)
 			pluginSvc := services.NewPluginService(appSvc, resourceSvc)
 			appSvc.SetPluginService(pluginSvc)
+			metricsSvc.SetPluginService(pluginSvc)
 
 			app := application.New(application.Options{
 				Name:        "klados",
@@ -56,6 +59,8 @@ func Execute(assets embed.FS) {
 					application.NewService(logSvc),
 					application.NewService(execSvc),
 					application.NewService(portForwardSvc),
+					application.NewService(drainSvc),
+					application.NewService(metricsSvc),
 					application.NewService(pluginSvc),
 				},
 				Assets: application.AssetOptions{

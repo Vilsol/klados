@@ -4,10 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiresource "k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/Vilsol/klados/internal/cluster"
@@ -17,6 +21,7 @@ import (
 
 type ResourceService struct {
 	appService  *AppService
+	drainSvc    *DrainService
 	engine      *resource.ResourceEngine
 	watchMgr    *watcher.WatchManager
 	registry    *resource.Registry
@@ -24,8 +29,8 @@ type ResourceService struct {
 	ctx         context.Context
 }
 
-func NewResourceService(appSvc *AppService) *ResourceService {
-	return &ResourceService{appService: appSvc}
+func NewResourceService(appSvc *AppService, drainSvc *DrainService) *ResourceService {
+	return &ResourceService{appService: appSvc, drainSvc: drainSvc}
 }
 
 func (s *ResourceService) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
@@ -44,7 +49,7 @@ func (s *ResourceService) ServiceStartup(ctx context.Context, _ application.Serv
 	}
 
 	enricherReg := resource.NewEnricherRegistry()
-	if err := resource.RegisterBuiltin(reg, enricherReg); err != nil {
+	if err := resource.RegisterBuiltin(reg, enricherReg, s.drainSvc); err != nil {
 		return err
 	}
 
@@ -63,19 +68,37 @@ func (s *ResourceService) ServiceShutdown() error {
 }
 
 func (s *ResourceService) ListResources(contextName, gvr, namespace string) ([]map[string]any, error) {
+	namespace = s.sanitizeNamespace(gvr, namespace)
 	return s.engine.List(s.ctx, contextName, gvr, namespace)
 }
 
 func (s *ResourceService) GetResource(contextName, gvr, namespace, name string) (map[string]any, error) {
+	namespace = s.sanitizeNamespace(gvr, namespace)
 	return s.engine.Get(s.ctx, contextName, gvr, namespace, name)
 }
 
 func (s *ResourceService) DeleteResource(contextName, gvr, namespace, name string) error {
+	namespace = s.sanitizeNamespace(gvr, namespace)
 	return s.engine.Delete(s.ctx, contextName, gvr, namespace, name)
 }
 
 func (s *ResourceService) StartWatch(contextName, gvr, namespace string) error {
+	namespace = s.sanitizeNamespace(gvr, namespace)
 	return s.watchMgr.StartWatch(contextName, gvr, namespace)
+}
+
+// sanitizeNamespace strips the namespace for cluster-scoped resources to prevent
+// the dynamic client from hitting invalid namespaced API paths.
+// sanitizeNamespace strips the namespace for cluster-scoped resources to prevent
+// the dynamic client from hitting invalid namespaced API paths.
+func (s *ResourceService) sanitizeNamespace(gvr, namespace string) string {
+	if namespace == "" {
+		return ""
+	}
+	if desc, ok := s.registry.Get(gvr); ok && desc.ClusterScoped {
+		return ""
+	}
+	return namespace
 }
 
 func (s *ResourceService) StopWatch(contextName, gvr, namespace string) {
@@ -151,6 +174,41 @@ func (s *ResourceService) ScaleResource(contextName, gvr, namespace, name string
 	return err
 }
 
+func (s *ResourceService) ExpandPVC(contextName, namespace, name, newSize string) error {
+	obj, err := s.engine.Get(s.ctx, contextName, "core.v1.persistentvolumeclaims", namespace, name)
+	if err != nil {
+		return err
+	}
+
+	phase, _, _ := unstructured.NestedString(obj, "status", "phase")
+	if phase != "Bound" {
+		return fmt.Errorf("PVC %s is not Bound (phase: %s)", name, phase)
+	}
+
+	currentSizeStr, _, _ := unstructured.NestedString(obj, "status", "capacity", "storage")
+	if currentSizeStr == "" {
+		currentSizeStr, _, _ = unstructured.NestedString(obj, "spec", "resources", "requests", "storage")
+	}
+
+	currentQty, err := apiresource.ParseQuantity(currentSizeStr)
+	if err != nil {
+		return fmt.Errorf("failed to parse current size %q: %w", currentSizeStr, err)
+	}
+
+	newQty, err := apiresource.ParseQuantity(newSize)
+	if err != nil {
+		return fmt.Errorf("invalid size %q: %w", newSize, err)
+	}
+
+	if newQty.Cmp(currentQty) <= 0 {
+		return fmt.Errorf("new size %s must be larger than current size %s", newSize, currentSizeStr)
+	}
+
+	patch := fmt.Sprintf(`{"spec":{"resources":{"requests":{"storage":%q}}}}`, newSize)
+	_, err = s.engine.Patch(s.ctx, contextName, "core.v1.persistentvolumeclaims", namespace, name, types.MergePatchType, []byte(patch))
+	return err
+}
+
 func (s *ResourceService) RestartResource(contextName, gvr, namespace, name string) error {
 	ts := time.Now().UTC().Format(time.RFC3339)
 	patch := []byte(fmt.Sprintf(
@@ -159,4 +217,261 @@ func (s *ResourceService) RestartResource(contextName, gvr, namespace, name stri
 	))
 	_, err := s.engine.Patch(s.ctx, contextName, gvr, namespace, name, types.MergePatchType, patch)
 	return err
+}
+
+func (s *ResourceService) PauseRollout(contextName, namespace, name string) error {
+	_, err := s.engine.Patch(s.ctx, contextName, "apps.v1.deployments", namespace, name, types.MergePatchType, []byte(`{"spec":{"paused":true}}`))
+	return err
+}
+
+func (s *ResourceService) ResumeRollout(contextName, namespace, name string) error {
+	_, err := s.engine.Patch(s.ctx, contextName, "apps.v1.deployments", namespace, name, types.MergePatchType, []byte(`{"spec":{"paused":false}}`))
+	return err
+}
+
+type RolloutRevision struct {
+	Revision int64          `json:"revision"`
+	Name     string         `json:"name"`
+	Labels   map[string]any `json:"labels,omitempty"`
+}
+
+func (s *ResourceService) GetRolloutHistory(contextName, gvr, namespace, name string) ([]RolloutRevision, error) {
+	conn, err := s.appService.ClusterManager().GetConnection(contextName)
+	if err != nil {
+		return nil, err
+	}
+
+	switch gvr {
+	case "apps.v1.deployments":
+		obj, err := s.engine.Get(s.ctx, contextName, gvr, namespace, name)
+		if err != nil {
+			return nil, err
+		}
+		uid, _, _ := nestedString(obj, "metadata", "uid")
+
+		rsList, err := conn.Clientset.AppsV1().ReplicaSets(namespace).List(s.ctx, metav1.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+		var revisions []RolloutRevision
+		for _, rs := range rsList.Items {
+			for _, ref := range rs.OwnerReferences {
+				if ref.UID == types.UID(uid) {
+					revStr := rs.Annotations["deployment.kubernetes.io/revision"]
+					rev, _ := strconv.ParseInt(revStr, 10, 64)
+					revisions = append(revisions, RolloutRevision{
+						Revision: rev,
+						Name:     rs.Name,
+					})
+					break
+				}
+			}
+		}
+		return revisions, nil
+
+	case "apps.v1.statefulsets", "apps.v1.daemonsets":
+		obj, err := s.engine.Get(s.ctx, contextName, gvr, namespace, name)
+		if err != nil {
+			return nil, err
+		}
+		uid, _, _ := nestedString(obj, "metadata", "uid")
+
+		crList, err := conn.Clientset.AppsV1().ControllerRevisions(namespace).List(s.ctx, metav1.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+		var revisions []RolloutRevision
+		for _, cr := range crList.Items {
+			for _, ref := range cr.OwnerReferences {
+				if ref.UID == types.UID(uid) {
+					revisions = append(revisions, RolloutRevision{
+						Revision: cr.Revision,
+						Name:     cr.Name,
+					})
+					break
+				}
+			}
+		}
+		return revisions, nil
+	}
+
+	return nil, fmt.Errorf("rollback not supported for %s", gvr)
+}
+
+func (s *ResourceService) RollbackToRevision(contextName, gvr, namespace, name string, revision int64) error {
+	conn, err := s.appService.ClusterManager().GetConnection(contextName)
+	if err != nil {
+		return err
+	}
+
+	switch gvr {
+	case "apps.v1.deployments":
+		if revision == 0 {
+			history, err := s.GetRolloutHistory(contextName, gvr, namespace, name)
+			if err != nil {
+				return err
+			}
+			var current int64
+			for _, r := range history {
+				if r.Revision > current {
+					current = r.Revision
+				}
+			}
+			revision = current - 1
+		}
+		rsList, err := conn.Clientset.AppsV1().ReplicaSets(namespace).List(s.ctx, metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		obj, err := s.engine.Get(s.ctx, contextName, gvr, namespace, name)
+		if err != nil {
+			return err
+		}
+		uid, _, _ := nestedString(obj, "metadata", "uid")
+		for _, rs := range rsList.Items {
+			revStr := rs.Annotations["deployment.kubernetes.io/revision"]
+			rev, _ := strconv.ParseInt(revStr, 10, 64)
+			if rev != revision {
+				continue
+			}
+			owned := false
+			for _, ref := range rs.OwnerReferences {
+				if ref.UID == types.UID(uid) {
+					owned = true
+					break
+				}
+			}
+			if !owned {
+				continue
+			}
+			templateData, err := json.Marshal(rs.Spec.Template)
+			if err != nil {
+				return err
+			}
+			patch := fmt.Sprintf(`{"spec":{"template":%s}}`, string(templateData))
+			_, err = s.engine.Patch(s.ctx, contextName, gvr, namespace, name, types.StrategicMergePatchType, []byte(patch))
+			return err
+		}
+		return fmt.Errorf("revision %d not found", revision)
+
+	case "apps.v1.statefulsets", "apps.v1.daemonsets":
+		obj, err := s.engine.Get(s.ctx, contextName, gvr, namespace, name)
+		if err != nil {
+			return err
+		}
+		uid, _, _ := nestedString(obj, "metadata", "uid")
+		crList, err := conn.Clientset.AppsV1().ControllerRevisions(namespace).List(s.ctx, metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, cr := range crList.Items {
+			if cr.Revision != revision {
+				continue
+			}
+			owned := false
+			for _, ref := range cr.OwnerReferences {
+				if ref.UID == types.UID(uid) {
+					owned = true
+					break
+				}
+			}
+			if !owned {
+				continue
+			}
+			patchData, err := cr.Data.MarshalJSON()
+			if err != nil {
+				return err
+			}
+			_, err = s.engine.Patch(s.ctx, contextName, gvr, namespace, name, types.MergePatchType, patchData)
+			return err
+		}
+		return fmt.Errorf("revision %d not found", revision)
+	}
+
+	return fmt.Errorf("rollback not supported for %s", gvr)
+}
+
+func (s *ResourceService) DeleteJobCascade(contextName, namespace, name string) error {
+	conn, err := s.appService.ClusterManager().GetConnection(contextName)
+	if err != nil {
+		return err
+	}
+	policy := metav1.DeletePropagationForeground
+	return conn.Clientset.BatchV1().Jobs(namespace).Delete(s.ctx, name, metav1.DeleteOptions{
+		PropagationPolicy: &policy,
+	})
+}
+
+func (s *ResourceService) DeleteJobOrphan(contextName, namespace, name string) error {
+	conn, err := s.appService.ClusterManager().GetConnection(contextName)
+	if err != nil {
+		return err
+	}
+	policy := metav1.DeletePropagationOrphan
+	return conn.Clientset.BatchV1().Jobs(namespace).Delete(s.ctx, name, metav1.DeleteOptions{
+		PropagationPolicy: &policy,
+	})
+}
+
+func (s *ResourceService) TriggerCronJob(contextName, namespace, name string) error {
+	conn, err := s.appService.ClusterManager().GetConnection(contextName)
+	if err != nil {
+		return err
+	}
+	cj, err := conn.Clientset.BatchV1().CronJobs(namespace).Get(s.ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	ts := time.Now().Unix()
+	suffix := fmt.Sprintf("-manual-%d", ts)
+	maxPrefix := 63 - len(suffix)
+	prefix := name
+	if len(prefix) > maxPrefix {
+		prefix = prefix[:maxPrefix]
+	}
+	jobName := prefix + suffix
+
+	job := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      jobName,
+			Namespace: namespace,
+			Annotations: map[string]string{
+				"cronjob.kubernetes.io/instantiate": "manual",
+			},
+		},
+		Spec: cj.Spec.JobTemplate.Spec,
+	}
+	job.Spec.Selector = nil
+	delete(job.Spec.Template.Labels, "batch.kubernetes.io/controller-uid")
+	delete(job.Spec.Template.Labels, "batch.kubernetes.io/job-name")
+
+	_, err = conn.Clientset.BatchV1().Jobs(namespace).Create(s.ctx, job, metav1.CreateOptions{})
+	return err
+}
+
+func (s *ResourceService) SuspendCronJob(contextName, namespace, name string) error {
+	suspendTrue := true
+	patch, _ := json.Marshal(map[string]any{"spec": map[string]any{"suspend": suspendTrue}})
+	_, err := s.engine.Patch(s.ctx, contextName, "batch.v1.cronjobs", namespace, name, types.MergePatchType, patch)
+	return err
+}
+
+func (s *ResourceService) ResumeCronJob(contextName, namespace, name string) error {
+	suspendFalse := false
+	patch, _ := json.Marshal(map[string]any{"spec": map[string]any{"suspend": suspendFalse}})
+	_, err := s.engine.Patch(s.ctx, contextName, "batch.v1.cronjobs", namespace, name, types.MergePatchType, patch)
+	return err
+}
+
+func nestedString(obj map[string]any, path ...string) (string, bool, error) {
+	cur := any(obj)
+	for _, k := range path {
+		m, ok := cur.(map[string]any)
+		if !ok {
+			return "", false, nil
+		}
+		cur = m[k]
+	}
+	s, ok := cur.(string)
+	return s, ok, nil
 }

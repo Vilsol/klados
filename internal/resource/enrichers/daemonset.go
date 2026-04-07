@@ -8,7 +8,7 @@ import (
 
 type DaemonSetEnricher struct{}
 
-func (e *DaemonSetEnricher) Enrich(obj *unstructured.Unstructured) error {
+func (e *DaemonSetEnricher) Enrich(_ string, obj *unstructured.Unstructured) error {
 	ready, _, _ := unstructured.NestedInt64(obj.Object, "status", "numberReady")
 	desired, _, _ := unstructured.NestedInt64(obj.Object, "status", "desiredNumberScheduled")
 

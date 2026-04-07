@@ -7,9 +7,16 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-type NodeEnricher struct{}
+// DrainStateProvider is a minimal interface so NodeEnricher doesn't import the services package.
+type DrainStateProvider interface {
+	IsActive(contextName, nodeName string) bool
+}
 
-func (e *NodeEnricher) Enrich(obj *unstructured.Unstructured) error {
+type NodeEnricher struct {
+	DrainService DrainStateProvider
+}
+
+func (e *NodeEnricher) Enrich(contextName string, obj *unstructured.Unstructured) error {
 	conditions, _, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
 
 	readyStatus := "Unknown"
@@ -64,6 +71,10 @@ func (e *NodeEnricher) Enrich(obj *unstructured.Unstructured) error {
 	allocatable, _, _ := unstructured.NestedStringMap(obj.Object, "status", "allocatable")
 	if es, ok := allocatable["ephemeral-storage"]; ok {
 		_ = unstructured.SetNestedField(obj.Object, es, "status", "ephemeralStorage")
+	}
+
+	if e.DrainService != nil && e.DrainService.IsActive(contextName, obj.GetName()) {
+		_ = unstructured.SetNestedField(obj.Object, "Draining", "status", "drainPhase")
 	}
 
 	return nil

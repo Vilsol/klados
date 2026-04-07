@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"github.com/sasha-s/go-deadlock"
 
 	"github.com/Vilsol/slox"
 	"github.com/adrg/xdg"
@@ -25,6 +26,7 @@ type WasmRuntime struct {
 	ctx        context.Context
 	eventCh    chan eventPayload
 	hapi       *hostAPI
+	mu         deadlock.Mutex // serializes all mod calls
 }
 
 // NewWasmRuntime loads and instantiates a Wasm plugin module.
@@ -163,6 +165,9 @@ func (r *WasmRuntime) CallEnrich(gvr string, objJSON []byte) ([]byte, error) {
 		return nil, fmt.Errorf("plugin %s missing required exports (plugin_alloc, plugin_enrich)", r.pluginName)
 	}
 
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	// Allocate input buffer in guest memory.
 	allocResults, err := allocFn.Call(r.ctx, totalLen)
 	if err != nil || len(allocResults) == 0 {
@@ -241,6 +246,9 @@ func (r *WasmRuntime) CallOnEvent(eventName string, payload []byte) error {
 		return nil
 	}
 
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	results, err := allocFn.Call(r.ctx, uint64(len(data)))
 	if err != nil || len(results) == 0 {
 		return fmt.Errorf("plugin_alloc failed: %w", err)
@@ -257,6 +265,44 @@ func (r *WasmRuntime) CallOnEvent(eventName string, payload []byte) error {
 		_, _ = freeFn.Call(r.ctx, uint64(ptr), uint64(len(data)))
 	}
 
+	return err
+}
+
+// CallCommand calls plugin_command(id_ptr, id_len).
+// Returns nil if the export does not exist (component-path plugins won't export it).
+func (r *WasmRuntime) CallCommand(commandID string) error {
+	fn := r.mod.ExportedFunction("plugin_command")
+	if fn == nil {
+		slox.Info(r.ctx, "[wasm-cmd] plugin_command export absent", "plugin", r.pluginName, "command", commandID)
+		return nil
+	}
+	slox.Info(r.ctx, "[wasm-cmd] plugin_command export found, calling", "plugin", r.pluginName, "command", commandID)
+
+	idBytes := []byte(commandID)
+	allocFn := r.mod.ExportedFunction("plugin_alloc")
+	freeFn := r.mod.ExportedFunction("plugin_free")
+	if allocFn == nil {
+		return fmt.Errorf("plugin %s missing plugin_alloc", r.pluginName)
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	results, err := allocFn.Call(r.ctx, uint64(len(idBytes)))
+	if err != nil || len(results) == 0 {
+		return fmt.Errorf("plugin_alloc failed: %w", err)
+	}
+	ptr := uint32(results[0])
+
+	if !r.mod.Memory().Write(ptr, idBytes) {
+		return fmt.Errorf("writing command id to guest memory failed")
+	}
+
+	_, err = fn.Call(r.ctx, uint64(ptr), uint64(len(idBytes)))
+
+	if freeFn != nil {
+		_, _ = freeFn.Call(r.ctx, uint64(ptr), uint64(len(idBytes)))
+	}
 	return err
 }
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   import Header from './Header.svelte'
   import Sidebar from './Sidebar.svelte'
-  import TabBar from './TabBar.svelte'
+  import { TabBar } from '@klados/ui'
   import type { Snippet } from 'svelte'
   import { slotRegistry } from '$lib/plugins/slots.svelte.js'
   import { loadPluginComponent } from '$lib/plugins/loader.js'
@@ -25,7 +25,7 @@
     <Sidebar />
     <main id="main-content" class="flex flex-col flex-1 overflow-hidden" tabindex="-1">
       <TabBar />
-      <div class="flex-1 overflow-auto">
+      <div class="flex-1 overflow-hidden">
         {@render children()}
       </div>
     </main>
@@ -35,7 +35,7 @@
       {#each slotRegistry.getStatusBarWidgets() as widget (widget.id)}
         {#await loadPluginComponent(widget.pluginName, widget.component, basePluginURL) then Cmp}
           {#if Cmp}
-            <svelte:component this={Cmp} />
+            <Cmp />
           {/if}
         {/await}
       {/each}

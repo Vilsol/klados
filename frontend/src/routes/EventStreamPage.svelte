@@ -22,10 +22,11 @@
   let showWarning = $state(true)
   let showNormal = $state(true)
   let reasonFilter = $state('')
-  let nsFilter = $state('')
+
+  const selectedNs = $derived(clusterStore.getSelectedNamespaces(ctxName))
 
   let now = $state(Date.now())
-  const ticker = setInterval(() => { now = Date.now() }, 10_000)
+  const ticker = setInterval(() => { now = Date.now() }, 1_000)
   onDestroy(() => clearInterval(ticker))
 
   const filtered = $derived.by(() => {
@@ -34,7 +35,7 @@
       if (type === 'Warning' && !showWarning) return false
       if (type === 'Normal' && !showNormal) return false
       if (reasonFilter && !(e.reason ?? '').toLowerCase().includes(reasonFilter.toLowerCase())) return false
-      if (nsFilter && (e.metadata?.namespace ?? '') !== nsFilter) return false
+      if (selectedNs.length > 0 && !selectedNs.includes(e.metadata?.namespace ?? '')) return false
       return true
     }).sort((a, b) => {
       const ta = a.lastTimestamp ?? a.eventTime ?? a.metadata?.creationTimestamp ?? ''
@@ -43,9 +44,6 @@
     })
   })
 
-  const namespaces = $derived(
-    [...new Set(store.items.map((e) => e.metadata?.namespace ?? '').filter(Boolean))].sort()
-  )
 </script>
 
 <div class="flex flex-col h-full">
@@ -70,18 +68,6 @@
       bind:value={reasonFilter}
       class="text-xs bg-bg border border-border rounded px-2 py-1 outline-none focus:ring-1 focus:ring-accent w-36"
     />
-
-    {#if namespaces.length > 0}
-      <select
-        bind:value={nsFilter}
-        class="text-xs bg-bg border border-border rounded px-2 py-1 outline-none focus:ring-1 focus:ring-accent"
-      >
-        <option value="">All namespaces</option>
-        {#each namespaces as ns}
-          <option value={ns}>{ns}</option>
-        {/each}
-      </select>
-    {/if}
 
     <span class="text-xs text-muted ml-auto">{filtered.length} events</span>
 

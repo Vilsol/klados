@@ -37,3 +37,8 @@ func PluginEnrich(gvrPtr, gvrLen, objPtr, objLen uint32) uint64 {
 func PluginOnEvent(typePtr, typeLen, payloadPtr, payloadLen uint32) {
 	DispatchOnEvent(typePtr, typeLen, payloadPtr, payloadLen)
 }
+
+//go:wasmexport plugin_command
+func PluginCommand(idPtr, idLen uint32) {
+	DispatchCommand(idPtr, idLen)
+}

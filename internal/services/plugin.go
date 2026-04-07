@@ -128,7 +128,23 @@ func (s *PluginService) initPluginRuntime(p *plugin.LoadedPlugin, enricherReg *r
 		}
 	}
 
-	if p.Manifest.Extensions == nil || p.Manifest.Extensions.Enrichers == nil {
+	hasEnricher := p.Manifest.Extensions != nil && p.Manifest.Extensions.Enrichers != nil
+	hasWasmCommands := false
+	if p.Manifest.Extensions != nil {
+		for _, cmd := range p.Manifest.Extensions.Commands {
+			if cmd.Component == nil {
+				hasWasmCommands = true
+				break
+			}
+		}
+	}
+	if !hasEnricher && !hasWasmCommands {
+		return
+	}
+
+	// Wasm binary path comes from the enricher config. Command-only Wasm plugins
+	// must still declare an enricher config to specify the binary path.
+	if !hasEnricher {
 		return
 	}
 
@@ -184,6 +200,34 @@ func (s *PluginService) initPluginRuntime(p *plugin.LoadedPlugin, enricherReg *r
 			},
 		})
 	}
+}
+
+// InvokeCommand dispatches a plugin command asynchronously.
+// Returns immediately; errors are emitted as plugin:error events.
+func (s *PluginService) InvokeCommand(pluginName, commandID string) error {
+	slox.Info(s.ctx, "[wasm-cmd] InvokeCommand called", "plugin", pluginName, "command", commandID)
+	rt, ok := s.runtimes[pluginName]
+	if !ok {
+		knownRuntimes := make([]string, 0, len(s.runtimes))
+		for k := range s.runtimes {
+			knownRuntimes = append(knownRuntimes, k)
+		}
+		slox.Warn(s.ctx, "[wasm-cmd] no runtime found", "plugin", pluginName, "known", knownRuntimes)
+		return fmt.Errorf("no runtime for plugin %q", pluginName)
+	}
+	slox.Info(s.ctx, "[wasm-cmd] runtime found, dispatching goroutine", "plugin", pluginName, "command", commandID)
+	go func() {
+		if err := rt.CallCommand(commandID); err != nil {
+			slox.Warn(s.ctx, "[wasm-cmd] CallCommand error", "plugin", pluginName, "command", commandID, "error", err)
+			app := application.Get()
+			if app != nil {
+				app.Event.Emit("plugin:error", map[string]string{"name": pluginName, "error": err.Error()})
+			}
+		} else {
+			slox.Info(s.ctx, "[wasm-cmd] CallCommand completed", "plugin", pluginName, "command", commandID)
+		}
+	}()
+	return nil
 }
 
 func (s *PluginService) ServiceShutdown() error {
@@ -526,6 +570,13 @@ func (s *PluginService) GetPluginStatusBarWidgets() []plugin.StatusBarEntry {
 		return nil
 	}
 	return s.registry.GetStatusBarWidgets()
+}
+
+func (s *PluginService) GetPluginMetricQueries(gvr string) []plugin.MetricQueryEntry {
+	if s.registry == nil {
+		return nil
+	}
+	return s.registry.GetMetricQueries(gvr)
 }
 
 // InstallPlugin installs a plugin from an OCI reference (oci://...), a directory path,

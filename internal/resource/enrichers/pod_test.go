@@ -28,7 +28,7 @@ func TestPodEnricher(t *testing.T) {
 	}}
 
 	e := &enrichers.PodEnricher{}
-	testza.AssertNoError(t, e.Enrich(obj))
+	testza.AssertNoError(t, e.Enrich("", obj))
 
 	readyDisplay, _, _ := unstructured.NestedString(obj.Object, "status", "readyDisplay")
 	testza.AssertEqual(t, "1/2", readyDisplay)
@@ -51,7 +51,7 @@ func TestPodEnricher_NoContainerStatuses(t *testing.T) {
 	}}
 
 	e := &enrichers.PodEnricher{}
-	testza.AssertNoError(t, e.Enrich(obj))
+	testza.AssertNoError(t, e.Enrich("", obj))
 
 	readyDisplay, _, _ := unstructured.NestedString(obj.Object, "status", "readyDisplay")
 	testza.AssertEqual(t, "0/1", readyDisplay)

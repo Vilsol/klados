@@ -1,6 +1,14 @@
 import { Events } from '@wailsio/runtime'
+import { mount } from 'svelte'
 import * as PluginService from '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
+import type { PermsSummary } from '../../../bindings/github.com/Vilsol/klados/internal/plugin/models.js'
 import { notificationStore } from '$lib/stores/notification.svelte.js'
+import { streamingStore } from '$lib/stores/streaming.svelte.js'
+import { clusterStore } from '$lib/stores/cluster.svelte.js'
+import { createPluginContext } from '$lib/plugins/context.js'
+import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
+
+export type { PermsSummary }
 
 export interface ResourcePerm {
   group: string
@@ -15,7 +23,7 @@ export interface RegisteredDetailTab {
   id: string
   label: string
   component: string
-  resourcePerms: ResourcePerm[]
+  perms: PermsSummary
 }
 
 export interface RegisteredCommand {
@@ -23,6 +31,8 @@ export interface RegisteredCommand {
   id: string
   label: string
   icon?: string
+  component?: string
+  perms: PermsSummary
   action: () => void
 }
 
@@ -130,19 +140,28 @@ class SlotRegistry {
         id: t.id ?? '',
         label: t.label ?? '',
         component: t.component ?? '',
-        resourcePerms: (t.resourcePerms ?? []).map((p) => ({
-          group: p.group ?? '',
-          version: p.version ?? '',
-          resource: p.resource ?? '',
-          verbs: p.verbs ?? [],
-        })),
+        perms: t.perms ?? {},
       }))
       this.commands = (cmds ?? []).map((c) => ({
         pluginName: c.pluginName ?? '',
         id: c.id ?? '',
         label: c.label ?? '',
         icon: c.icon ?? undefined,
-        action: () => {},
+        component: c.component ?? undefined,
+        perms: c.perms ?? {},
+        action: c.component
+          ? () => { invokeComponentCommand(c.pluginName ?? '', c.component!, c.perms ?? {}, getBasePluginURL()).catch((e) => notificationStore.error(`Plugin "${c.pluginName}" failed`, String(e))) }
+          : () => {
+              const pluginName = c.pluginName ?? ''
+              const id = c.id ?? ''
+              console.log('[wasm-cmd] calling InvokeCommand', { pluginName, id })
+              PluginService.InvokeCommand(pluginName, id)
+                .then(() => console.log('[wasm-cmd] InvokeCommand resolved ok'))
+                .catch((e) => {
+                  console.error('[wasm-cmd] InvokeCommand rejected', e)
+                  notificationStore.error(`Plugin "${pluginName}" failed`, String(e))
+                })
+            },
       }))
       this.overviewFields = (overviewFields ?? []).map((f) => ({
         pluginName: f.pluginName ?? '',
@@ -182,6 +201,50 @@ class SlotRegistry {
 }
 
 export const slotRegistry = new SlotRegistry()
+
+function getBasePluginURL(): string | null {
+  const cfg = streamingStore.config
+  return cfg ? `http://127.0.0.1:${cfg.port}/${cfg.token}/plugins` : null
+}
+
+async function invokeComponentCommand(
+  pluginName: string,
+  component: string,
+  perms: PermsSummary,
+  basePluginURL: string | null,
+) {
+  if (!basePluginURL) return
+  const url = `${basePluginURL}/${pluginName}/${component}`
+  const mod = await import(/* @vite-ignore */ url)
+  if (!mod?.default) return
+  const ctx = buildCommandContext(pluginName, perms)
+  mount(mod.default, { target: document.body, props: { ctx } })
+}
+
+function buildCommandContext(pluginName: string, perms: PermsSummary) {
+  const manifest = {
+    schemaVersion: 1 as const,
+    name: pluginName,
+    version: '',
+    displayName: '',
+    minHostVersion: '',
+    permissions: {
+      resources: perms.resources?.map((p) => ({ ...p, verbs: p.verbs as any })),
+      logs: perms.logs || undefined,
+      exec: perms.exec || undefined,
+      storage: perms.storage || undefined,
+      events: perms.events || undefined,
+    },
+  }
+  const ctx = clusterStore.activeContext ?? ''
+  return createPluginContext(manifest, {
+    clusterName: ctx,
+    clusterVersion: '',
+    namespace: clusterStore.getSelectedNamespaces(ctx)[0] ?? '',
+    listResources: (g, n) => ResourceService.ListResources(ctx, g, n ?? ''),
+    getResource: (g, n, name) => ResourceService.GetResource(ctx, g, n, name),
+  })
+}
 
 if (typeof window !== 'undefined') {
   Events.On('plugins:loaded', () => {

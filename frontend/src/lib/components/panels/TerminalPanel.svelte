@@ -1,9 +1,8 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
-  import { ChevronDown } from 'lucide-svelte'
   import * as ExecService from '../../../../bindings/github.com/Vilsol/klados/internal/services/execservice.js'
   import { streamingStore } from '$lib/stores/streaming.svelte'
-  import Terminal from '$lib/components/Terminal.svelte'
+  import { Terminal, Combobox } from '@klados/ui'
 
   let { obj, ctxName, namespace, name }: {
     obj: Record<string, any>
@@ -26,7 +25,6 @@
   const shells = ['bash', 'sh', 'zsh']
 
   let selectedContainer = $state('')
-  let containerDropdownOpen = $state(false)
   let selectedShell = $state('bash')
   let sessions = $state<TermSession[]>([])
   let activeIdx = $state(0)
@@ -39,22 +37,12 @@
     }
   })
 
-  function selectContainer(n: string) {
-    selectedContainer = n
-    containerDropdownOpen = false
-  }
-
-  function handleClickOutside(e: MouseEvent) {
-    if (!(e.target as HTMLElement).closest('[data-container-dropdown]')) {
-      containerDropdownOpen = false
-    }
-  }
-
-  const containerLabel = $derived(() => {
-    if (!selectedContainer) return 'Select container'
-    const c = containers.find(c => c.name === selectedContainer)
-    return c ? `${c.name}${c.init ? ' (init)' : ''}` : selectedContainer
-  })
+  const containerOptions = $derived(
+    containers.map((c) => ({
+      value: c.name,
+      label: c.init ? `${c.name} (init)` : c.name,
+    })),
+  )
 
   async function connect() {
     error = null
@@ -87,34 +75,18 @@
   })
 </script>
 
-<svelte:document onclick={handleClickOutside} />
 
 {#if sessions.length > 0 && streamingStore.config}
   <div class="flex flex-col h-full overflow-hidden">
     <!-- Compact header: selectors + tab bar + new button -->
     <div class="flex items-center gap-2 px-2 py-1 border-b border-border bg-surface shrink-0 text-xs flex-wrap">
-      <!-- Container dropdown (compact) -->
-      <div class="relative" data-container-dropdown>
-        <button
-          onclick={() => (containerDropdownOpen = !containerDropdownOpen)}
-          class="flex items-center gap-1 text-xs bg-bg text-fg border border-border rounded px-2 py-1 hover:bg-surface-hover transition-colors"
-        >
-          <span class="max-w-[8rem] truncate">{containerLabel()}</span>
-          <ChevronDown size={12} class="shrink-0 text-muted" />
-        </button>
-        {#if containerDropdownOpen}
-          <div class="absolute top-full left-0 mt-1 min-w-[8rem] rounded border border-border bg-bg shadow-lg z-50">
-            {#each containers as c}
-              <button
-                onclick={() => selectContainer(c.name)}
-                class="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-hover transition-colors
-                  {selectedContainer === c.name ? 'font-medium text-fg' : 'text-muted'}"
-              >
-                {c.name}{c.init ? ' (init)' : ''}
-              </button>
-            {/each}
-          </div>
-        {/if}
+      <div class="w-36">
+        <Combobox
+          bind:value={selectedContainer}
+          options={containerOptions}
+          placeholder="Container"
+          size="xs"
+        />
       </div>
 
       <!-- Shell selector (compact) -->
@@ -141,9 +113,12 @@
                 : 'border-border text-muted hover:bg-surface-hover'}"
           >
             <span>{s.shell}:{s.container}</span>
-            <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
             <span
+              role="button"
+              tabindex="0"
+              aria-label="Remove session"
               onclick={(e) => { e.stopPropagation(); removeSession(i) }}
+              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); removeSession(i) } }}
               class="ml-1 hover:text-destructive"
             >×</span>
           </button>
@@ -179,33 +154,18 @@
     {:else}
       <!-- Container selector -->
       <div class="flex flex-col gap-1">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-medium text-muted uppercase tracking-wide">Container</label>
-        <div class="relative" data-container-dropdown>
-          <button
-            onclick={() => (containerDropdownOpen = !containerDropdownOpen)}
-            class="flex items-center justify-between gap-1 w-full text-sm bg-bg text-fg border border-border rounded px-2 py-1.5 hover:bg-surface-hover transition-colors"
-          >
-            <span>{containerLabel()}</span>
-            <ChevronDown size={14} class="shrink-0 text-muted" />
-          </button>
-          {#if containerDropdownOpen}
-            <div class="absolute top-full left-0 mt-1 w-full rounded border border-border bg-bg shadow-lg z-50">
-              {#each containers as c}
-                <button
-                  onclick={() => selectContainer(c.name)}
-                  class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover transition-colors
-                    {selectedContainer === c.name ? 'font-medium text-fg' : 'text-muted'}"
-                >
-                  {c.name}{c.init ? ' (init)' : ''}
-                </button>
-              {/each}
-            </div>
-          {/if}
-        </div>
+        <Combobox
+          bind:value={selectedContainer}
+          options={containerOptions}
+          placeholder="Select container"
+        />
       </div>
 
       <!-- Shell selector -->
       <div class="flex flex-col gap-1">
+        <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-medium text-muted uppercase tracking-wide">Shell</label>
         <div class="flex gap-2">
           {#each shells as shell}

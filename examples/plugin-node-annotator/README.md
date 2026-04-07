@@ -21,6 +21,18 @@ Opens an **Annotations** tab on any node's detail drawer showing:
 - **This Node** — readiness status and taint count for the selected node, with individual taint badges (`key=value:effect`)
 - **All Nodes** — a table of every node in the cluster with their readiness and taint count
 
+### Metric charts (node drawer → "Metrics")
+
+When Prometheus is available, adds three charts below the built-in CPU/Memory graphs:
+
+| Chart | Query | Unit |
+|-------|-------|------|
+| **Disk Available** | Root filesystem free ratio | ratio (0–1) |
+| **Network Receive** | Inbound bytes/s across all non-loopback interfaces | bytes |
+| **Pod Count** | Running pods on the node (from kubelet) | count |
+
+These are declarative — no Wasm or UI code required, just the `metrics` field in `manifest.json`.
+
 ## Building
 
 Requires [mise](https://mise.jdx.dev/) and [TinyGo](https://tinygo.org/).

@@ -4,20 +4,25 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"sync"
+	"github.com/sasha-s/go-deadlock"
 
 	"github.com/adrg/xdg"
 )
 
-type Config struct {
-	Theme                string   `json:"theme"`
-	KubeconfigPaths      []string `json:"kubeconfigPaths"`
-	TerminalWebGL        bool     `json:"terminalWebGL"`
-	DisabledPlugins       []string `json:"disabledPlugins,omitempty"`
-	InsecureRegistries    []string `json:"insecureRegistries,omitempty"`
-	InsecureSkipTLSVerify bool     `json:"insecureSkipTLSVerify,omitempty"`
+type MetricsConfig struct {
+	PrometheusURL string `json:"prometheusUrl,omitempty"`
+}
 
-	mu   sync.Mutex
+type Config struct {
+	Theme                 string                    `json:"theme"`
+	KubeconfigPaths       []string                  `json:"kubeconfigPaths"`
+	TerminalWebGL         bool                      `json:"terminalWebGL"`
+	DisabledPlugins       []string                  `json:"disabledPlugins,omitempty"`
+	InsecureRegistries    []string                  `json:"insecureRegistries,omitempty"`
+	InsecureSkipTLSVerify bool                      `json:"insecureSkipTLSVerify,omitempty"`
+	Metrics               map[string]*MetricsConfig `json:"metrics,omitempty"`
+
+	mu   deadlock.Mutex
 	path string
 }
 

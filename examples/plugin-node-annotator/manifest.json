@@ -37,7 +37,8 @@
       { "category": "Cluster", "label": "Nodes", "gvr": "core.v1.nodes" }
     ],
     "commands": [
-      { "id": "node-annotator-taint-report", "label": "Node Annotator: Taint Report" }
+      { "id": "node-annotator-taint-report", "label": "Node Annotator: Taint Report" },
+      { "id": "node-annotator-cluster-health", "label": "Node Annotator: Cluster Health", "component": "ui/ClusterHealthOverlay.js" }
     ],
     "overviewFields": [
       { "id": "node-taint-overview", "label": "Taints", "gvr": "core.v1.nodes", "component": "ui/NodeTaintBadge.js" }
@@ -53,6 +54,28 @@
     ],
     "statusBar": [
       { "id": "node-annotator-status", "label": "Node Annotator", "component": "ui/NodeStatusWidget.js" }
+    ],
+    "metrics": [
+      {
+        "gvr": "core.v1.nodes",
+        "queries": [
+          {
+            "name": "Disk Available",
+            "query": "node_filesystem_avail_bytes{node=\"{{name}}\", mountpoint=\"/\", fstype!=\"tmpfs\"} / node_filesystem_size_bytes{node=\"{{name}}\", mountpoint=\"/\", fstype!=\"tmpfs\"}",
+            "unit": "ratio"
+          },
+          {
+            "name": "Network Receive",
+            "query": "sum(rate(node_network_receive_bytes_total{node=\"{{name}}\", device!=\"lo\"}[5m]))",
+            "unit": "bytes"
+          },
+          {
+            "name": "Pod Count",
+            "query": "kubelet_running_pods{node=\"{{name}}\"}",
+            "unit": ""
+          }
+        ]
+      }
     ]
   }
 }

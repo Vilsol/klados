@@ -30,7 +30,7 @@ func TestPluginEnricher_NewFields_AreMerged(t *testing.T) {
 	e := newEnricher(&fakeRuntime{result: result})
 
 	obj := &unstructured.Unstructured{Object: map[string]any{"kind": "Pod"}}
-	testza.AssertNil(t, e.Enrich(obj))
+	testza.AssertNil(t, e.Enrich("", obj))
 
 	testza.AssertEqual(t, "added", obj.Object["pluginField"])
 }
@@ -40,7 +40,7 @@ func TestPluginEnricher_CollisionField_StillMerged(t *testing.T) {
 	e := newEnricher(&fakeRuntime{result: result})
 
 	obj := &unstructured.Unstructured{Object: map[string]any{"kind": "Pod"}}
-	testza.AssertNil(t, e.Enrich(obj))
+	testza.AssertNil(t, e.Enrich("", obj))
 
 	// Collision field is merged (warn but don't suppress).
 	testza.AssertEqual(t, "OverwrittenKind", obj.Object["kind"])
@@ -51,7 +51,7 @@ func TestPluginEnricher_RuntimeError_ObjectUnchanged(t *testing.T) {
 	e := newEnricher(&fakeRuntime{err: errors.New("wasm trap")})
 
 	obj := &unstructured.Unstructured{Object: map[string]any{"kind": "Pod"}}
-	testza.AssertNil(t, e.Enrich(obj))
+	testza.AssertNil(t, e.Enrich("", obj))
 	testza.AssertEqual(t, "Pod", obj.Object["kind"])
 	testza.AssertNil(t, obj.Object["pluginField"])
 }
@@ -60,7 +60,7 @@ func TestPluginEnricher_EmptyResult_ObjectUnchanged(t *testing.T) {
 	e := newEnricher(&fakeRuntime{result: nil})
 
 	obj := &unstructured.Unstructured{Object: map[string]any{"kind": "Pod"}}
-	testza.AssertNil(t, e.Enrich(obj))
+	testza.AssertNil(t, e.Enrich("", obj))
 	testza.AssertEqual(t, "Pod", obj.Object["kind"])
 }
 
@@ -71,7 +71,7 @@ func TestPluginEnricher_WithRealRuntime_EchoesInput(t *testing.T) {
 	e := &plugin.PluginEnricher{Runtime: rt, GVR: "core.v1.pods", PluginName: "test"}
 	obj := &unstructured.Unstructured{Object: map[string]any{"kind": "Pod", "apiVersion": "v1"}}
 
-	testza.AssertNil(t, e.Enrich(obj))
+	testza.AssertNil(t, e.Enrich("", obj))
 	testza.AssertEqual(t, "Pod", obj.Object["kind"])
 	testza.AssertEqual(t, "v1", obj.Object["apiVersion"])
 }

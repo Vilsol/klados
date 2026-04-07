@@ -1,14 +1,17 @@
 module github.com/Vilsol/klados-plugin-node-annotator
 
-go 1.24.0
+go 1.25.7
 
-require github.com/Vilsol/klados-plugin-sdk v0.1.0
+require (
+	github.com/MarvinJWendt/testza v0.5.2
+	github.com/Vilsol/klados-plugin-sdk v0.1.0
+	github.com/tetratelabs/wazero v1.11.0
+)
 
 require (
 	atomicgo.dev/assert v0.0.2 // indirect
 	atomicgo.dev/cursor v0.1.1 // indirect
 	atomicgo.dev/keyboard v0.2.8 // indirect
-	github.com/MarvinJWendt/testza v0.5.2 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gookit/color v1.5.2 // indirect
@@ -18,7 +21,6 @@ require (
 	github.com/pterm/pterm v0.12.53 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
-	github.com/tetratelabs/wazero v1.11.0 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect

@@ -1,5 +1,7 @@
 <script lang="ts">
   import { Eye, EyeOff, Copy, Check } from 'lucide-svelte'
+  import { SectionHeader } from '@klados/ui'
+  import { toggleSet } from '$lib/utils/collections'
 
   let { obj }: { obj: Record<string, any> } = $props()
 
@@ -9,13 +11,6 @@
 
   let revealed = $state<Set<string>>(new Set())
   let copied = $state<string | null>(null)
-
-  function toggle(key: string) {
-    const next = new Set(revealed)
-    if (next.has(key)) next.delete(key)
-    else next.add(key)
-    revealed = next
-  }
 
   function decode(b64: string): string {
     try {
@@ -48,9 +43,7 @@
   {:else}
     <section>
       <div class="flex items-center justify-between mb-2">
-        <h3 class="text-xs font-semibold text-muted uppercase tracking-wide">
-          Data ({entries.length} {entries.length === 1 ? 'key' : 'keys'})
-        </h3>
+        <SectionHeader>Data ({entries.length} {entries.length === 1 ? 'key' : 'keys'})</SectionHeader>
         <span class="text-xs text-muted">Values are base64-encoded</span>
       </div>
       <div class="flex flex-col gap-2">
@@ -74,7 +67,7 @@
                   {/if}
                 </button>
                 <button
-                  onclick={() => toggle(key)}
+                  onclick={() => revealed = toggleSet(revealed, key)}
                   class="p-1 rounded hover:bg-surface transition-colors text-muted hover:text-fg"
                   title={isRevealed ? 'Hide value' : 'Reveal value'}
                 >

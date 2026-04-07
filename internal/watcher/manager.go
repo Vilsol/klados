@@ -3,7 +3,7 @@ package watcher
 import (
 	"context"
 	"fmt"
-	"sync"
+	"github.com/sasha-s/go-deadlock"
 	"time"
 
 	"github.com/Vilsol/slox"
@@ -39,7 +39,7 @@ type ConnectionProvider interface {
 }
 
 type WatchManager struct {
-	mu          sync.Mutex
+	mu          deadlock.Mutex
 	clusterMgr  ConnectionProvider
 	enricherReg *resource.EnricherRegistry
 	emitEvent   func(string, any)
@@ -95,7 +95,7 @@ func (m *WatchManager) StartWatch(contextName, gvr, namespace string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	m.watches[key] = &watchState{cancel: cancel}
 
-	go m.runWatch(ctx, ri, enrichers, eventName, key)
+	go m.runWatch(ctx, ri, enrichers, eventName, key, contextName)
 	return nil
 }
 
@@ -105,6 +105,7 @@ func (m *WatchManager) runWatch(
 	enrichers []resource.Enricher,
 	eventName string,
 	key watchKey,
+	contextName string,
 ) {
 	for {
 		select {
@@ -124,7 +125,7 @@ func (m *WatchManager) runWatch(
 			continue
 		}
 
-		m.processEvents(ctx, wi, enrichers, eventName)
+		m.processEvents(ctx, wi, enrichers, eventName, contextName)
 	}
 }
 
@@ -133,6 +134,7 @@ func (m *WatchManager) processEvents(
 	wi watch.Interface,
 	enrichers []resource.Enricher,
 	eventName string,
+	contextName string,
 ) {
 	defer wi.Stop()
 
@@ -151,7 +153,7 @@ func (m *WatchManager) processEvents(
 			}
 
 			for _, enricher := range enrichers {
-				_ = enricher.Enrich(obj)
+				_ = enricher.Enrich(contextName, obj)
 			}
 
 			m.emitEvent(eventName, WatchEvent{

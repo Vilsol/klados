@@ -34,6 +34,21 @@ func RegisterEnricher(gvr string, fn func(obj map[string]any) map[string]any) {
 	enrichers[gvr] = fn
 }
 
+var commandHandlers = map[string]func(){}
+
+// OnCommand registers a handler for the given command ID.
+func OnCommand(id string, fn func()) {
+	commandHandlers[id] = fn
+}
+
+// DispatchCommand delivers a command invocation to the registered handler.
+func DispatchCommand(idPtr, idLen uint32) {
+	id := string(ReadGuestBytes(idPtr, idLen))
+	if fn, ok := commandHandlers[id]; ok {
+		fn()
+	}
+}
+
 var eventHandlers = map[string][]func([]byte){}
 
 // OnEvent registers a callback for a specific event type.

@@ -8,7 +8,7 @@ import (
 
 type DeploymentEnricher struct{}
 
-func (e *DeploymentEnricher) Enrich(obj *unstructured.Unstructured) error {
+func (e *DeploymentEnricher) Enrich(_ string, obj *unstructured.Unstructured) error {
 	ready, _, _ := unstructured.NestedInt64(obj.Object, "status", "readyReplicas")
 	desired, _, _ := unstructured.NestedInt64(obj.Object, "spec", "replicas")
 	available, _, _ := unstructured.NestedInt64(obj.Object, "status", "availableReplicas")

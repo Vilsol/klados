@@ -4,7 +4,7 @@
   import { RefreshCw, Trash2, ChevronDown, ChevronRight, FolderOpen } from 'lucide-svelte'
   import * as PluginService from '../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
   import * as AppService from '../../bindings/github.com/Vilsol/klados/internal/services/appservice.js'
-  import ConfirmDialog from '$lib/components/ConfirmDialog.svelte'
+  import { ConfirmDialog } from '@klados/ui'
   import { notificationStore } from '$lib/stores/notification.svelte.js'
 
   interface ResourcePerm {
@@ -41,6 +41,14 @@
   let confirmOpen = $state(false)
   let loadingActions = $state<Record<string, boolean>>({})
   let installing = $state(false)
+  let registryRef = $state('')
+  let registryLoading = $state(false)
+  let registryError = $state('')
+  let showAuthForm = $state(false)
+  let authHost = $state('')
+  let authUsername = $state('')
+  let authPassword = $state('')
+  let authInsecure = $state(false)
 
   async function loadPlugins() {
     try {
@@ -103,6 +111,53 @@
     })
   }
 
+  async function installFromRegistry() {
+    const ref = registryRef.startsWith('oci://') ? registryRef : `oci://${registryRef}`
+    registryLoading = true
+    registryError = ''
+    try {
+      await PluginService.InstallPlugin(ref)
+      registryRef = ''
+      showAuthForm = false
+      notificationStore.success('Plugin installed', ref.split('/').pop() ?? ref)
+      await loadPlugins()
+    } catch (err: any) {
+      if (err?.message?.includes('authentication required')) {
+        authHost = ref.replace(/^oci:\/\//, '').split('/')[0]
+        showAuthForm = true
+      } else {
+        registryError = err?.message ?? String(err)
+      }
+    } finally {
+      registryLoading = false
+    }
+  }
+
+  async function submitCredentials() {
+    const ref = registryRef.startsWith('oci://') ? registryRef : `oci://${registryRef}`
+    registryLoading = true
+    try {
+      await PluginService.SaveRegistryCredentials(authHost, authUsername, authPassword)
+      if (authInsecure) await PluginService.AddInsecureRegistry(authHost)
+      await PluginService.InstallPlugin(ref)
+      showAuthForm = false
+      authUsername = ''
+      authPassword = ''
+      authInsecure = false
+      registryRef = ''
+      notificationStore.success('Plugin installed', ref.split('/').pop() ?? ref)
+      await loadPlugins()
+    } catch (err: any) {
+      if (err?.message?.includes('authentication required')) {
+        registryError = 'Credentials rejected — verify and try again'
+      } else {
+        registryError = err?.message ?? String(err)
+      }
+    } finally {
+      registryLoading = false
+    }
+  }
+
   async function installPlugin() {
     installing = true
     try {
@@ -137,6 +192,50 @@
         {installing ? 'Installing…' : 'Install Plugin'}
       </button>
     </div>
+  </div>
+
+  <div class="px-6 py-4 border-b border-border flex flex-col gap-3">
+    <p class="text-sm font-medium">Install from registry</p>
+    <div class="flex gap-2">
+      <input
+        type="text"
+        bind:value={registryRef}
+        placeholder="ghcr.io/owner/plugin:v1"
+        disabled={registryLoading}
+        class="flex-1 text-xs px-3 py-1.5 rounded border border-border bg-surface focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
+        onkeydown={(e) => e.key === 'Enter' && installFromRegistry()}
+      />
+      <button
+        onclick={installFromRegistry}
+        disabled={registryLoading || !registryRef}
+        class="text-xs px-3 py-1.5 rounded border border-border hover:bg-surface-hover transition-colors disabled:opacity-50"
+      >
+        {registryLoading ? 'Installing…' : 'Install'}
+      </button>
+    </div>
+
+    {#if registryError}
+      <p class="text-xs text-red-500">{registryError}</p>
+    {/if}
+
+    {#if showAuthForm}
+      <div class="flex flex-col gap-2 border border-border rounded-lg p-3 bg-surface text-xs">
+        <p class="text-muted">Authentication required for <span class="text-fg font-mono">{authHost}</span></p>
+        <input type="text" bind:value={authUsername} placeholder="Username" class="px-2 py-1 rounded border border-border bg-surface focus:outline-none" />
+        <input type="password" bind:value={authPassword} placeholder="Password or token" class="px-2 py-1 rounded border border-border bg-surface focus:outline-none" />
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" bind:checked={authInsecure} />
+          Insecure (HTTP)
+        </label>
+        <button
+          onclick={submitCredentials}
+          disabled={registryLoading}
+          class="self-start px-3 py-1 rounded border border-border hover:bg-surface-hover transition-colors disabled:opacity-50"
+        >
+          Save & Retry
+        </button>
+      </div>
+    {/if}
   </div>
 
   <div class="flex-1 px-6 py-4">

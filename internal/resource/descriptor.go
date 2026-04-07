@@ -28,6 +28,13 @@ type OverviewField struct {
 	RenderType RenderType `json:"renderType"`
 }
 
+type Action struct {
+	Name           string `json:"name"`
+	Label          string `json:"label"`
+	DisabledWhen   string `json:"disabledWhen,omitempty"`
+	DisabledReason string `json:"disabledReason,omitempty"`
+}
+
 type Descriptor struct {
 	Group          string          `json:"group"`
 	Version        string          `json:"version"`
@@ -36,7 +43,8 @@ type Descriptor struct {
 	Columns        []Column        `json:"columns"`
 	OverviewFields []OverviewField `json:"overviewFields,omitempty"`
 	DetailPanels   []string        `json:"detailPanels,omitempty"`
-	Actions        []string        `json:"actions,omitempty"`
+	Actions        []Action        `json:"actions,omitempty"`
+	ClusterScoped  bool            `json:"clusterScoped,omitempty"`
 }
 
 func (d *Descriptor) GVR() string {

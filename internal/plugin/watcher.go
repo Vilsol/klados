@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
+	"github.com/sasha-s/go-deadlock"
 	"time"
 
 	"github.com/Vilsol/slox"
@@ -19,7 +19,7 @@ type PluginWatcher struct {
 	onReload  func(name string)
 	dirs      map[string]string // pluginDir → pluginName
 	debounces map[string]*time.Timer
-	mu        sync.Mutex
+	mu        deadlock.Mutex
 	ctx       context.Context
 	done      chan struct{}
 }

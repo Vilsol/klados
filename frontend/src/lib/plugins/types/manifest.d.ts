@@ -67,6 +67,10 @@ export interface Extensions {
   contextMenu?: ComponentRef[];
   headerWidgets?: ComponentRef[];
   statusBar?: ComponentRef[];
+  /**
+   * PromQL query templates per GVR, rendered as additional charts in the metrics tab
+   */
+  metrics?: MetricTemplateGroup[];
 }
 export interface EnricherConfig {
   /**
@@ -97,6 +101,10 @@ export interface Command {
   id: string;
   label: string;
   icon?: string;
+  /**
+   * Relative path to Svelte component JS bundle. If set, mounts UI component instead of calling Wasm.
+   */
+  component?: string;
 }
 export interface ComponentRef {
   id: string;
@@ -109,4 +117,28 @@ export interface ComponentRef {
    * Relative path to the Svelte component JS bundle
    */
   component: string;
+}
+export interface MetricTemplateGroup {
+  /**
+   * GVR this group of queries applies to (dot-separated format)
+   */
+  gvr: string;
+  /**
+   * @minItems 1
+   */
+  queries: [MetricTemplateQuery, ...MetricTemplateQuery[]];
+}
+export interface MetricTemplateQuery {
+  /**
+   * Display name for the chart
+   */
+  name: string;
+  /**
+   * PromQL template with {{var}} placeholders
+   */
+  query: string;
+  /**
+   * Unit label (e.g. req/s, bytes, cores)
+   */
+  unit: string;
 }

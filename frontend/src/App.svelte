@@ -2,7 +2,7 @@
   import Router from 'svelte-spa-router'
   import { routes } from './routes/routes'
   import Layout from '$lib/components/Layout.svelte'
-  import Notification from '$lib/components/Notification.svelte'
+  import { Notification } from '@klados/ui'
   import CommandPalette from '$lib/components/CommandPalette.svelte'
   import { onMount } from 'svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
@@ -41,7 +41,7 @@
     return [msg, err]
   }
 
-  onMount(async () => {
+  onMount(() => {
     const origError = console.error.bind(console)
     const origWarn = console.warn.bind(console)
     console.error = (...args) => { origError(...args); const [m, e] = argsToLog(args); logError(m, e) }
@@ -52,49 +52,56 @@
       const msg = err ? err.message : String(e.reason)
       logError(`Unhandled rejection: ${msg}`, err)
     }
-    try {
-      const theme = await ConfigService.GetTheme()
-      if (theme) setTheme(theme as 'light' | 'dark' | 'system')
-    } catch {
-      // Config service not available yet
-    }
 
-    try {
-      const sess = await AppService.GetSession()
-      if (sess) {
-        const tabs = (sess.openTabs ?? []).map((t: TabState) => ({
-          clusterContext: t.clusterContext ?? '',
-          gvr: t.gvr ?? '',
-          namespace: t.namespace ?? '',
-          name: t.name ?? '',
-          scrollPosition: t.scrollPosition ?? 0,
-        }))
-        sessionStore.restore(tabs, sess.activeTab ?? 0, sess.sidebarCollapsed ?? false)
+    let unsubPlugins: (() => void) | undefined
+    let handler: ((e: KeyboardEvent) => void) | undefined
+
+    ;(async () => {
+      try {
+        const theme = await ConfigService.GetTheme()
+        if (theme) setTheme(theme as 'light' | 'dark' | 'system')
+      } catch {
+        // Config service not available yet
       }
-    } catch {
-      // Session restore not available
-    }
 
-    await clusterStore.loadContexts()
-    await descriptorRegistry.load()
+      try {
+        const sess = await AppService.GetSession()
+        if (sess) {
+          const tabs = (sess.openTabs ?? []).map((t: TabState) => ({
+            clusterContext: t.clusterContext ?? '',
+            gvr: t.gvr ?? '',
+            namespace: t.namespace ?? '',
+            name: t.name ?? '',
+            scrollPosition: t.scrollPosition ?? 0,
+          }))
+          sessionStore.restore(tabs, sess.activeTab ?? 0, sess.sidebarCollapsed ?? false)
+        }
+      } catch {
+        // Session restore not available
+      }
 
-    const unsubPlugins = Events.On('plugins:loaded', () => {
-      descriptorRegistry.reloadPlugins()
-    })
+      await clusterStore.loadContexts()
+      await descriptorRegistry.load()
 
-    shortcutStore.register({
-      id: 'command-palette',
-      keys: 'Control+k',
-      description: 'Open command palette',
-      modes: ['normal', 'editor'],
-      action: () => { paletteOpen = true },
-    })
+      unsubPlugins = Events.On('plugins:loaded', () => {
+        descriptorRegistry.reloadPlugins()
+      })
 
-    const handler = (e: KeyboardEvent) => shortcutStore.dispatch(e)
-    window.addEventListener('keydown', handler)
+      shortcutStore.register({
+        id: 'command-palette',
+        keys: 'Control+k',
+        description: 'Open command palette',
+        modes: ['normal', 'editor'],
+        action: () => { paletteOpen = true },
+      })
+
+      handler = (e: KeyboardEvent) => shortcutStore.dispatch(e)
+      window.addEventListener('keydown', handler)
+    })()
+
     return () => {
-      window.removeEventListener('keydown', handler)
-      unsubPlugins()
+      if (handler) window.removeEventListener('keydown', handler)
+      unsubPlugins?.()
     }
   })
 

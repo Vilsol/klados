@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
+	"github.com/sasha-s/go-deadlock"
 	"time"
 
 	"github.com/Vilsol/klados/internal/config"
+	"github.com/Vilsol/klados/internal/metrics"
 	"github.com/Vilsol/slox"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,6 +19,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	metricsClientset "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 type ConnectionStatus int
@@ -73,15 +75,16 @@ func detectProvider(clusterName, serverVersion string) string {
 
 type Connection struct {
 	KubeContext
-	Config    *rest.Config
-	Clientset kubernetes.Interface
-	Dynamic   dynamic.Interface
-	Discovery discovery.DiscoveryInterface
-	cancel    context.CancelFunc
+	Config              *rest.Config
+	Clientset           kubernetes.Interface
+	Dynamic             dynamic.Interface
+	Discovery           discovery.DiscoveryInterface
+	MetricsCapability   metrics.MetricsCapability
+	cancel              context.CancelFunc
 }
 
 type Manager struct {
-	mu          sync.RWMutex
+	mu          deadlock.RWMutex
 	connections map[string]*Connection
 	contexts    []KubeContext
 	rawConfig   *clientcmdapi.Config
@@ -190,6 +193,8 @@ func (m *Manager) Connect(ctx context.Context, contextName string) error {
 
 	if m.config != nil && m.config.InsecureSkipTLSVerify {
 		restCfg.TLSClientConfig.Insecure = true
+		restCfg.TLSClientConfig.CAFile = ""
+		restCfg.TLSClientConfig.CAData = nil
 	}
 
 	clientset, err := kubernetes.NewForConfig(restCfg)
@@ -255,6 +260,38 @@ func (m *Manager) Connect(ctx context.Context, contextName string) error {
 			})
 		}
 	}()
+	go func() {
+		mc, err := metricsClientset.NewForConfig(restCfg)
+		if err != nil {
+			slox.Warn(m.ctx, "metrics client creation failed", "context", contextName, "error", err)
+			return
+		}
+		slox.Debug(m.ctx, "detecting metrics sources", "context", contextName)
+		msProvider := metrics.NewMetricsServerProvider(mc.MetricsV1beta1(), disc)
+		cap := metrics.MetricsCapability{
+			HasMetricsServer: msProvider.Available(),
+		}
+		slox.Debug(m.ctx, "metrics-server detection result", "context", contextName, "available", cap.HasMetricsServer)
+
+		var manualURL string
+		if m.config != nil {
+			if mc, ok := m.config.Metrics[contextName]; ok && mc != nil {
+				manualURL = mc.PrometheusURL
+			}
+		}
+		if promURL, found := metrics.DetectPrometheus(m.ctx, clientset, disc, dynClient, restCfg, manualURL); found {
+			cap.HasPrometheus = true
+			cap.PrometheusURL = promURL
+		}
+		slox.Debug(m.ctx, "metrics detection complete", "context", contextName, "hasMetricsServer", cap.HasMetricsServer, "hasPrometheus", cap.HasPrometheus, "prometheusURL", cap.PrometheusURL)
+
+		m.mu.Lock()
+		if c, ok := m.connections[contextName]; ok {
+			c.MetricsCapability = cap
+		}
+		m.mu.Unlock()
+		m.emitEvent(fmt.Sprintf("metrics:%s:capabilities", contextName), cap)
+	}()
 
 	return nil
 }
@@ -292,6 +329,23 @@ func (m *Manager) GetConnection(contextName string) (*Connection, error) {
 		return nil, fmt.Errorf("not connected to %q", contextName)
 	}
 	return conn, nil
+}
+
+func (m *Manager) GetMetricsCapability(contextName string) metrics.MetricsCapability {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if conn, ok := m.connections[contextName]; ok {
+		return conn.MetricsCapability
+	}
+	return metrics.MetricsCapability{}
+}
+
+func (m *Manager) SetMetricsCapability(contextName string, cap metrics.MetricsCapability) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if conn, ok := m.connections[contextName]; ok {
+		conn.MetricsCapability = cap
+	}
 }
 
 func (m *Manager) ListNamespaces(ctx context.Context, contextName string) ([]string, error) {

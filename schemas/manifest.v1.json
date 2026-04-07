@@ -122,7 +122,38 @@
         "statusBar": {
           "type": "array",
           "items": { "$ref": "#/$defs/ComponentRef" }
+        },
+        "metrics": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MetricTemplateGroup" },
+          "description": "PromQL query templates per GVR, rendered as additional charts in the metrics tab"
         }
+      }
+    },
+    "MetricTemplateGroup": {
+      "type": "object",
+      "required": ["gvr", "queries"],
+      "additionalProperties": false,
+      "properties": {
+        "gvr": {
+          "type": "string",
+          "description": "GVR this group of queries applies to (dot-separated format)"
+        },
+        "queries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MetricTemplateQuery" },
+          "minItems": 1
+        }
+      }
+    },
+    "MetricTemplateQuery": {
+      "type": "object",
+      "required": ["name", "query", "unit"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "Display name for the chart" },
+        "query": { "type": "string", "description": "PromQL template with {{var}} placeholders" },
+        "unit": { "type": "string", "description": "Unit label (e.g. req/s, bytes, cores)" }
       }
     },
     "EnricherConfig": {
@@ -173,7 +204,8 @@
       "properties": {
         "id": { "type": "string" },
         "label": { "type": "string" },
-        "icon": { "type": "string" }
+        "icon": { "type": "string" },
+        "component": { "type": "string", "description": "Relative path to Svelte component JS bundle. If set, mounts UI component instead of calling Wasm." }
       }
     },
     "ComponentRef": {

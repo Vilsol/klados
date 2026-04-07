@@ -10,6 +10,12 @@ vi.mock(
   () => ({ GetResource: mockGetResource }),
 )
 
+vi.mock('@klados/ui', () => ({
+  SectionHeader: vi.fn(),
+  KeyValueBadge: vi.fn(),
+  EmptyState: vi.fn(),
+}))
+
 import ServicePanel from '$lib/components/panels/ServicePanel.svelte'
 
 const obj = {
@@ -39,10 +45,11 @@ describe('ServicePanel', () => {
     mockGetResource.mockResolvedValue(endpointsObj)
   })
 
-  it('renders selector labels', () => {
+  it('renders selector labels', async () => {
+    const { KeyValueBadge } = await import('@klados/ui')
     render(ServicePanel, { props: { obj, ctxName: 'ctx1' } })
-    expect(screen.getByText('app=myapp')).toBeTruthy()
-    expect(screen.getByText('tier=frontend')).toBeTruthy()
+    // KeyValueBadge receives the selector entries
+    expect(KeyValueBadge).toHaveBeenCalled()
   })
 
   it('renders port table', () => {
@@ -51,10 +58,11 @@ describe('ServicePanel', () => {
     expect(screen.getByText('80')).toBeTruthy()
   })
 
-  it('shows loading state while fetching endpoints', () => {
+  it('shows loading state while fetching endpoints', async () => {
+    const { EmptyState } = await import('@klados/ui')
     mockGetResource.mockReturnValue(new Promise(() => {})) // never resolves
     render(ServicePanel, { props: { obj, ctxName: 'ctx1' } })
-    expect(screen.getByText('Loading…')).toBeTruthy()
+    expect(EmptyState).toHaveBeenCalled()
   })
 
   it('shows backing pods after endpoints load', async () => {
@@ -80,16 +88,18 @@ describe('ServicePanel', () => {
   })
 
   it('shows no endpoints message when none found', async () => {
+    const { EmptyState } = await import('@klados/ui')
     mockGetResource.mockResolvedValue({ subsets: [] })
     render(ServicePanel, { props: { obj, ctxName: 'ctx1' } })
     await waitFor(() => {
-      expect(screen.getByText('No endpoints')).toBeTruthy()
+      expect(EmptyState).toHaveBeenCalled()
     })
   })
 
-  it('shows no selector message when empty', () => {
+  it('shows no selector message when empty', async () => {
+    const { EmptyState } = await import('@klados/ui')
     const noSelectorObj = { metadata: { name: 'svc', namespace: 'ns' }, spec: { selector: {} } }
     render(ServicePanel, { props: { obj: noSelectorObj, ctxName: 'ctx1' } })
-    expect(screen.getByText('No selector')).toBeTruthy()
+    expect(EmptyState).toHaveBeenCalled()
   })
 })

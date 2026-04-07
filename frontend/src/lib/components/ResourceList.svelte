@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createVirtualizer } from '@tanstack/svelte-virtual'
-  import { ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw } from 'lucide-svelte'
-  import ConfirmDialog from './ConfirmDialog.svelte'
+  import { ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw, Columns3 } from 'lucide-svelte'
+  import { ConfirmDialog } from '@klados/ui'
   import { notificationStore } from '$lib/stores/notification.svelte'
   import { evalExpr, type ColumnDef, type RenderType } from '$lib/registry/index'
   import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
@@ -10,10 +10,12 @@
   import { slotRegistry } from '$lib/plugins/slots.svelte.js'
   import { loadPluginComponent } from '$lib/plugins/loader.js'
   import { streamingStore } from '$lib/stores/streaming.svelte.js'
+  import Sparkline from './charts/Sparkline.svelte'
+  import type { MetricResult } from './charts/types'
 
   let now = $state(Date.now())
   onMount(() => {
-    const id = setInterval(() => { now = Date.now() }, 10_000)
+    const id = setInterval(() => { now = Date.now() }, 1_000)
     return () => clearInterval(id)
   })
 
@@ -29,6 +31,10 @@
     scrollContainer = $bindable<HTMLDivElement | undefined>(undefined),
     onrefresh,
     onselect,
+    sparklineGvrs = [],
+    sparklineData = {},
+    sparklineColumns = [],
+    onSparklineToggle,
   }: {
     items: Record<string, any>[]
     columns: ColumnDef[]
@@ -41,6 +47,10 @@
     scrollContainer?: HTMLDivElement
     onrefresh?: () => void
     onselect?: (item: Record<string, any>) => void
+    sparklineGvrs?: string[]
+    sparklineData?: Record<string, MetricResult[]>
+    sparklineColumns?: string[]
+    onSparklineToggle?: (columns: string[]) => void
   } = $props()
 
   let filterText = $state('')
@@ -49,6 +59,24 @@
   let deleteTarget = $state<{ namespace: string; name: string } | null>(null)
   let confirmOpen = $state(false)
   let ctxMenu = $state<{ x: number; y: number; item: Record<string, any> } | null>(null)
+  let columnMenuOpen = $state(false)
+
+  const hasSparklines = $derived(sparklineGvrs.includes(gvr))
+  const availableSparklineCols = ['CPU', 'Memory']
+
+  function toggleSparklineCol(col: string) {
+    const current = sparklineColumns
+    const next = current.includes(col) ? current.filter(c => c !== col) : [...current, col]
+    onSparklineToggle?.(next)
+  }
+
+  function getSparklinePoints(itemName: string, metricName: string): { t: number; v: number }[] {
+    const metrics = sparklineData[itemName]
+    if (!metrics) return []
+    const metric = metrics.find(m => m.name === metricName)
+    if (!metric?.series?.[0]?.points) return []
+    return metric.series[0].points
+  }
 
   const pluginColumns = $derived(slotRegistry.getListColumns(gvr))
   const pluginMenuItems = $derived(slotRegistry.getContextMenuItems(gvr))
@@ -63,6 +91,14 @@
     const close = () => { ctxMenu = null }
     window.addEventListener('click', close, { once: true })
     return () => window.removeEventListener('click', close)
+  })
+
+  $effect(() => {
+    if (!columnMenuOpen) return
+    const close = () => { columnMenuOpen = false }
+    // Delay to avoid immediate close from the toggle click
+    const timer = setTimeout(() => window.addEventListener('click', close, { once: true }), 0)
+    return () => { clearTimeout(timer); window.removeEventListener('click', close) }
   })
 
   // Scroll to top when GVR changes
@@ -91,6 +127,7 @@
     }
     if (sortCol >= 0) {
       const col = columns[sortCol]
+      if (!col?.expr) return result
       result = [...result].sort((a, b) => {
         const av = String(evalExpr(col.expr, a) ?? '')
         const bv = String(evalExpr(col.expr, b) ?? '')
@@ -99,6 +136,8 @@
     }
     return result
   })
+
+  const tooManyForSparklines = $derived(filtered.length > 200)
 
   const ROW_HEIGHT = 36
 
@@ -160,6 +199,13 @@
     }
     confirmOpen = true
   }
+
+  const gridTemplateCols = $derived(
+    columns.map((c) => c.width ? `${c.width}px` : '1fr').join(' ')
+    + (pluginColumns.length ? ' ' + pluginColumns.map(() => '1fr').join(' ') : '')
+    + (sparklineColumns.length ? ' ' + sparklineColumns.map(() => '80px').join(' ') : '')
+    + ' 36px'
+  )
 </script>
 
 <div class="flex flex-col h-full">
@@ -171,6 +217,36 @@
       class="flex-1 text-sm bg-transparent outline-none placeholder-muted"
     />
     <span class="text-xs text-muted">{filtered.length} items</span>
+    {#if hasSparklines}
+      <div class="relative">
+        <button
+          onclick={() => columnMenuOpen = !columnMenuOpen}
+          class="p-1 rounded hover:bg-surface-hover transition-colors"
+          title="Toggle sparkline columns"
+          aria-label="Toggle columns"
+        >
+          <Columns3 size={14} />
+        </button>
+        {#if columnMenuOpen}
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div class="absolute right-0 top-full mt-1 z-50 bg-surface border border-border rounded shadow-lg py-1 min-w-40"
+            onclick={(e) => e.stopPropagation()}
+            onkeydown={(e) => e.stopPropagation()}>
+            {#each availableSparklineCols as col}
+              <label class="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-hover cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sparklineColumns.includes(col)}
+                  onchange={() => toggleSparklineCol(col)}
+                  class="rounded border-border"
+                />
+                {col} Sparkline
+              </label>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/if}
     {#if onrefresh}
       <button
         onclick={onrefresh}
@@ -187,7 +263,7 @@
     <div class="p-4 text-sm text-destructive">{error}</div>
   {:else}
     <div class="grid text-xs font-semibold uppercase tracking-wider text-muted border-b border-border shrink-0 px-2"
-      style="grid-template-columns: {columns.map((c) => c.width ? `${c.width}px` : '1fr').join(' ')}{pluginColumns.length ? ' ' + pluginColumns.map(() => '1fr').join(' ') : ''} 36px"
+      style="grid-template-columns: {gridTemplateCols}"
     >
       {#each columns as col, i}
         <button
@@ -205,6 +281,9 @@
       {#each pluginColumns as pcol (pcol.id)}
         <div class="py-2 px-1">{pcol.label}</div>
       {/each}
+      {#each sparklineColumns as scol}
+        <div class="py-2 px-1">{scol}</div>
+      {/each}
       <div></div>
     </div>
 
@@ -218,6 +297,7 @@
           {#each $virtualizer.getVirtualItems() as row (row.index)}
             {@const item = filtered[row.index]}
             {@const isSelected = selectedName === `${item.metadata?.name ?? ''}/${item.metadata?.namespace ?? ''}`}
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
             <div
               class="absolute top-0 left-0 right-0 flex items-center px-2 transition-colors group
                 {isSelected ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-surface-hover border-l-2 border-transparent'}
@@ -231,7 +311,7 @@
             >
               <div
                 class="grid flex-1 min-w-0"
-                style="grid-template-columns: {columns.map((c) => c.width ? `${c.width}px` : '1fr').join(' ')}{pluginColumns.length ? ' ' + pluginColumns.map(() => '1fr').join(' ') : ''} 36px"
+                style="grid-template-columns: {gridTemplateCols}"
               >
                 {#each columns as col}
                   {@const value = renderCell(col, item)}
@@ -251,8 +331,22 @@
                   <div class="px-1 flex items-center overflow-hidden text-sm">
                     {#if basePluginURL}
                       {#await loadPluginComponent(pcol.pluginName, pcol.component, basePluginURL) then Cmp}
-                        {#if Cmp}<svelte:component this={Cmp} resource={item} />{/if}
+                        {#if Cmp}<Cmp resource={item} />{/if}
                       {/await}
+                    {/if}
+                  </div>
+                {/each}
+                {#each sparklineColumns as scol}
+                  <div class="px-1 flex items-center overflow-hidden">
+                    {#if tooManyForSparklines}
+                      <span class="text-xs text-muted" title="Sparklines disabled for >200 resources">Too many</span>
+                    {:else}
+                      {@const pts = getSparklinePoints(item.metadata?.name ?? '', scol)}
+                      {#if pts.length > 0}
+                        <Sparkline points={pts} height={20} />
+                      {:else}
+                        <div style="height: 20px;"></div>
+                      {/if}
                     {/if}
                   </div>
                 {/each}
@@ -281,13 +375,14 @@
     class="fixed z-50 bg-surface border border-border rounded shadow-lg py-1 min-w-36"
     style="left:{ctxMenu.x}px; top:{ctxMenu.y}px"
     onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => e.stopPropagation()}
   >
     {#each pluginMenuItems as mi (mi.id)}
       {#if basePluginURL}
         {#await loadPluginComponent(mi.pluginName, mi.component, basePluginURL) then Cmp}
           {#if Cmp}
             {@const menuItem = ctxMenu}
-            <svelte:component this={Cmp} resource={menuItem.item} onclose={() => { ctxMenu = null }} />
+            <Cmp resource={menuItem.item} onclose={() => { ctxMenu = null }} />
           {/if}
         {/await}
       {/if}

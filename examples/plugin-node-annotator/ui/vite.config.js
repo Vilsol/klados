@@ -11,6 +11,7 @@ export default defineConfig({
         NodeContextItem: 'src/NodeContextItem.svelte',
         NodeHeaderWidget: 'src/NodeHeaderWidget.svelte',
         NodeStatusWidget: 'src/NodeStatusWidget.svelte',
+        ClusterHealthOverlay: 'src/ClusterHealthOverlay.svelte',
       },
       formats: ['es'],
     },

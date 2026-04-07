@@ -8,6 +8,10 @@ import "reflect"
 import "regexp"
 
 type Command struct {
+	// Relative path to Svelte component JS bundle. If set, mounts UI component
+	// instead of calling Wasm.
+	Component *string `json:"component,omitempty"`
+
 	// Icon corresponds to the JSON schema field "icon".
 	Icon *string `json:"icon,omitempty"`
 
@@ -169,6 +173,10 @@ type Extensions struct {
 	// ListColumns corresponds to the JSON schema field "listColumns".
 	ListColumns []ComponentRef `json:"listColumns,omitempty"`
 
+	// PromQL query templates per GVR, rendered as additional charts in the metrics
+	// tab
+	Metrics []MetricTemplateGroup `json:"metrics,omitempty"`
+
 	// OverviewFields corresponds to the JSON schema field "overviewFields".
 	OverviewFields []ComponentRef `json:"overviewFields,omitempty"`
 
@@ -239,6 +247,73 @@ func (j *ManifestV1Json) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("field %s: must be equal to %v", "schemaVersion", 1)
 	}
 	*j = ManifestV1Json(plain)
+	return nil
+}
+
+type MetricTemplateGroup struct {
+	// GVR this group of queries applies to (dot-separated format)
+	Gvr string `json:"gvr"`
+
+	// Queries corresponds to the JSON schema field "queries".
+	Queries []MetricTemplateQuery `json:"queries"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *MetricTemplateGroup) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["gvr"]; raw != nil && !ok {
+		return fmt.Errorf("field gvr in MetricTemplateGroup: required")
+	}
+	if _, ok := raw["queries"]; raw != nil && !ok {
+		return fmt.Errorf("field queries in MetricTemplateGroup: required")
+	}
+	type Plain MetricTemplateGroup
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if plain.Queries != nil && len(plain.Queries) < 1 {
+		return fmt.Errorf("field %s length: must be >= %d", "queries", 1)
+	}
+	*j = MetricTemplateGroup(plain)
+	return nil
+}
+
+type MetricTemplateQuery struct {
+	// Display name for the chart
+	Name string `json:"name"`
+
+	// PromQL template with {{var}} placeholders
+	Query string `json:"query"`
+
+	// Unit label (e.g. req/s, bytes, cores)
+	Unit string `json:"unit"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *MetricTemplateQuery) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in MetricTemplateQuery: required")
+	}
+	if _, ok := raw["query"]; raw != nil && !ok {
+		return fmt.Errorf("field query in MetricTemplateQuery: required")
+	}
+	if _, ok := raw["unit"]; raw != nil && !ok {
+		return fmt.Errorf("field unit in MetricTemplateQuery: required")
+	}
+	type Plain MetricTemplateQuery
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = MetricTemplateQuery(plain)
 	return nil
 }
 

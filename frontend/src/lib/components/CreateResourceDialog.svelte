@@ -30,6 +30,7 @@
   let view: EditorView | undefined
   let saving = $state(false)
 
+  // svelte-ignore state_referenced_locally
   const TEMPLATE = `apiVersion: ""
 kind: ""
 metadata:

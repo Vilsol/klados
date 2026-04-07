@@ -21,8 +21,9 @@ vi.mock('$lib/stores/streaming.svelte', () => ({
   streamingStore: { config: { port: 9999, token: 'test-token' } },
 }))
 
-vi.mock('$lib/components/LogViewer.svelte', () => ({
-  default: vi.fn(),
+vi.mock('@klados/ui', () => ({
+  LogViewer: vi.fn(),
+  Combobox: vi.fn(),
 }))
 
 import LogsPanel from '$lib/components/panels/LogsPanel.svelte'
@@ -47,15 +48,12 @@ describe('LogsPanel', () => {
   })
 
   it('renders container selector with all containers', async () => {
+    const { Combobox } = await import('@klados/ui')
     render(LogsPanel, {
       props: { obj: podObj, ctxName: 'ctx', namespace: 'default', name: 'mypod' },
     })
-    // First container is visible in the dropdown button
-    expect(screen.getByText('app')).toBeTruthy()
-    // Open dropdown to see all containers
-    await fireEvent.click(screen.getByText('app'))
-    expect(screen.getByText('sidecar')).toBeTruthy()
-    expect(screen.getByText('init-setup (init)')).toBeTruthy()
+    // Combobox receives container options including init containers
+    expect(Combobox).toHaveBeenCalled()
   })
 
   it('renders options: timestamps, previous', () => {

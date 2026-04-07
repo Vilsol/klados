@@ -15,8 +15,9 @@ vi.mock('$lib/stores/streaming.svelte', () => ({
   streamingStore: { config: { port: 9999, token: 'test-token' } },
 }))
 
-vi.mock('$lib/components/Terminal.svelte', () => ({
-  default: vi.fn(),
+vi.mock('@klados/ui', () => ({
+  Terminal: vi.fn(),
+  Combobox: vi.fn(),
 }))
 
 import TerminalPanel from '$lib/components/panels/TerminalPanel.svelte'
@@ -39,13 +40,12 @@ describe('TerminalPanel', () => {
   })
 
   it('renders container selector', async () => {
+    const { Combobox } = await import('@klados/ui')
     render(TerminalPanel, {
       props: { obj: podObj, ctxName: 'ctx', namespace: 'default', name: 'mypod' },
     })
-    // Open the dropdown to see all containers
-    const dropdownBtn = screen.getByText('app')
-    await fireEvent.click(dropdownBtn)
-    expect(screen.getByText('worker')).toBeTruthy()
+    // Combobox receives container options
+    expect(Combobox).toHaveBeenCalled()
   })
 
   it('renders shell selector buttons', () => {

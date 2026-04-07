@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as ResourceService from '../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
   import { notificationStore } from '$lib/stores/notification.svelte'
+  import { SectionHeader, KeyValueBadge, EmptyState, KeyValuePairEditor } from '@klados/ui'
 
   let {
     obj = $bindable(),
@@ -55,7 +56,7 @@
 
 <div class="p-4 flex flex-col gap-6 overflow-auto">
   <div class="flex items-center justify-between">
-    <span class="text-xs font-semibold text-muted uppercase tracking-wide">Labels & Annotations</span>
+    <SectionHeader class="">Labels & Annotations</SectionHeader>
     {#if !editing}
       <button
         onclick={startEdit}
@@ -79,23 +80,13 @@
   {#if !editing}
     <section>
       <h3 class="text-xs font-medium mb-2">Labels</h3>
-      {#if labels.length === 0}
-        <p class="text-xs text-muted">None</p>
-      {:else}
-        <div class="flex flex-wrap gap-1.5">
-          {#each labels.sort(([a], [b]) => a.localeCompare(b)) as [k, v]}
-            <span class="text-xs font-mono bg-surface border border-border rounded px-2 py-0.5">
-              <span class="text-accent">{k}</span><span class="text-muted">=</span>{v}
-            </span>
-          {/each}
-        </div>
-      {/if}
+      <KeyValueBadge entries={labels} />
     </section>
 
     <section>
       <h3 class="text-xs font-medium mb-2">Annotations</h3>
       {#if annotations.length === 0}
-        <p class="text-xs text-muted">None</p>
+        <EmptyState />
       {:else}
         <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
           {#each annotations.sort(([a], [b]) => a.localeCompare(b)) as [k, v]}
@@ -108,60 +99,12 @@
   {:else}
     <section>
       <h3 class="text-xs font-medium mb-2">Labels</h3>
-      <div class="flex flex-col gap-1.5">
-        {#each editLabels as pair, i}
-          <div class="flex gap-2 items-center">
-            <input
-              bind:value={editLabels[i][0]}
-              placeholder="key"
-              class="text-xs font-mono flex-1 bg-surface border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-accent"
-            />
-            <span class="text-muted text-xs">=</span>
-            <input
-              bind:value={editLabels[i][1]}
-              placeholder="value"
-              class="text-xs font-mono flex-1 bg-surface border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-accent"
-            />
-            <button
-              onclick={() => editLabels.splice(i, 1)}
-              class="text-xs text-muted hover:text-destructive transition-colors"
-            >✕</button>
-          </div>
-        {/each}
-        <button
-          onclick={() => editLabels.push(['', ''])}
-          class="text-xs text-accent hover:underline self-start"
-        >+ Add label</button>
-      </div>
+      <KeyValuePairEditor bind:pairs={editLabels} addLabel="+ Add label" />
     </section>
 
     <section>
       <h3 class="text-xs font-medium mb-2">Annotations</h3>
-      <div class="flex flex-col gap-1.5">
-        {#each editAnnotations as pair, i}
-          <div class="flex gap-2 items-center">
-            <input
-              bind:value={editAnnotations[i][0]}
-              placeholder="key"
-              class="text-xs font-mono flex-1 bg-surface border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-accent"
-            />
-            <span class="text-muted text-xs">=</span>
-            <input
-              bind:value={editAnnotations[i][1]}
-              placeholder="value"
-              class="text-xs font-mono flex-1 bg-surface border border-border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-accent"
-            />
-            <button
-              onclick={() => editAnnotations.splice(i, 1)}
-              class="text-xs text-muted hover:text-destructive transition-colors"
-            >✕</button>
-          </div>
-        {/each}
-        <button
-          onclick={() => editAnnotations.push(['', ''])}
-          class="text-xs text-accent hover:underline self-start"
-        >+ Add annotation</button>
-      </div>
+      <KeyValuePairEditor bind:pairs={editAnnotations} addLabel="+ Add annotation" />
     </section>
   {/if}
 </div>

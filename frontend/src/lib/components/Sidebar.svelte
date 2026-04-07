@@ -9,6 +9,10 @@
   import * as PortForwardService from '../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js'
   import * as PluginService from '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
   import PortForwardDialog from './PortForwardDialog.svelte'
+  import { descriptorRegistry } from '$lib/registry/index'
+  import { registryLoaded } from '$lib/registry/loaded.svelte'
+  import { buildCRDTree } from '$lib/utils/crdTree'
+  import CRDTreeNode from './CRDTreeNode.svelte'
 
   interface APIResource {
     gvr: string
@@ -34,8 +38,17 @@
     Storage: [
       'core.v1.persistentvolumeclaims',
       'core.v1.persistentvolumes',
+      'storage.k8s.io.v1.storageclasses',
+      'storage.k8s.io.v1.csidrivers',
     ],
-    Cluster: ['core.v1.nodes'],
+    Cluster: ['core.v1.nodes', 'apiextensions.k8s.io.v1.customresourcedefinitions'],
+    RBAC: [
+      'core.v1.serviceaccounts',
+      'rbac.authorization.k8s.io.v1.roles',
+      'rbac.authorization.k8s.io.v1.clusterroles',
+      'rbac.authorization.k8s.io.v1.rolebindings',
+      'rbac.authorization.k8s.io.v1.clusterrolebindings',
+    ],
   }
 
   const kindByGvr: Record<string, string> = {
@@ -52,12 +65,41 @@
     'core.v1.secrets': 'Secrets',
     'core.v1.persistentvolumeclaims': 'PersistentVolumeClaims',
     'core.v1.persistentvolumes': 'PersistentVolumes',
+    'storage.k8s.io.v1.storageclasses': 'StorageClasses',
+    'storage.k8s.io.v1.csidrivers': 'CSI Drivers',
     'core.v1.nodes': 'Nodes',
+    'apiextensions.k8s.io.v1.customresourcedefinitions': 'CRDs',
+    'core.v1.serviceaccounts': 'ServiceAccounts',
+    'rbac.authorization.k8s.io.v1.roles': 'Roles',
+    'rbac.authorization.k8s.io.v1.clusterroles': 'ClusterRoles',
+    'rbac.authorization.k8s.io.v1.rolebindings': 'RoleBindings',
+    'rbac.authorization.k8s.io.v1.clusterrolebindings': 'ClusterRoleBindings',
   }
 
   let discoveredGVRs = $state<Set<string>>(new Set())
   let expandedGroups = $state<Record<string, boolean>>({ Workloads: true })
   let customResources = $state<APIResource[]>([])
+
+  const crdTree = $derived((() => {
+    const kindMap = new Map(customResources.map((r) => [r.gvr, r.kind]))
+    return buildCRDTree(
+      customResources.map((r) => r.gvr),
+      (gvr) => kindMap.get(gvr) || gvr.split('.').at(-1)!,
+    )
+  })())
+
+  let expandedNodes = $state(new Set<string>())
+  $effect(() => {
+    clusterStore.activeContext // track
+    expandedNodes = new Set()
+  })
+
+  function toggleExpand(fullSuffix: string) {
+    const next = new Set(expandedNodes)
+    if (next.has(fullSuffix)) next.delete(fullSuffix)
+    else next.add(fullSuffix)
+    expandedNodes = next
+  }
 
   interface ForwardSpec {
     id: string
@@ -178,6 +220,14 @@
     </div>
 
     <nav class="flex-1 overflow-y-auto py-1">
+      {#if ctx}
+        <button
+          onclick={() => push(`/c/${ctx}`)}
+          class="w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 rounded-none hover:bg-surface-hover transition-colors border-b border-border mb-1 text-fg"
+        >
+          Overview
+        </button>
+      {/if}
       {#each Object.entries(gvrGroups) as [groupName, gvrs]}
         {@const available = gvrs.filter((g) => !ctx || discoveredGVRs.size === 0 || discoveredGVRs.has(g))}
         {#if available.length > 0}
@@ -208,7 +258,7 @@
         {/if}
       {/each}
 
-      {#if customResources.length > 0}
+      {#if crdTree.length > 0}
         <div>
           <button
             onclick={() => toggleGroup('Custom Resources')}
@@ -222,13 +272,8 @@
           </button>
           {#if expandedGroups['Custom Resources']}
             <div class="ml-4">
-              {#each customResources as r}
-                <button
-                  onclick={() => navigate(r.gvr)}
-                  class="w-full text-left px-3 py-1 text-sm hover:bg-surface-hover transition-colors rounded-sm"
-                >
-                  {r.kind}
-                </button>
+              {#each crdTree as node}
+                <CRDTreeNode {node} expanded={expandedNodes} onToggle={toggleExpand} ctxName={ctx ?? ''} />
               {/each}
             </div>
           {/if}

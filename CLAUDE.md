@@ -11,7 +11,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Module
 
-`github.com/Vilsol/klados`
+`github.com/Vilsol/klados` — Go 1.25, Wails v3 alpha.74
+
+## Monorepo
+
+pnpm workspace (`pnpm-workspace.yaml`): `frontend/`, `packages/*`, `apps/*`. Use `pnpm install` (not npm).
+
+Tool versions managed by `mise.toml` (wails3, go-jsonschema, node 25, tinygo, pnpm).
 
 ## Build
 
@@ -20,13 +26,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 task dev
 
 # Frontend only
-cd frontend && npm install && npm run build
+cd frontend && pnpm install && pnpm build
 
 # Go binary (requires CGO for Wails/GTK on Linux)
 go build .
 
-# After changing any Go service signature, regenerate Wails bindings:
+# Regenerate Wails bindings (after any Go service signature change):
 wails3 generate bindings
+
+# Regenerate plugin types from JSON Schemas:
+mise run generate:plugin-types
+
+# Type-check frontend:
+cd frontend && pnpm check
 ```
 
 ## Test
@@ -45,7 +57,7 @@ go test ./internal/cluster/ -run TestLoadKubeconfigs -v
 go test ./internal/... -v -tags integration
 
 # Frontend
-cd frontend && npx vitest run
+cd frontend && pnpm test
 
 # Single frontend test file
 cd frontend && npx vitest run src/lib/__tests__/Header.svelte.test.ts
@@ -81,6 +93,10 @@ Kubernetes API → cluster.Manager (dynamic client)
 | `resource/` | `Registry` (CEL-validated descriptors), `ResourceEngine` (List/Get/Delete), `EnricherRegistry` + per-resource enrichers that inject display fields into unstructured objects |
 | `watcher/` | `WatchManager`: start/stop per `(ctx, gvr, namespace)` key; 30s grace period before actually stopping; emits `watch:{ctx}:{gvr}:{ns}` events with `{type, object}` payload |
 | `streaming/` | Fiber HTTP server on random localhost port, token auth, emits `streaming:ready` with port+token |
+| `logs/` | `LogStreamer`: per-container log streaming over WebSocket, 1024-item buffered channel for backpressure |
+| `exec/` | `ExecManager`: interactive shell sessions via WebSocket, resize via text JSON frames |
+| `portforward/` | `Manager`: port-forward lifecycle, emits `portforward:{ctx}:{id}` (per-forward) and `portforward:{ctx}:updated` (aggregate) events |
+| `metrics/` | Metrics collection and aggregation |
 | `services/` | Wails service layer — `AppService` owns `cluster.Manager` and `streaming.Server`; `ResourceService` owns `ResourceEngine` and `WatchManager` |
 | `plugin/` | Plugin system: wazero Wasm runtime, manifest validation, permission enforcement, enricher adapter, hot reload via fsnotify. See [PLUGIN_ARCHITECTURE.md](PLUGIN_ARCHITECTURE.md) for full spec. |
 

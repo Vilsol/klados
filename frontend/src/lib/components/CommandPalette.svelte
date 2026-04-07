@@ -82,7 +82,10 @@
         label: cmd.label,
         subtitle: cmd.pluginName,
         category: 'Plugins',
-        action: cmd.action,
+        action: () => {
+          open = false
+          cmd.action()
+        },
       })
     }
 

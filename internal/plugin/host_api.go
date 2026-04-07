@@ -220,7 +220,7 @@ func (h *hostAPI) dispatch(method string, reqBytes []byte) []byte {
 		if ctxName == "" {
 			return errorJSON("no active cluster context")
 		}
-		items, err := h.deps.ResourceEngine.List(h.ctx, ctxName, gvr, ns)
+		items, err := h.deps.ResourceEngine.ListRaw(h.ctx, ctxName, gvr, ns)
 		if err != nil {
 			return errorJSON(err.Error())
 		}

@@ -15,7 +15,7 @@ type trackingEnricher struct {
 	order *[]string
 }
 
-func (e *trackingEnricher) Enrich(obj *unstructured.Unstructured) error {
+func (e *trackingEnricher) Enrich(_ string, obj *unstructured.Unstructured) error {
 	if e.order != nil {
 		*e.order = append(*e.order, e.key)
 	}
@@ -32,7 +32,7 @@ func TestEnricherRegistry_Chaining_OrderPreserved(t *testing.T) {
 
 	obj := &unstructured.Unstructured{Object: map[string]any{"kind": "Deployment"}}
 	for _, e := range reg.GetAll("apps.v1.deployments") {
-		testza.AssertNil(t, e.Enrich(obj))
+		testza.AssertNil(t, e.Enrich("", obj))
 	}
 
 	testza.AssertEqual(t, "1", obj.Object["first"])
@@ -42,7 +42,7 @@ func TestEnricherRegistry_Chaining_OrderPreserved(t *testing.T) {
 
 type readingEnricher struct{}
 
-func (e *readingEnricher) Enrich(obj *unstructured.Unstructured) error {
+func (e *readingEnricher) Enrich(_ string, obj *unstructured.Unstructured) error {
 	if obj.Object["base"] == "set" {
 		obj.Object["derived"] = "yes"
 	}
@@ -56,7 +56,7 @@ func TestEnricherRegistry_SecondEnricherSeesFirstOutput(t *testing.T) {
 
 	obj := &unstructured.Unstructured{Object: map[string]any{}}
 	for _, e := range reg.GetAll("core.v1.pods") {
-		testza.AssertNil(t, e.Enrich(obj))
+		testza.AssertNil(t, e.Enrich("", obj))
 	}
 
 	testza.AssertEqual(t, "set", obj.Object["base"])
@@ -70,7 +70,7 @@ func TestEnricherRegistry_DifferentGVRsAreIndependent(t *testing.T) {
 
 	obj := &unstructured.Unstructured{Object: map[string]any{}}
 	for _, e := range reg.GetAll("apps.v1.deployments") {
-		_ = e.Enrich(obj)
+		_ = e.Enrich("", obj)
 	}
 	testza.AssertEqual(t, "yes", obj.Object["fromDeploy"])
 	testza.AssertNil(t, obj.Object["fromPod"])

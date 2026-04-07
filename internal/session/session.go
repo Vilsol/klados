@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"sync"
+	"github.com/sasha-s/go-deadlock"
 	"time"
 
 	"github.com/adrg/xdg"
@@ -18,7 +18,7 @@ type Session struct {
 	SidebarCollapsed  bool              `json:"sidebarCollapsed"`
 	Window            WindowState       `json:"window"`
 
-	mu       sync.Mutex
+	mu       deadlock.Mutex
 	path     string
 	debounce *time.Timer
 }

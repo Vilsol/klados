@@ -1,5 +1,8 @@
 <script lang="ts">
   import PortForwardDialog from '$lib/components/PortForwardDialog.svelte'
+  import PortButton from '$lib/components/PortButton.svelte'
+  import { SectionHeader, StatusBadge, DataTable } from '@klados/ui'
+  import { toggleSet } from '$lib/utils/collections'
 
   let { obj, ctxName = '' }: { obj: Record<string, any>; ctxName?: string } = $props()
 
@@ -28,12 +31,6 @@
   }
 
   let expandedEnv = $state<Set<string>>(new Set())
-  function toggleEnv(name: string) {
-    const next = new Set(expandedEnv)
-    if (next.has(name)) next.delete(name)
-    else next.add(name)
-    expandedEnv = next
-  }
 
   let showInitContainers = $state(false)
 </script>
@@ -41,17 +38,14 @@
 <div class="flex flex-col gap-4 p-4 overflow-auto">
   <!-- Main containers -->
   <section>
-    <h3 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Containers</h3>
+    <SectionHeader>Containers</SectionHeader>
     <div class="flex flex-col gap-3">
       {#each containers as c}
         {@const status = containerStatus(c.name)}
         <div class="bg-surface border border-border rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm font-medium">{c.name}</span>
-            <span class="text-xs px-2 py-0.5 rounded-full
-              {status?.ready ? 'bg-green-500/15 text-green-600 dark:text-green-400' : 'bg-surface-hover text-muted'}">
-              {stateLabel(status)}
-            </span>
+            <StatusBadge status={!!status?.ready} mode="pill">{stateLabel(status)}</StatusBadge>
           </div>
           <p class="text-xs font-mono text-muted truncate mb-2">{c.image}</p>
 
@@ -75,21 +69,14 @@
           {#if c.ports?.length}
             <div class="flex flex-wrap gap-1 mt-1">
               {#each c.ports as p}
-                <button
-                  onclick={() => pfPort = p.containerPort}
-                  class="text-xs font-mono bg-surface border border-border rounded px-1.5 py-0.5 hover:bg-surface-hover hover:border-accent/50 transition-colors"
-                  title="Forward port {p.containerPort}"
-                  aria-label="Forward port {p.containerPort}"
-                >
-                  {p.containerPort}/{p.protocol ?? 'TCP'} ↗
-                </button>
+                <PortButton port={p.containerPort} protocol={p.protocol ?? 'TCP'} onclick={() => pfPort = p.containerPort} />
               {/each}
             </div>
           {/if}
 
           {#if c.env?.length}
             <button
-              onclick={() => toggleEnv(c.name)}
+              onclick={() => expandedEnv = toggleSet(expandedEnv, c.name)}
               class="text-xs text-accent hover:underline mt-1"
             >
               {expandedEnv.has(c.name) ? '▾' : '▸'} {c.env.length} env var{c.env.length !== 1 ? 's' : ''}
@@ -145,27 +132,19 @@
   <!-- Pod conditions -->
   {#if conditions.length > 0}
     <section>
-      <h3 class="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Conditions</h3>
-      <table class="w-full text-xs">
-        <thead class="bg-surface">
-          <tr>
-            <th class="text-left px-2 py-1.5 font-medium text-muted">Type</th>
-            <th class="text-left px-2 py-1.5 font-medium text-muted">Status</th>
-            <th class="text-left px-2 py-1.5 font-medium text-muted">Reason</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each conditions as cond}
-            <tr class="border-t border-border">
-              <td class="px-2 py-1.5 font-mono">{cond.type}</td>
-              <td class="px-2 py-1.5">
-                <span class="{cond.status === 'True' ? 'text-green-600 dark:text-green-400' : 'text-muted'}">{cond.status}</span>
-              </td>
-              <td class="px-2 py-1.5 text-muted">{cond.reason ?? '—'}</td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+      <SectionHeader>Conditions</SectionHeader>
+      <DataTable
+        columns={[{ label: 'Type' }, { label: 'Status' }, { label: 'Reason' }]}
+        items={conditions}
+      >
+        {#snippet row(cond)}
+          <td class="px-2 py-1.5 font-mono">{cond.type}</td>
+          <td class="px-2 py-1.5">
+            <span class="{cond.status === 'True' ? 'text-green-600 dark:text-green-400' : 'text-muted'}">{cond.status}</span>
+          </td>
+          <td class="px-2 py-1.5 text-muted">{cond.reason ?? '—'}</td>
+        {/snippet}
+      </DataTable>
     </section>
   {/if}
 </div>

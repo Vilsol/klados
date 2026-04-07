@@ -18,6 +18,13 @@ export interface OverviewFieldDef {
   renderType: RenderType
 }
 
+export interface ActionDef {
+  name: string
+  label: string
+  disabledWhen?: string
+  disabledReason?: string
+}
+
 export interface DescriptorDef {
   group: string
   version: string
@@ -27,7 +34,8 @@ export interface DescriptorDef {
   columns: ColumnDef[]
   overviewFields: OverviewFieldDef[]
   detailPanels: string[]
-  actions: string[]
+  actions: ActionDef[]
+  clusterScoped?: boolean
 }
 
 class DescriptorRegistry {
@@ -48,6 +56,7 @@ class DescriptorRegistry {
           resource: d.resource ?? '',
           kind: d.kind ?? '',
           gvr,
+          clusterScoped: d.clusterScoped ?? false,
           columns: (d.columns ?? []).map((c: any) => ({
             name: c.name ?? '',
             expr: c.expr ?? '',
@@ -60,7 +69,12 @@ class DescriptorRegistry {
             renderType: (f.renderType ?? 'text') as RenderType,
           })),
           detailPanels: d.detailPanels ?? [],
-          actions: d.actions ?? [],
+          actions: (d.actions ?? []).map((a: any) => ({
+            name: a.name ?? '',
+            label: a.label ?? '',
+            disabledWhen: a.disabledWhen ?? undefined,
+            disabledReason: a.disabledReason ?? undefined,
+          })),
         })
       }
       this.descriptors = new Map(this.builtins)
@@ -101,8 +115,15 @@ class DescriptorRegistry {
           }))
           const panelSet = new Set(existing.detailPanels)
           for (const p of d.detailPanels ?? []) panelSet.add(p)
-          const actionSet = new Set(existing.actions)
-          for (const a of d.actions ?? []) actionSet.add(a)
+          const actionNameSet = new Set(existing.actions.map((a) => a.name))
+          const mergedActions: ActionDef[] = [...existing.actions]
+          for (const a of d.actions ?? []) {
+            const mapped: ActionDef = { name: a.name ?? '', label: a.label ?? '' }
+            if (!actionNameSet.has(mapped.name)) {
+              mergedActions.push(mapped)
+              actionNameSet.add(mapped.name)
+            }
+          }
           // Create a new object — never mutate builtins references.
           // Plugin columns replace built-in columns; panels/actions are additive.
           this.descriptors.set(gvr, {
@@ -110,7 +131,7 @@ class DescriptorRegistry {
             columns: pluginColumns.length > 0 ? pluginColumns : existing.columns,
             overviewFields: [...existing.overviewFields, ...addedOverview],
             detailPanels: [...panelSet],
-            actions: [...actionSet],
+            actions: mergedActions,
           })
         } else {
           this.descriptors.set(gvr, {
@@ -131,7 +152,12 @@ class DescriptorRegistry {
               renderType: (f.renderType ?? 'text') as RenderType,
             })),
             detailPanels: d.detailPanels ?? [],
-            actions: d.actions ?? [],
+            actions: (d.actions ?? []).map((a: any) => ({
+              name: a.name ?? '',
+              label: a.label ?? '',
+              disabledWhen: a.disabledWhen ?? undefined,
+              disabledReason: a.disabledReason ?? undefined,
+            })),
           })
         }
       }
@@ -165,7 +191,7 @@ class DescriptorRegistry {
         { label: 'Age', expr: 'metadata.creationTimestamp', renderType: 'age' },
       ],
       detailPanels: ['overview', 'yaml'],
-      actions: ['delete'],
+      actions: [{ name: 'delete', label: 'Delete' }],
     }
   }
 

@@ -78,7 +78,7 @@ describe('SlotRegistry', () => {
   })
 
   it('registerCommand adds to commands list', () => {
-    slotRegistry.registerCommand({ pluginName: 'p', id: 'cmd', label: 'Do Thing', action: vi.fn() })
+    slotRegistry.registerCommand({ pluginName: 'p', id: 'cmd', label: 'Do Thing', perms: {}, action: vi.fn() })
     expect(slotRegistry.getCommands()).toHaveLength(1)
   })
 })
