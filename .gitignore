@@ -6,3 +6,34 @@ build/linux/appimage/build
 build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
 node_modules
 *.oci.tar.gz
+*.oci.tar
+
+# direnv generated
+.direnv/
+
+# Claude Code settings (machine-specific)
+.claude/settings.json
+
+# Wolf runtime/session state
+.wolf/cron-state.json
+.wolf/token-ledger.json
+.wolf/designqc-report.json
+.wolf/suggestions.json
+.wolf/memory.md
+.wolf/hooks/_session.json
+.wolf/cerebrum.md
+
+# SvelteKit / package build outputs
+packages/ui/.svelte-kit/
+packages/ui/package/
+
+# Example plugin build artifacts
+examples/hello-plugin/ui/*.js
+examples/hello-plugin/ui/*.js.map
+examples/plugin-node-annotator/ui/*.js
+examples/plugin-node-annotator/ui/*.js.map
+examples/plugin-node-annotator/dist/
+
+# Debug/scratch files
+frontend/scroll-debug.log
+terminal.md

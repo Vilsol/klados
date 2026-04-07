@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T06:09:59.470Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T06:18:05.792Z
 > Files: 496 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../tmp/crd_group_poc/
@@ -68,7 +68,7 @@
 
 ## ./
 
-- `.gitignore` — Git ignore rules (~33 tok)
+- `.gitignore` — Git ignore rules (~214 tok)
 - `ARCHITECTURE.md` — Klados — Architecture (~6361 tok)
 - `CLAUDE.md` — OpenWolf (~1801 tok)
 - `code_editor.md` — Advanced JavaScript Code Editor Integration in OS WebView Desktop Applications (~9373 tok)
