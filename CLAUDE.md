@@ -132,6 +132,10 @@ All callbacks receive `WailsEvent { name, data }` — always unwrap with `wailsE
 
 `clusterStore.selectedNamespaces: string[]` — empty means all namespaces. `ResourceListPage` passes `watchNamespace = selectedNamespaces.length === 1 ? selectedNamespaces[0] : ''` to the watch (empty = all). Multi-select filters client-side in `ResourceList`.
 
+## VCS
+
+This repo uses Jujutsu (`jj`). At the end of every unit of work (bugfix, feature, small change, etc.), create a new logical `jj` commit via the `jj-vcs` skill. Never leave work uncommitted.
+
 ## Conventions
 
 - **Svelte 5 runes** (`$state`, `$derived`, `$effect`, `$props`) — class-based stores exported as singletons. Never use `.svelte.ts` extension for non-reactive files (the Vite Svelte plugin treats any `.svelte.*` import as a component).

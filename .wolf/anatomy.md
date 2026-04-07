@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T14:32:54.705Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T14:43:08.268Z
 > Files: 496 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../../tmp/crd_group_poc/
@@ -70,7 +70,7 @@
 
 - `.gitignore` — Git ignore rules (~214 tok)
 - `ARCHITECTURE.md` — Klados — Architecture (~6361 tok)
-- `CLAUDE.md` — OpenWolf (~1801 tok)
+- `CLAUDE.md` — OpenWolf (~1850 tok)
 - `code_editor.md` — Advanced JavaScript Code Editor Integration in OS WebView Desktop Applications (~9373 tok)
 - `component_libs.md` — Advanced Headless Component Architecture in Svelte 5: Integrating WAI-ARIA Primitives with Tailwind CSS v4 (~11452 tok)
 - `FEATURES.md` — Klados — Feature Plan (~4332 tok)
