@@ -105,9 +105,10 @@ func TestNamespaceColumnOnAllNamespacedDescriptors(t *testing.T) {
 			continue
 		}
 		found := false
-		for _, col := range d.Columns {
+		for i, col := range d.Columns {
 			if col.Name == "Namespace" {
-				testza.AssertTrue(t, col.Hidden, "Namespace column on %s must be Hidden", d.GVR())
+				testza.AssertFalse(t, col.Hidden, "Namespace column on %s must not be Hidden", d.GVR())
+				testza.AssertEqual(t, 1, i, "Namespace column on %s must be second (index 1)", d.GVR())
 				found = true
 				break
 			}

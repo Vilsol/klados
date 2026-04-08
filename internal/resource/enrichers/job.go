@@ -34,6 +34,26 @@ func (e *JobEnricher) Enrich(_ string, obj *unstructured.Unstructured) error {
 	}
 
 	_ = unstructured.SetNestedField(obj.Object, durationDisplay, "status", "durationDisplay")
+
+	conditions, _, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
+	statusDisplay := "Running"
+	for _, c := range conditions {
+		cMap, ok := c.(map[string]any)
+		if !ok {
+			continue
+		}
+		if s, _ := cMap["status"].(string); s != "True" {
+			continue
+		}
+		if t, _ := cMap["type"].(string); t == "Complete" {
+			statusDisplay = "Complete"
+			break
+		} else if t == "Failed" {
+			statusDisplay = "Failed"
+		}
+	}
+	_ = unstructured.SetNestedField(obj.Object, statusDisplay, "status", "statusDisplay")
+
 	return nil
 }
 

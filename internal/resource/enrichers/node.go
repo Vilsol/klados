@@ -77,5 +77,25 @@ func (e *NodeEnricher) Enrich(contextName string, obj *unstructured.Unstructured
 		_ = unstructured.SetNestedField(obj.Object, "Draining", "status", "drainPhase")
 	}
 
+	addresses, _, _ := unstructured.NestedSlice(obj.Object, "status", "addresses")
+	for _, a := range addresses {
+		aMap, ok := a.(map[string]any)
+		if !ok {
+			continue
+		}
+		if t, _ := aMap["type"].(string); t == "InternalIP" {
+			if ip, _ := aMap["address"].(string); ip != "" {
+				_ = unstructured.SetNestedField(obj.Object, ip, "status", "internalIPDisplay")
+				break
+			}
+		}
+	}
+
+	os, _, _ := unstructured.NestedString(obj.Object, "status", "nodeInfo", "operatingSystem")
+	arch, _, _ := unstructured.NestedString(obj.Object, "status", "nodeInfo", "architecture")
+	if os != "" || arch != "" {
+		_ = unstructured.SetNestedField(obj.Object, os+"/"+arch, "status", "osArchDisplay")
+	}
+
 	return nil
 }

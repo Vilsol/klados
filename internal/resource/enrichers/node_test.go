@@ -62,6 +62,48 @@ func TestNodeEnricher_DrainPhase_NilDrainService(t *testing.T) {
 	testza.AssertNoError(t, e.Enrich("ctx", obj))
 }
 
+func TestNodeEnricher_InternalIPDisplay(t *testing.T) {
+	e := &enrichers.NodeEnricher{}
+
+	obj := &unstructured.Unstructured{Object: map[string]any{
+		"metadata": map[string]any{"name": "node1"},
+		"status": map[string]any{
+			"conditions": []any{},
+			"addresses": []any{
+				map[string]any{"type": "Hostname", "address": "node1"},
+				map[string]any{"type": "InternalIP", "address": "10.0.0.1"},
+			},
+		},
+		"spec": map[string]any{},
+	}}
+
+	testza.AssertNoError(t, e.Enrich("ctx", obj))
+
+	ip, _, _ := unstructured.NestedString(obj.Object, "status", "internalIPDisplay")
+	testza.AssertEqual(t, "10.0.0.1", ip)
+}
+
+func TestNodeEnricher_OsArchDisplay(t *testing.T) {
+	e := &enrichers.NodeEnricher{}
+
+	obj := &unstructured.Unstructured{Object: map[string]any{
+		"metadata": map[string]any{"name": "node1"},
+		"status": map[string]any{
+			"conditions": []any{},
+			"nodeInfo": map[string]any{
+				"operatingSystem": "linux",
+				"architecture":    "amd64",
+			},
+		},
+		"spec": map[string]any{},
+	}}
+
+	testza.AssertNoError(t, e.Enrich("ctx", obj))
+
+	display, _, _ := unstructured.NestedString(obj.Object, "status", "osArchDisplay")
+	testza.AssertEqual(t, "linux/amd64", display)
+}
+
 func TestNodeEnricher_DrainPhase_ContextIsolation(t *testing.T) {
 	svc := &mockDrainService{active: map[string]bool{"ctx1:node1": true}}
 	e := &enrichers.NodeEnricher{DrainService: svc}
