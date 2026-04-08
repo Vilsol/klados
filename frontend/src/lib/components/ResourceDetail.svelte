@@ -32,6 +32,10 @@
   import CRDPanel from './panels/CRDPanel.svelte'
   import CRDSchemaPanel from './panels/CRDSchemaPanel.svelte'
   import PlaceholderPanel from './panels/PlaceholderPanel.svelte'
+  import ResourceQuotaPanel from './panels/ResourceQuotaPanel.svelte'
+  import LimitRangePanel from './panels/LimitRangePanel.svelte'
+  import PDBPanel from './panels/PDBPanel.svelte'
+  import EndpointSlicePanel from './panels/EndpointSlicePanel.svelte'
   import ActionsToolbar from './panels/ActionsToolbar.svelte'
   import MetricsTab from './charts/MetricsTab.svelte'
   import { YAMLEditor } from '@klados/ui'
@@ -62,11 +66,11 @@
     ['crd-schema', CRDSchemaPanel as PanelComponent],
     ['metrics', MetricsTab as PanelComponent],
     ['netpol', PlaceholderPanel as PanelComponent],
-    ['endpointslice', PlaceholderPanel as PanelComponent],
-    ['resourcequota', PlaceholderPanel as PanelComponent],
-    ['limitrange', PlaceholderPanel as PanelComponent],
+    ['endpointslice', EndpointSlicePanel as PanelComponent],
+    ['resourcequota', ResourceQuotaPanel as PanelComponent],
+    ['limitrange', LimitRangePanel as PanelComponent],
     ['hpa', PlaceholderPanel as PanelComponent],
-    ['pdb', PlaceholderPanel as PanelComponent],
+    ['pdb', PDBPanel as PanelComponent],
     ['webhooks', PlaceholderPanel as PanelComponent],
   ])
 
@@ -299,6 +303,14 @@
           </div>
         {:else if panel === 'metrics'}
           <PanelCmp {obj} {ctxName} {gvr} {namespace} {name} />
+        {:else if panel === 'resourcequota' || panel === 'limitrange' || panel === 'pdb'}
+          <div class="overflow-auto h-full">
+            <PanelCmp {obj} />
+          </div>
+        {:else if panel === 'endpointslice'}
+          <div class="overflow-auto h-full">
+            <PanelCmp {obj} {ctxName} />
+          </div>
         {/if}
       {/if}
     {/each}
