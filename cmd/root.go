@@ -35,7 +35,7 @@ func Execute(assets embed.FS) {
 
 			appSvc := services.NewAppService(cfg, sess, ctx)
 			clusterSvc := services.NewClusterService(appSvc, sess)
-			configSvc := services.NewConfigService(cfg)
+			configSvc := services.NewConfigService(ctx, cfg)
 			drainSvc := services.NewDrainService(appSvc)
 			resourceSvc := services.NewResourceService(appSvc, drainSvc)
 			schemaSvc := services.NewSchemaService(appSvc)

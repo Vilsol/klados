@@ -1,17 +1,20 @@
 package services
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Vilsol/klados/internal/config"
+	"github.com/Vilsol/slox"
 )
 
 type ConfigService struct {
+	ctx    context.Context
 	config *config.Config
 }
 
-func NewConfigService(cfg *config.Config) *ConfigService {
-	return &ConfigService{config: cfg}
+func NewConfigService(ctx context.Context, cfg *config.Config) *ConfigService {
+	return &ConfigService{ctx: ctx, config: cfg}
 }
 
 func (c *ConfigService) GetTheme() string {
@@ -54,15 +57,27 @@ func (c *ConfigService) GetColumnPrefs(gvr string) *config.GVRColumnPrefs {
 	if c.config.ColumnPrefs == nil {
 		return nil
 	}
-	return c.config.ColumnPrefs[gvr]
+	prefs := c.config.ColumnPrefs[gvr]
+	if prefs != nil {
+		slox.Info(c.ctx, "loaded column prefs", "gvr", gvr, "order", prefs.Order)
+	}
+	return prefs
 }
 
 func (c *ConfigService) SetColumnPrefs(gvr string, prefs *config.GVRColumnPrefs) error {
+	slox.Info(c.ctx, "saving column prefs", "gvr", gvr, "order", prefs.Order)
 	return c.config.Update(func(cfg *config.Config) {
 		if cfg.ColumnPrefs == nil {
 			cfg.ColumnPrefs = make(map[string]*config.GVRColumnPrefs)
 		}
 		cfg.ColumnPrefs[gvr] = prefs
+	})
+}
+
+func (c *ConfigService) DeleteColumnPrefs(gvr string) error {
+	slox.Info(c.ctx, "deleting column prefs", "gvr", gvr)
+	return c.config.Update(func(cfg *config.Config) {
+		delete(cfg.ColumnPrefs, gvr)
 	})
 }
 

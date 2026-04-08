@@ -11,6 +11,7 @@ const { mockGetColumnPrefs, mockSetColumnPrefs, mockGetCompactRows, mockGetDescr
 vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js', () => ({
   GetColumnPrefs: mockGetColumnPrefs,
   SetColumnPrefs: mockSetColumnPrefs,
+  DeleteColumnPrefs: vi.fn(),
   GetCompactRows: mockGetCompactRows,
   SetCompactRows: vi.fn(),
 }))
@@ -140,7 +141,7 @@ describe('columnStore', () => {
 
     columnStore.reset()
 
-    expect(mockSetColumnPrefs).toHaveBeenCalledWith('core.v1.pods', null)
+    expect(mockSetColumnPrefs).not.toHaveBeenCalledWith('core.v1.pods', null)
     expect(columnStore.visibleColumns.map((c) => c.name)).toEqual(['Name', 'Status', 'Age'])
   })
 

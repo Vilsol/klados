@@ -79,7 +79,7 @@ class ColumnStore {
     } else {
       this.visibleColumns = this.visibleColumns.filter((c) => c.name !== name)
     }
-    this.#debouncedSave()
+    this.#save()
   }
 
   moveColumn(name: string, direction: 'up' | 'down'): void {
@@ -92,7 +92,7 @@ class ColumnStore {
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1
     ;[next[idx], next[swapIdx]] = [next[swapIdx], next[idx]]
     this.visibleColumns = next
-    this.#debouncedSave()
+    this.#save()
   }
 
   resizeColumn(name: string, width: number): void {
@@ -116,7 +116,7 @@ class ColumnStore {
 
   setSort(column: string, direction: 'asc' | 'desc'): void {
     this.sortState = { column, direction }
-    this.#debouncedSave()
+    this.#save()
   }
 
   reset(): void {
@@ -124,7 +124,7 @@ class ColumnStore {
       clearTimeout(this.#saveTimer)
       this.#saveTimer = null
     }
-    ConfigService.SetColumnPrefs(this.#gvr, null)
+    ConfigService.DeleteColumnPrefs(this.#gvr)
     this.#applyPrefs(null)
   }
 
@@ -133,22 +133,33 @@ class ColumnStore {
     await ConfigService.SetCompactRows(value)
   }
 
+  #buildPrefs(): GVRColumnPrefs {
+    return new GVRColumnPrefs({
+      order: this.visibleColumns.map((c) => c.name),
+      columns: Object.fromEntries(
+        this.allColumns
+          .filter(({ col }) => col.width !== undefined)
+          .map(({ col }) => [col.name, new ColumnSettings({ width: col.width })]),
+      ),
+      sort: this.sortState
+        ? new SortPrefs({ column: this.sortState.column, direction: this.sortState.direction })
+        : null,
+    })
+  }
+
+  #save(): void {
+    if (this.#saveTimer !== null) {
+      clearTimeout(this.#saveTimer)
+      this.#saveTimer = null
+    }
+    ConfigService.SetColumnPrefs(this.#gvr, this.#buildPrefs())
+  }
+
   #debouncedSave(): void {
     if (this.#saveTimer !== null) clearTimeout(this.#saveTimer)
     this.#saveTimer = setTimeout(() => {
       this.#saveTimer = null
-      const prefs = new GVRColumnPrefs({
-        order: this.visibleColumns.map((c) => c.name),
-        columns: Object.fromEntries(
-          this.allColumns
-            .filter(({ col }) => col.width !== undefined)
-            .map(({ col }) => [col.name, new ColumnSettings({ width: col.width })]),
-        ),
-        sort: this.sortState
-          ? new SortPrefs({ column: this.sortState.column, direction: this.sortState.direction })
-          : null,
-      })
-      ConfigService.SetColumnPrefs(this.#gvr, prefs)
+      ConfigService.SetColumnPrefs(this.#gvr, this.#buildPrefs())
     }, 300)
   }
 }

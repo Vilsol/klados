@@ -14,6 +14,7 @@
   import type { MetricResult } from './charts/types'
   import { columnStore } from '$lib/stores/columns.svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
+  import ColumnMenu from './ColumnMenu.svelte'
 
   let now = $state(Date.now())
   onMount(() => {
@@ -59,15 +60,6 @@
   let ctxMenu = $state<{ x: number; y: number; item: Record<string, any> } | null>(null)
   let columnMenuOpen = $state(false)
   let resizing = $state<{ name: string; startX: number; startWidth: number } | null>(null)
-
-  const hasSparklines = $derived(sparklineGvrs.includes(gvr))
-  const availableSparklineCols = ['CPU', 'Memory']
-
-  function toggleSparklineCol(col: string) {
-    const current = sparklineColumns
-    const next = current.includes(col) ? current.filter(c => c !== col) : [...current, col]
-    onSparklineToggle?.(next)
-  }
 
   function getSparklinePoints(itemName: string, metricName: string): { t: number; v: number }[] {
     const metrics = sparklineData[itemName]
@@ -139,14 +131,15 @@
 
   const rowHeight = $derived(columnStore.compact ? 28 : 36)
 
-  const virtualizer = $derived(
-    createVirtualizer({
+  const virtualizer = $derived.by(() => {
+    const rh = rowHeight
+    return createVirtualizer({
       count: filtered.length,
       getScrollElement: () => scrollContainer ?? null,
-      estimateSize: () => rowHeight,
+      estimateSize: () => rh,
       overscan: 10,
-    }),
-  )
+    })
+  })
 
   function toggleSort(name: string) {
     const current = columnStore.sortState
@@ -251,36 +244,19 @@
       class="flex-1 text-sm bg-transparent outline-none placeholder-muted"
     />
     <span class="text-xs text-muted">{filtered.length} items</span>
-    {#if hasSparklines}
-      <div class="relative">
-        <button
-          onclick={() => columnMenuOpen = !columnMenuOpen}
-          class="p-1 rounded hover:bg-surface-hover transition-colors"
-          title="Toggle sparkline columns"
-          aria-label="Toggle columns"
-        >
-          <Columns3 size={14} />
-        </button>
-        {#if columnMenuOpen}
-          <!-- svelte-ignore a11y_no_static_element_interactions -->
-          <div class="absolute right-0 top-full mt-1 z-50 bg-surface border border-border rounded shadow-lg py-1 min-w-40"
-            onclick={(e) => e.stopPropagation()}
-            onkeydown={(e) => e.stopPropagation()}>
-            {#each availableSparklineCols as col}
-              <label class="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-hover cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={sparklineColumns.includes(col)}
-                  onchange={() => toggleSparklineCol(col)}
-                  class="rounded border-border"
-                />
-                {col} Sparkline
-              </label>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    {/if}
+    <div class="relative">
+      <button
+        onclick={() => columnMenuOpen = !columnMenuOpen}
+        class="p-1 rounded hover:bg-surface-hover transition-colors"
+        title="Manage columns"
+        aria-label="Manage columns"
+      >
+        <Columns3 size={14} />
+      </button>
+      {#if columnMenuOpen}
+        <ColumnMenu {gvr} {sparklineGvrs} {sparklineColumns} {onSparklineToggle} />
+      {/if}
+    </div>
     {#if onrefresh}
       <button
         onclick={onrefresh}
@@ -303,7 +279,7 @@
         <div class="relative">
           <button
             onclick={() => toggleSort(col.name)}
-            class="flex items-center gap-1 py-2 px-1 hover:text-fg transition-colors text-left w-full
+            class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {columnStore.compact ? 'py-1' : 'py-2'}
               {i === 0 ? 'sticky left-0 z-10 bg-bg shadow-[2px_0_4px_rgba(0,0,0,0.08)] dark:shadow-[2px_0_4px_rgba(0,0,0,0.3)]' : ''}"
           >
             {col.name}
@@ -316,7 +292,7 @@
           {#if i < columnStore.visibleColumns.length - 1}
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
-              class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-accent/50 z-20"
+              class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-border/50 hover:bg-accent/70 z-20"
               onmousedown={(e) => startResize(e, col)}
               ondblclick={() => autoFit(col.name)}
             ></div>

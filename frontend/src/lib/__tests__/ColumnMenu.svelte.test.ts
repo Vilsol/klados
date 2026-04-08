@@ -9,6 +9,7 @@ const { mockGetColumnPrefs, mockGetCompactRows } = vi.hoisted(() => ({
 vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js', () => ({
   GetColumnPrefs: mockGetColumnPrefs,
   SetColumnPrefs: vi.fn(),
+  DeleteColumnPrefs: vi.fn(),
   GetCompactRows: mockGetCompactRows,
   SetCompactRows: vi.fn(),
 }))

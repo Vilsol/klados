@@ -44,7 +44,7 @@
     >Reset</button>
   </div>
 
-  {#each visibleEntries as entry, i}
+  {#each visibleEntries as entry, i (entry.col.name)}
     <div class="flex items-center gap-1 px-2 py-1 hover:bg-surface-hover">
       <input
         type="checkbox"
@@ -75,7 +75,7 @@
     </div>
   {/each}
 
-  {#each hiddenEntries as entry}
+  {#each hiddenEntries as entry (entry.col.name)}
     <div class="flex items-center gap-1 px-2 py-1 hover:bg-surface-hover">
       <input
         type="checkbox"

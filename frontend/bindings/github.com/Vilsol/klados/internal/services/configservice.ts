@@ -9,6 +9,10 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 // @ts-ignore: Unused imports
 import * as config$0 from "../config/models.js";
 
+export function DeleteColumnPrefs(gvr: string): $CancellablePromise<void> {
+    return $Call.ByID(4114770319, gvr);
+}
+
 export function GetColumnPrefs(gvr: string): $CancellablePromise<config$0.GVRColumnPrefs | null> {
     return $Call.ByID(2172831658, gvr).then(($result: any) => {
         return $$createType1($result);
