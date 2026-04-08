@@ -22,6 +22,9 @@ node_modules
 .wolf/memory.md
 .wolf/hooks/_session.json
 .wolf/cerebrum.md
+.wolf/buglog.json
+.wolf/daemon.log
+.wolf/anatomy.md
 
 # SvelteKit / package build outputs
 packages/ui/.svelte-kit/

@@ -3256,6 +3256,42 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-08T02:12:37.100Z"
+    },
+    {
+      "id": "bug-204",
+      "timestamp": "2026-04-08T05:20:00.000Z",
+      "error_message": "TypeError: Cannot read properties of undefined (reading 'querySelector') in MetricsChart $effect",
+      "file": "frontend/src/lib/components/charts/MetricsChart.svelte",
+      "root_cause": "uPlot does not fully initialize chart.root in jsdom test environment; chart.root is undefined",
+      "fix": "Changed chart.root.querySelector to chart.root?.querySelector (optional chaining)",
+      "tags": ["test", "uplot", "jsdom", "optional-chaining"],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T05:20:00.000Z"
+    },
+    {
+      "id": "bug-205",
+      "timestamp": "2026-04-08T05:20:00.000Z",
+      "error_message": "Type '{}' is missing the following properties from type 'PermsSummary': resources, logs, exec, storage, and 2 more",
+      "file": "frontend/src/lib/__tests__/slots.svelte.test.ts",
+      "root_cause": "perms: {} doesn't structurally satisfy the PermsSummary class type",
+      "fix": "Added PermsSummary type import and cast: perms: {} as PermsSummary",
+      "tags": ["test", "typescript", "type-cast"],
+      "related_bugs": ["bug-203"],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T05:20:00.000Z"
+    },
+    {
+      "id": "bug-206",
+      "timestamp": "2026-04-08T05:20:00.000Z",
+      "error_message": "Duplicate identifier 'PluginService' in generated bindings/services/index.js",
+      "file": "frontend/bindings/github.com/Vilsol/klados/internal/services/index.js",
+      "root_cause": "AppService.SetPluginService, AppService.PluginService, and MetricsService.SetPluginService are exported Wails service methods that take/return *PluginService, causing Wails to generate a PluginService model class that conflicts with the PluginService service namespace in the generated index",
+      "fix": "Added //wails:ignore directive to SetPluginService and PluginService() methods in app.go and metrics.go",
+      "tags": ["wails", "bindings", "generation", "duplicate-identifier"],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T05:20:00.000Z"
     }
   ]
 }
