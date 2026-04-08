@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T02:21:41.491Z
-> Files: 280 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T02:25:38.981Z
+> Files: 281 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../.claude/plans/
 
@@ -117,6 +117,7 @@
 ## frontend/src/lib/__tests__/
 
 - `columns.svelte.test.ts` — Declares podDescriptor (~1492 tok)
+- `ResourceList.svelte.test.ts` — textCol: visibleColumns, sortState, compact (~1338 tok)
 - `slots.svelte.test.ts` — Declares tabs (~1037 tok)
 
 ## frontend/src/lib/components/
@@ -131,7 +132,7 @@
 - `PortButton.svelte` — Svelte: PortButton, TS, 1 stores (~116 tok)
 - `PortForwardDialog.svelte` — Svelte: PortForwardDialog, TS, 15 stores (~2320 tok)
 - `ResourceDetail.svelte` — Svelte: ResourceDetail, TS, 17 stores (~2943 tok)
-- `ResourceList.svelte` — Svelte: ResourceList, TS, 29 stores (~4014 tok)
+- `ResourceList.svelte` — Svelte: ResourceList (~4771 tok)
 - `Sidebar.svelte` — Svelte: Sidebar, TS, 18 stores (~3819 tok)
 
 ## frontend/src/lib/components/charts/
@@ -208,7 +209,7 @@
 - `EventStreamPage.svelte` — Svelte: EventStreamPage, TS, 13 stores (~1408 tok)
 - `PluginManagement.svelte` — Svelte: PluginManagement, TS, 15 stores (~3767 tok)
 - `ResourceDetailPage.svelte` — Svelte: ResourceDetailPage, TS, 16 stores (~720 tok)
-- `ResourceListPage.svelte` — Svelte: ResourceListPage, TS, 29 stores (~1809 tok)
+- `ResourceListPage.svelte` — Svelte: ResourceListPage (~1844 tok)
 - `routes.ts` — Exports routes (~178 tok)
 
 ## internal/cluster/

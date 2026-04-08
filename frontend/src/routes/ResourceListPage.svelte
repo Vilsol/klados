@@ -12,6 +12,7 @@
   import { registryLoaded } from '$lib/registry/loaded.svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
   import { sessionStore } from '$lib/stores/session.svelte'
+  import { columnStore } from '$lib/stores/columns.svelte'
   import { Plus } from 'lucide-svelte'
   import type { MetricResult } from '$lib/components/charts/types'
 
@@ -26,6 +27,9 @@
 
   // Keep activeContext in sync with the current tab's context for the header
   $effect(() => { if (ctxName) clusterStore.setActiveContext(ctxName) })
+
+  // Initialize column store whenever GVR changes
+  $effect(() => { if (gvr) columnStore.loadForGVR(gvr) })
 
   let listScrollContainer = $state<HTMLDivElement | undefined>()
 
@@ -143,7 +147,6 @@
     {#if descriptor}
       <ResourceList
         items={store.items}
-        columns={descriptor.columns}
         contextName={ctxName}
         {gvr}
         {selectedNamespaces}

@@ -1,0 +1,155 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render } from '@testing-library/svelte'
+import type { ColumnDef } from '$lib/registry/index'
+
+const {
+  mockSetNamespaces, mockSetSort, mockResizeColumn, mockAutoFitColumn,
+  mockVisibleColumns, mockSortState, mockCompact,
+} = vi.hoisted(() => ({
+  mockSetNamespaces: vi.fn(),
+  mockSetSort: vi.fn(),
+  mockResizeColumn: vi.fn(),
+  mockAutoFitColumn: vi.fn(),
+  mockVisibleColumns: { value: [] as ColumnDef[] },
+  mockSortState: { value: null as { column: string; direction: 'asc' | 'desc' } | null },
+  mockCompact: { value: false },
+}))
+
+vi.mock('$lib/stores/columns.svelte', () => ({
+  columnStore: {
+    get visibleColumns() { return mockVisibleColumns.value },
+    get sortState() { return mockSortState.value },
+    get compact() { return mockCompact.value },
+    setSort: mockSetSort,
+    resizeColumn: mockResizeColumn,
+    autoFitColumn: mockAutoFitColumn,
+  },
+}))
+
+vi.mock('$lib/stores/cluster.svelte', () => ({
+  clusterStore: {
+    setNamespaces: mockSetNamespaces,
+  },
+}))
+
+vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js', () => ({
+  DeleteResource: vi.fn(),
+  ListResources: vi.fn().mockResolvedValue([]),
+}))
+
+vi.mock('$lib/plugins/slots.svelte.js', () => ({
+  slotRegistry: {
+    getListColumns: vi.fn().mockReturnValue([]),
+    getContextMenuItems: vi.fn().mockReturnValue([]),
+  },
+}))
+
+vi.mock('$lib/stores/streaming.svelte.js', () => ({
+  streamingStore: { config: null },
+}))
+
+vi.mock('$lib/plugins/loader.js', () => ({
+  loadPluginComponent: vi.fn().mockResolvedValue(null),
+}))
+
+vi.mock('./charts/Sparkline.svelte', () => ({ default: vi.fn() }))
+
+vi.mock('@klados/ui', () => ({
+  ConfirmDialog: vi.fn(),
+}))
+
+// Mock virtualizer to return all items (jsdom has no scroll/layout)
+vi.mock('@tanstack/svelte-virtual', () => ({
+  createVirtualizer: ({ count }: { count: number }) => ({
+    subscribe: (fn: (v: any) => void) => {
+      fn({
+        getTotalSize: () => count * 36,
+        getVirtualItems: () =>
+          Array.from({ length: count }, (_, i) => ({ index: i, start: i * 36, size: 36 })),
+      })
+      return () => {}
+    },
+  }),
+}))
+
+import ResourceList from '$lib/components/ResourceList.svelte'
+
+const textCol: ColumnDef = { name: 'Name', expr: 'metadata.name', renderType: 'text' }
+const ageCol: ColumnDef = { name: 'Age', expr: 'metadata.creationTimestamp', renderType: 'age' }
+const nsCol: ColumnDef = { name: 'Namespace', expr: 'metadata.namespace', renderType: 'text' }
+
+const testItem = {
+  metadata: { name: 'my-pod', namespace: 'default', creationTimestamp: '2024-01-01T00:00:00Z' },
+  spec: {},
+  status: {},
+}
+
+describe('ResourceList', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockVisibleColumns.value = [textCol, ageCol]
+    mockSortState.value = null
+    mockCompact.value = false
+  })
+
+  it('sticky first column has correct classes', () => {
+    const { container } = render(ResourceList, {
+      props: {
+        items: [],
+        contextName: 'test-ctx',
+        gvr: 'core.v1.pods',
+      },
+    })
+
+    // First header cell button should have sticky classes
+    const headerButtons = container.querySelectorAll('.grid button')
+    const first = headerButtons[0] as HTMLElement
+    expect(first.className).toContain('sticky')
+    expect(first.className).toContain('left-0')
+
+    // Second header button should NOT have sticky
+    const second = headerButtons[1] as HTMLElement
+    expect(second.className).not.toContain('sticky')
+  })
+
+  it('cell alignment matches render type', () => {
+    mockVisibleColumns.value = [textCol, ageCol]
+
+    const { container } = render(ResourceList, {
+      props: {
+        items: [testItem],
+        contextName: 'test-ctx',
+        gvr: 'core.v1.pods',
+      },
+    })
+
+    const bodyCells = container.querySelectorAll('[data-col]')
+    const nameCell = Array.from(bodyCells).find(
+      (el) => el.getAttribute('data-col') === 'Name'
+    ) as HTMLElement
+    const ageCell = Array.from(bodyCells).find(
+      (el) => el.getAttribute('data-col') === 'Age'
+    ) as HTMLElement
+
+    expect(nameCell?.className).toContain('text-left')
+    expect(ageCell?.className).toContain('text-right')
+  })
+
+  it('cell has title attribute', () => {
+    mockVisibleColumns.value = [textCol, ageCol]
+
+    const { container } = render(ResourceList, {
+      props: {
+        items: [testItem],
+        contextName: 'test-ctx',
+        gvr: 'core.v1.pods',
+      },
+    })
+
+    const spans = container.querySelectorAll('[data-col] span')
+    expect(spans.length).toBeGreaterThan(0)
+    for (const span of spans) {
+      expect(span.hasAttribute('title')).toBe(true)
+    }
+  })
+})

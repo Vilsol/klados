@@ -3,7 +3,7 @@
   import { ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw, Columns3 } from 'lucide-svelte'
   import { ConfirmDialog } from '@klados/ui'
   import { notificationStore } from '$lib/stores/notification.svelte'
-  import { evalExpr, type ColumnDef, type RenderType } from '$lib/registry/index'
+  import { evalExpr, defaultAlign, type ColumnDef, type RenderType } from '$lib/registry/index'
   import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
   import { formatAge } from '$lib/utils/age'
   import { onMount } from 'svelte'
@@ -12,6 +12,8 @@
   import { streamingStore } from '$lib/stores/streaming.svelte.js'
   import Sparkline from './charts/Sparkline.svelte'
   import type { MetricResult } from './charts/types'
+  import { columnStore } from '$lib/stores/columns.svelte'
+  import { clusterStore } from '$lib/stores/cluster.svelte'
 
   let now = $state(Date.now())
   onMount(() => {
@@ -21,7 +23,6 @@
 
   let {
     items,
-    columns,
     contextName,
     gvr,
     selectedNamespaces = [],
@@ -37,7 +38,6 @@
     onSparklineToggle,
   }: {
     items: Record<string, any>[]
-    columns: ColumnDef[]
     contextName: string
     gvr: string
     selectedNamespaces?: string[]
@@ -54,12 +54,11 @@
   } = $props()
 
   let filterText = $state('')
-  let sortCol = $state<number>(-1)
-  let sortDir = $state<'asc' | 'desc'>('asc')
   let deleteTarget = $state<{ namespace: string; name: string } | null>(null)
   let confirmOpen = $state(false)
   let ctxMenu = $state<{ x: number; y: number; item: Record<string, any> } | null>(null)
   let columnMenuOpen = $state(false)
+  let resizing = $state<{ name: string; startX: number; startWidth: number } | null>(null)
 
   const hasSparklines = $derived(sparklineGvrs.includes(gvr))
   const availableSparklineCols = ['CPU', 'Memory']
@@ -96,7 +95,6 @@
   $effect(() => {
     if (!columnMenuOpen) return
     const close = () => { columnMenuOpen = false }
-    // Delay to avoid immediate close from the toggle click
     const timer = setTimeout(() => window.addEventListener('click', close, { once: true }), 0)
     return () => { clearTimeout(timer); window.removeEventListener('click', close) }
   })
@@ -105,10 +103,8 @@
   $effect(() => {
     gvr
     filterText = ''
-    sortCol = -1
     if (scrollContainer) scrollContainer.scrollTop = 0
   })
-
 
   const filtered = $derived.by(() => {
     let result = items
@@ -125,37 +121,39 @@
         return labelsStr.includes(q) || (item.metadata?.name ?? '').toLowerCase().includes(q)
       })
     }
-    if (sortCol >= 0) {
-      const col = columns[sortCol]
-      if (!col?.expr) return result
-      result = [...result].sort((a, b) => {
-        const av = String(evalExpr(col.expr, a) ?? '')
-        const bv = String(evalExpr(col.expr, b) ?? '')
-        return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
-      })
+    if (columnStore.sortState) {
+      const { column, direction } = columnStore.sortState
+      const col = columnStore.visibleColumns.find((c) => c.name === column)
+      if (col?.expr) {
+        result = [...result].sort((a, b) => {
+          const av = String(evalExpr(col.expr, a) ?? '')
+          const bv = String(evalExpr(col.expr, b) ?? '')
+          return direction === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+        })
+      }
     }
     return result
   })
 
   const tooManyForSparklines = $derived(filtered.length > 200)
 
-  const ROW_HEIGHT = 36
+  const rowHeight = $derived(columnStore.compact ? 28 : 36)
 
   const virtualizer = $derived(
     createVirtualizer({
       count: filtered.length,
       getScrollElement: () => scrollContainer ?? null,
-      estimateSize: () => ROW_HEIGHT,
+      estimateSize: () => rowHeight,
       overscan: 10,
     }),
   )
 
-  function toggleSort(idx: number) {
-    if (sortCol === idx) {
-      sortDir = sortDir === 'asc' ? 'desc' : 'asc'
+  function toggleSort(name: string) {
+    const current = columnStore.sortState
+    if (current?.column === name) {
+      columnStore.setSort(name, current.direction === 'asc' ? 'desc' : 'asc')
     } else {
-      sortCol = idx
-      sortDir = 'asc'
+      columnStore.setSort(name, 'asc')
     }
   }
 
@@ -180,6 +178,11 @@
     return 'bg-muted/10 text-fg border-border'
   }
 
+  function alignClass(col: ColumnDef): string {
+    const align = col.align ?? defaultAlign(col.renderType)
+    return align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'
+  }
+
   async function confirmDelete() {
     if (!deleteTarget) return
     const { namespace, name } = deleteTarget
@@ -201,11 +204,42 @@
   }
 
   const gridTemplateCols = $derived(
-    columns.map((c) => c.width ? `${c.width}px` : '1fr').join(' ')
+    columnStore.visibleColumns
+      .map((c) => c.width ? `${c.width}px` : 'minmax(20px, 1fr)')
+      .join(' ')
     + (pluginColumns.length ? ' ' + pluginColumns.map(() => '1fr').join(' ') : '')
     + (sparklineColumns.length ? ' ' + sparklineColumns.map(() => '80px').join(' ') : '')
     + ' 36px'
   )
+
+  function startResize(e: MouseEvent, col: ColumnDef) {
+    e.preventDefault()
+    resizing = { name: col.name, startX: e.clientX, startWidth: col.width ?? 100 }
+    window.addEventListener('mousemove', onResizeMove)
+    window.addEventListener('mouseup', onResizeUp, { once: true })
+  }
+
+  function onResizeMove(e: MouseEvent) {
+    if (!resizing) return
+    const delta = e.clientX - resizing.startX
+    const newWidth = Math.max(20, resizing.startWidth + delta)
+    columnStore.resizeColumn(resizing.name, newWidth)
+  }
+
+  function onResizeUp() {
+    window.removeEventListener('mousemove', onResizeMove)
+    resizing = null
+  }
+
+  function autoFit(name: string) {
+    const cells = scrollContainer?.querySelectorAll(`[data-col="${name}"]`)
+    if (!cells) return
+    let max = 60
+    for (const cell of cells) {
+      max = Math.max(max, (cell as HTMLElement).scrollWidth)
+    }
+    columnStore.autoFitColumn(name, max)
+  }
 </script>
 
 <div class="flex flex-col h-full">
@@ -265,18 +299,29 @@
     <div class="grid text-xs font-semibold uppercase tracking-wider text-muted border-b border-border shrink-0 px-2"
       style="grid-template-columns: {gridTemplateCols}"
     >
-      {#each columns as col, i}
-        <button
-          onclick={() => toggleSort(i)}
-          class="flex items-center gap-1 py-2 px-1 hover:text-fg transition-colors text-left"
-        >
-          {col.name}
-          {#if sortCol === i}
-            {#if sortDir === 'asc'}<ArrowUp size={10} />{:else}<ArrowDown size={10} />{/if}
-          {:else}
-            <ArrowUpDown size={10} class="opacity-30" />
+      {#each columnStore.visibleColumns as col, i}
+        <div class="relative">
+          <button
+            onclick={() => toggleSort(col.name)}
+            class="flex items-center gap-1 py-2 px-1 hover:text-fg transition-colors text-left w-full
+              {i === 0 ? 'sticky left-0 z-10 bg-bg shadow-[2px_0_4px_rgba(0,0,0,0.08)] dark:shadow-[2px_0_4px_rgba(0,0,0,0.3)]' : ''}"
+          >
+            {col.name}
+            {#if columnStore.sortState?.column === col.name}
+              {#if columnStore.sortState.direction === 'asc'}<ArrowUp size={10} />{:else}<ArrowDown size={10} />{/if}
+            {:else}
+              <ArrowUpDown size={10} class="opacity-30" />
+            {/if}
+          </button>
+          {#if i < columnStore.visibleColumns.length - 1}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+              class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-accent/50 z-20"
+              onmousedown={(e) => startResize(e, col)}
+              ondblclick={() => autoFit(col.name)}
+            ></div>
           {/if}
-        </button>
+        </div>
       {/each}
       {#each pluginColumns as pcol (pcol.id)}
         <div class="py-2 px-1">{pcol.label}</div>
@@ -302,7 +347,7 @@
               class="absolute top-0 left-0 right-0 flex items-center px-2 transition-colors group
                 {isSelected ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-surface-hover border-l-2 border-transparent'}
                 {onselect ? 'cursor-pointer' : ''}"
-              style="transform: translateY({row.start}px); height: {ROW_HEIGHT}px;"
+              style="transform: translateY({row.start}px); height: {rowHeight}px;"
               role={onselect ? 'button' : undefined}
               tabindex={onselect ? 0 : undefined}
               onclick={() => onselect?.(item)}
@@ -313,15 +358,24 @@
                 class="grid flex-1 min-w-0"
                 style="grid-template-columns: {gridTemplateCols}"
               >
-                {#each columns as col}
+                {#each columnStore.visibleColumns as col, i}
                   {@const value = renderCell(col, item)}
-                  <div class="px-1 truncate text-sm">
+                  <div
+                    class="px-1 truncate text-sm {alignClass(col)}
+                      {i === 0 ? 'sticky left-0 z-10 bg-bg shadow-[2px_0_4px_rgba(0,0,0,0.08)] dark:shadow-[2px_0_4px_rgba(0,0,0,0.3)]' : ''}
+                      {col.name === 'Namespace' ? 'cursor-pointer hover:text-accent' : ''}"
+                    data-col={col.name}
+                    onclick={col.name === 'Namespace' ? (e) => { e.stopPropagation(); clusterStore.setNamespaces(contextName, [String(value)]) } : undefined}
+                    role={col.name === 'Namespace' ? 'button' : undefined}
+                  >
                     {#if col.renderType === 'badge'}
-                      <span class="px-1.5 py-0.5 text-xs rounded border {badgeClass(value)}">
+                      <span class="px-1.5 py-0.5 text-xs rounded border {badgeClass(value)}"
+                            title={renderValue(value, col.renderType)}>
                         {renderValue(value, col.renderType)}
                       </span>
                     {:else}
-                      <span class={col.renderType === 'age' ? 'text-muted' : ''}>
+                      <span class={col.renderType === 'age' ? 'text-muted' : ''}
+                            title={renderValue(value, col.renderType)}>
                         {renderValue(value, col.renderType)}
                       </span>
                     {/if}
