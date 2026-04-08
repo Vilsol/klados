@@ -25,6 +25,7 @@ packages/ui/package/
 examples/hello-plugin/ui/*.js
 examples/hello-plugin/ui/*.js.map
 examples/plugin-node-annotator/ui/*.js
+!examples/plugin-node-annotator/ui/vite.config.js
 examples/plugin-node-annotator/ui/*.js.map
 examples/plugin-node-annotator/dist/
 
