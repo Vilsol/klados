@@ -36,6 +36,9 @@
   import LimitRangePanel from './panels/LimitRangePanel.svelte'
   import PDBPanel from './panels/PDBPanel.svelte'
   import EndpointSlicePanel from './panels/EndpointSlicePanel.svelte'
+  import NetworkPolicyPanel from './panels/NetworkPolicyPanel.svelte'
+  import HPAPanel from './panels/HPAPanel.svelte'
+  import WebhookConfigPanel from './panels/WebhookConfigPanel.svelte'
   import ActionsToolbar from './panels/ActionsToolbar.svelte'
   import MetricsTab from './charts/MetricsTab.svelte'
   import { YAMLEditor } from '@klados/ui'
@@ -65,13 +68,13 @@
     ['crd', CRDPanel as PanelComponent],
     ['crd-schema', CRDSchemaPanel as PanelComponent],
     ['metrics', MetricsTab as PanelComponent],
-    ['netpol', PlaceholderPanel as PanelComponent],
+    ['netpol', NetworkPolicyPanel as PanelComponent],
     ['endpointslice', EndpointSlicePanel as PanelComponent],
     ['resourcequota', ResourceQuotaPanel as PanelComponent],
     ['limitrange', LimitRangePanel as PanelComponent],
-    ['hpa', PlaceholderPanel as PanelComponent],
+    ['hpa', HPAPanel as PanelComponent],
     ['pdb', PDBPanel as PanelComponent],
-    ['webhooks', PlaceholderPanel as PanelComponent],
+    ['webhooks', WebhookConfigPanel as PanelComponent],
   ])
 
   const panelLabels: Record<string, string> = {
@@ -308,6 +311,14 @@
             <PanelCmp {obj} />
           </div>
         {:else if panel === 'endpointslice'}
+          <div class="overflow-auto h-full">
+            <PanelCmp {obj} {ctxName} />
+          </div>
+        {:else if panel === 'netpol' || panel === 'webhooks'}
+          <div class="overflow-auto h-full">
+            <PanelCmp {obj} />
+          </div>
+        {:else if panel === 'hpa'}
           <div class="overflow-auto h-full">
             <PanelCmp {obj} {ctxName} />
           </div>
