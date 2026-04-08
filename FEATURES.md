@@ -29,10 +29,10 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Node resource utilization (CPU, memory, pods, ephemeral storage)
 - [x] `v2` Node cordon / uncordon / drain actions
 - [ ] `v2` Cluster API version / feature gate discovery
-- [ ] `v2` MutatingWebhookConfigurations — list, detail with rule summary, failure policy indicators
-- [ ] `v2` ValidatingWebhookConfigurations — list, detail with rule summary, failure policy indicators
-- [ ] `v2` PriorityClasses — list with value, global default, preemption policy
-- [ ] `v2` RuntimeClasses — list with handler
+- [x] `v2` MutatingWebhookConfigurations — list, detail with rule summary, failure policy indicators
+- [x] `v2` ValidatingWebhookConfigurations — list, detail with rule summary, failure policy indicators
+- [x] `v2` PriorityClasses — list with value, global default, preemption policy
+- [x] `v2` RuntimeClasses — list with handler
 - [ ] `Future` Workspace grouping — organize clusters into named workspaces
 - [ ] `Future` Hotbar — pinnable quick-access bar for frequently used clusters/resources
 - [ ] `Future` Catalog — unified entity browser aggregating clusters, services, and custom entities
@@ -107,17 +107,17 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Link to open in browser (for accessible hosts)
 
 ### IngressClasses
-- [ ] `v2` List available ingress classes
-- [ ] `v2` Default class indicator
+- [x] `v2` List available ingress classes
+- [x] `v2` Default class indicator
 
 ### NetworkPolicies
-- [ ] `v2` List policies
-- [ ] `v2` Detail view — ingress/egress rules, pod selectors
-- [ ] `v2` Visual rule summary (which pods can talk to which)
+- [x] `v2` List policies
+- [x] `v2` Detail view — ingress/egress rules, pod selectors
+- [x] `v2` Visual rule summary (which pods can talk to which)
 
 ### Endpoints / EndpointSlices
-- [ ] `v2` List and detail view
-- [ ] `v2` Show associated service and target pods
+- [x] `v2` List and detail view
+- [x] `v2` Show associated service and target pods
 
 ### Port Forwarding Manager
 - [x] `MVP` Active port-forwards list
@@ -145,30 +145,30 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Delete
 
 ### Resource Quotas
-- [ ] `v2` List quotas per namespace
-- [ ] `v2` Usage vs hard limits display
+- [x] `v2` List quotas per namespace
+- [x] `v2` Usage vs hard limits display
 
 ### Limit Ranges
-- [ ] `v2` List and detail view
-- [ ] `v2` Default/max/min per resource type
+- [x] `v2` List and detail view
+- [x] `v2` Default/max/min per resource type
 
 ### HPAs (Horizontal Pod Autoscalers)
-- [ ] `v2` List with min/max/current replicas, target metrics
-- [ ] `v2` Detail view — scaling behavior, metrics status
+- [x] `v2` List with min/max/current replicas, target metrics
+- [x] `v2` Detail view — scaling behavior, metrics status
 - [ ] `v2` Edit min/max replicas
-- [ ] `v2` Current vs target metric values
+- [x] `v2` Current vs target metric values
 
 ### VPAs (Vertical Pod Autoscalers)
 - [ ] `Future` List and detail view
 - [ ] `Future` Recommendations display
 
 ### PDBs (Pod Disruption Budgets)
-- [ ] `v2` List with allowed disruptions
-- [ ] `v2` Detail view — min available / max unavailable
+- [x] `v2` List with allowed disruptions
+- [x] `v2` Detail view — min available / max unavailable
 
 ### Leases
-- [ ] `v2` List leases with holder, duration, renew time
-- [ ] `v2` Detail view — leader election debugging
+- [x] `v2` List leases with holder, duration, renew time
+- [x] `v2` Detail view — leader election debugging
 
 ## 5. Storage
 
