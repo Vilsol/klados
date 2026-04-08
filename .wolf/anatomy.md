@@ -1,10 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T01:54:01.702Z
-> Files: 274 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T02:17:13.522Z
+> Files: 279 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../.claude/plans/
 
+- `linked-conjuring-candle.md` — Phase 2 — Frontend Column Store Implementation Plan (~1378 tok)
 - `replicated-painting-thimble.md` — Phase 1 — Go Backend: Resource List Column Infrastructure (~1366 tok)
 
 ## ../../../.claude/skills/phase-planner/
@@ -100,6 +101,7 @@
 ## frontend/bindings/github.com/Vilsol/klados/internal/services/
 
 - `index.js` — Cynhyrchwyd y ffeil hon yn awtomatig. PEIDIWCH Â MODIWL (~292 tok)
+- `index.ts` — Cynhyrchwyd y ffeil hon yn awtomatig. PEIDIWCH Â MODIWL (~289 tok)
 
 ## frontend/src/
 
@@ -110,6 +112,11 @@
 ## frontend/src/lib/
 
 - `theme.svelte.ts` — Exports setTheme, getTheme, getResolved (~240 tok)
+
+## frontend/src/lib/__tests__/
+
+- `columns.svelte.test.ts` — Declares podDescriptor (~1492 tok)
+- `slots.svelte.test.ts` — Declares tabs (~1037 tok)
 
 ## frontend/src/lib/components/
 
@@ -128,7 +135,7 @@
 
 ## frontend/src/lib/components/charts/
 
-- `MetricsChart.svelte` — Svelte: MetricsChart, TS, 9 stores (~4732 tok)
+- `MetricsChart.svelte` — Svelte: MetricsChart (~4732 tok)
 - `MetricsTab.svelte` — Svelte: MetricsTab, TS, 15 stores (~2921 tok)
 - `Sparkline.svelte` — Svelte: Sparkline, TS, 4 stores (~563 tok)
 - `TimeRangeSelector.svelte` — Svelte: TimeRangeSelector, TS, 1 stores (~212 tok)
@@ -174,6 +181,7 @@
 ## frontend/src/lib/stores/
 
 - `cluster.svelte.ts` — Set the currently-viewed cluster context (called by route components on mount) (~1658 tok)
+- `columns.svelte.ts` — Exports columnStore (~1461 tok)
 - `notification.svelte.ts` — Declares Toast (~22 tok)
 - `resource.svelte.ts` — Exports createResourceStore (~791 tok)
 - `session.svelte.ts` — Exports TabState, sessionStore (~626 tok)
@@ -312,7 +320,7 @@
 
 ## internal/services/
 
-- `app.go` — AppService (31 fields); methods: ServiceStartup, ServiceShutdown, ClusterManager, Config (~1279 tok)
+- `app.go` — Struct: AppService (~1202 tok)
 - `cluster_test.go` — TestClusterService_ListContexts, TestClusterService_SwitchNamespace, TestClusterService_GetStatusDisconnected, TestClusterService_DisconnectUpdates... (~805 tok)
 - `cluster.go` — ClusterService (53 fields); methods: ServiceStartup, ListContexts, Connect, Disconnect (~1348 tok)
 - `config.go` — Struct: ConfigService (~475 tok)
@@ -321,7 +329,7 @@
 - `exec.go` — ExecService (7 fields); methods: ServiceStartup, ServiceShutdown, OpenExecSession, CloseExecSession (~254 tok)
 - `log.go` — LogService (7 fields); methods: ServiceStartup, ServiceShutdown, StartLogStream, StopLogStream (~248 tok)
 - `metrics_test.go` — TestCollectAnnotations_OOMKill, TestCollectAnnotations_Events, TestCollectAnnotations_ThrottlingSkippedWithoutPrometheus, TestCollectThresholds_Pod... (~2124 tok)
-- `metrics.go` — MetricsService (104 fields); methods: SetPluginService, ServiceStartup, GetCapabilities, GetResourceMetrics (~4694 tok)
+- `metrics.go` — Struct: MetricsService (~4385 tok)
 - `plugin_test.go` — TestInstallPlugin_OCI_AuthError, TestInstallPlugin_OCI_Success, TestInstallPlugin_OCI_InsecureFlag, TestSaveRegistryCredentials, TestAddInsecureReg... (~1054 tok)
 - `plugin.go` — PluginService (96 fields); methods: ServiceStartup, InvokeCommand, ServiceShutdown, ReloadPlugin (~5677 tok)
 - `portforward.go` — PortForwardService (9 fields); methods: ServiceStartup, ServiceShutdown, StartForward, StopForward (~393 tok)

@@ -142,10 +142,12 @@ func (a *AppService) Ctx() context.Context {
 	return a.ctx
 }
 
+//wails:ignore
 func (a *AppService) SetPluginService(svc *PluginService) {
 	a.pluginSvc = svc
 }
 
+//wails:ignore
 func (a *AppService) PluginService() *PluginService {
 	return a.pluginSvc
 }

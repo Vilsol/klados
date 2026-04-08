@@ -360,7 +360,7 @@
 
     // Make drag-selection rectangle visible using the accent color
     const accentColor = style.getPropertyValue('--color-accent').trim() || '#3b82f6'
-    const selectEl = chart.root.querySelector('.u-select') as HTMLElement | null
+    const selectEl = chart.root?.querySelector('.u-select') as HTMLElement | null
     if (selectEl) {
       selectEl.style.background = `color-mix(in srgb, ${accentColor} 20%, transparent)`
       selectEl.style.borderLeft = `2px solid ${accentColor}`

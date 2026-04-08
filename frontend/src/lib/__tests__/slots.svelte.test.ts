@@ -11,6 +11,7 @@ vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/pluginserv
 }))
 
 import { GetPluginDetailTabs, GetPluginCommands } from '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
+import type { PermsSummary } from '../../../bindings/github.com/Vilsol/klados/internal/plugin/models.js'
 import { slotRegistry } from '$lib/plugins/slots.svelte.js'
 
 describe('SlotRegistry', () => {
@@ -78,7 +79,7 @@ describe('SlotRegistry', () => {
   })
 
   it('registerCommand adds to commands list', () => {
-    slotRegistry.registerCommand({ pluginName: 'p', id: 'cmd', label: 'Do Thing', perms: {}, action: vi.fn() })
+    slotRegistry.registerCommand({ pluginName: 'p', id: 'cmd', label: 'Do Thing', perms: {} as PermsSummary, action: vi.fn() })
     expect(slotRegistry.getCommands()).toHaveLength(1)
   })
 })

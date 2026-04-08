@@ -26,6 +26,7 @@ func NewMetricsService(appSvc *AppService) *MetricsService {
 	return &MetricsService{appService: appSvc}
 }
 
+//wails:ignore
 func (s *MetricsService) SetPluginService(ps *PluginService) {
 	s.pluginSvc = ps
 }
