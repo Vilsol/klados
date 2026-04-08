@@ -475,6 +475,223 @@ var builtinDescriptors = []*Descriptor{
 		DetailPanels: []string{"overview", "csi-capabilities", "labels", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
+	{
+		Group: "networking.k8s.io", Version: "v1", Resource: "networkpolicies", Kind: "NetworkPolicy",
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150},
+			{Name: "Pod Selector", Expr: "status.podSelectorDisplay", RenderType: RenderText},
+			{Name: "Policy Types", Expr: "status.policyTypesDisplay", RenderType: RenderText},
+			{Name: "Ingress Rules", Expr: "status.ingressRuleCount", RenderType: RenderText, Width: 100},
+			{Name: "Egress Rules", Expr: "status.egressRuleCount", RenderType: RenderText, Width: 100},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
+			{Label: "Pod Selector", Expr: "status.podSelectorDisplay", RenderType: RenderText},
+			{Label: "Policy Types", Expr: "status.policyTypesDisplay", RenderType: RenderText},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "netpol", "labels", "events", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
+	{
+		Group: "networking.k8s.io", Version: "v1", Resource: "ingressclasses", Kind: "IngressClass",
+		ClusterScoped: true,
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Controller", Expr: "spec.controller", RenderType: RenderText},
+			{Name: "Default", Expr: "status.isDefault", RenderType: RenderBadge, Width: 80},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Controller", Expr: "spec.controller", RenderType: RenderText},
+			{Label: "Default", Expr: "status.isDefault", RenderType: RenderBadge},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "labels", "events", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
+	{
+		Group: "discovery.k8s.io", Version: "v1", Resource: "endpointslices", Kind: "EndpointSlice",
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150},
+			{Name: "Address Type", Expr: "addressType", RenderType: RenderText, Width: 100},
+			{Name: "Service", Expr: "status.serviceDisplay", RenderType: RenderText},
+			{Name: "Ports", Expr: "status.portsDisplay", RenderType: RenderText},
+			{Name: "Endpoints", Expr: "status.endpointCount", RenderType: RenderText, Width: 90},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
+			{Label: "Address Type", Expr: "addressType", RenderType: RenderText},
+			{Label: "Service", Expr: "status.serviceDisplay", RenderType: RenderText},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "endpointslice", "labels", "events", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
+	{
+		Group: "", Version: "v1", Resource: "resourcequotas", Kind: "ResourceQuota",
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150},
+			{Name: "Resources", Expr: "status.resourceCount", RenderType: RenderText, Width: 90},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
+			{Label: "Resources", Expr: "status.resourceCount", RenderType: RenderText},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "resourcequota", "labels", "events", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
+	{
+		Group: "", Version: "v1", Resource: "limitranges", Kind: "LimitRange",
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150},
+			{Name: "Limits", Expr: "status.limitCount", RenderType: RenderText, Width: 80},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
+			{Label: "Limits", Expr: "status.limitCount", RenderType: RenderText},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "limitrange", "labels", "events", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
+	{
+		Group: "autoscaling", Version: "v2", Resource: "horizontalpodautoscalers", Kind: "HorizontalPodAutoscaler",
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150},
+			{Name: "Reference", Expr: "status.referenceDisplay", RenderType: RenderText},
+			{Name: "Targets", Expr: "status.targetsDisplay", RenderType: RenderText},
+			{Name: "Min", Expr: "spec.minReplicas", RenderType: RenderText, Width: 60},
+			{Name: "Max", Expr: "spec.maxReplicas", RenderType: RenderText, Width: 60},
+			{Name: "Current", Expr: "status.currentReplicas", RenderType: RenderText, Width: 80},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
+			{Label: "Reference", Expr: "status.referenceDisplay", RenderType: RenderText},
+			{Label: "Min Replicas", Expr: "spec.minReplicas", RenderType: RenderText},
+			{Label: "Max Replicas", Expr: "spec.maxReplicas", RenderType: RenderText},
+			{Label: "Current", Expr: "status.currentReplicas", RenderType: RenderText},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "hpa", "labels", "events", "metrics", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
+	{
+		Group: "policy", Version: "v1", Resource: "poddisruptionbudgets", Kind: "PodDisruptionBudget",
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150},
+			{Name: "Pod Selector", Expr: "status.podSelectorDisplay", RenderType: RenderText},
+			{Name: "Min Available", Expr: "spec.minAvailable", RenderType: RenderText, Width: 110},
+			{Name: "Max Unavailable", Expr: "spec.maxUnavailable", RenderType: RenderText, Width: 120},
+			{Name: "Allowed Disruptions", Expr: "status.disruptionsAllowed", RenderType: RenderText, Width: 150},
+			{Name: "Current Healthy", Expr: "status.currentHealthy", RenderType: RenderText, Width: 120},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
+			{Label: "Pod Selector", Expr: "status.podSelectorDisplay", RenderType: RenderText},
+			{Label: "Min Available", Expr: "spec.minAvailable", RenderType: RenderText},
+			{Label: "Max Unavailable", Expr: "spec.maxUnavailable", RenderType: RenderText},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "pdb", "labels", "events", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
+	{
+		Group: "coordination.k8s.io", Version: "v1", Resource: "leases", Kind: "Lease",
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150},
+			{Name: "Holder", Expr: "spec.holderIdentity", RenderType: RenderText},
+			{Name: "Duration", Expr: "status.leaseDurationDisplay", RenderType: RenderText, Width: 90},
+			{Name: "Renew", Expr: "spec.renewTime", RenderType: RenderAge, Width: 80},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
+			{Label: "Holder", Expr: "spec.holderIdentity", RenderType: RenderText},
+			{Label: "Duration", Expr: "status.leaseDurationDisplay", RenderType: RenderText},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "labels", "events", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
+	{
+		Group: "admissionregistration.k8s.io", Version: "v1", Resource: "mutatingwebhookconfigurations", Kind: "MutatingWebhookConfiguration",
+		ClusterScoped: true,
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Webhooks", Expr: "status.webhookCount", RenderType: RenderText, Width: 90},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Webhooks", Expr: "status.webhookCount", RenderType: RenderText},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "webhooks", "labels", "events", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
+	{
+		Group: "admissionregistration.k8s.io", Version: "v1", Resource: "validatingwebhookconfigurations", Kind: "ValidatingWebhookConfiguration",
+		ClusterScoped: true,
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Webhooks", Expr: "status.webhookCount", RenderType: RenderText, Width: 90},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Webhooks", Expr: "status.webhookCount", RenderType: RenderText},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "webhooks", "labels", "events", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
+	{
+		Group: "scheduling.k8s.io", Version: "v1", Resource: "priorityclasses", Kind: "PriorityClass",
+		ClusterScoped: true,
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Value", Expr: "value", RenderType: RenderText, Width: 80, Align: AlignRight},
+			{Name: "Global Default", Expr: "status.globalDefaultDisplay", RenderType: RenderBadge, Width: 110},
+			{Name: "Preemption", Expr: "preemptionPolicy", RenderType: RenderBadge, Width: 110},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Value", Expr: "value", RenderType: RenderText},
+			{Label: "Global Default", Expr: "status.globalDefaultDisplay", RenderType: RenderBadge},
+			{Label: "Preemption", Expr: "preemptionPolicy", RenderType: RenderBadge},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "labels", "events", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
+	{
+		Group: "node.k8s.io", Version: "v1", Resource: "runtimeclasses", Kind: "RuntimeClass",
+		ClusterScoped: true,
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Handler", Expr: "handler", RenderType: RenderText},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Handler", Expr: "handler", RenderType: RenderText},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "labels", "events", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
 }
 
 func BuiltinDescriptors() []*Descriptor {
@@ -509,6 +726,18 @@ func RegisterBuiltin(reg *Registry, enricherReg *EnricherRegistry, drainSvc enri
 	enricherReg.Register("rbac.authorization.k8s.io.v1.clusterrolebindings", &enrichers.BindingEnricher{})
 	enricherReg.Register("storage.k8s.io.v1.storageclasses", &enrichers.StorageClassEnricher{})
 	enricherReg.Register("apiextensions.k8s.io.v1.customresourcedefinitions", &enrichers.CRDEnricher{})
+	enricherReg.Register("networking.k8s.io.v1.networkpolicies", &enrichers.NetworkPolicyEnricher{})
+	enricherReg.Register("networking.k8s.io.v1.ingressclasses", &enrichers.IngressClassEnricher{})
+	enricherReg.Register("discovery.k8s.io.v1.endpointslices", &enrichers.EndpointSliceEnricher{})
+	enricherReg.Register("core.v1.resourcequotas", &enrichers.ResourceQuotaEnricher{})
+	enricherReg.Register("core.v1.limitranges", &enrichers.LimitRangeEnricher{})
+	enricherReg.Register("autoscaling.v2.horizontalpodautoscalers", &enrichers.HPAEnricher{})
+	enricherReg.Register("policy.v1.poddisruptionbudgets", &enrichers.PDBEnricher{})
+	enricherReg.Register("coordination.k8s.io.v1.leases", &enrichers.LeaseEnricher{})
+	webhookEnricher := &enrichers.WebhookConfigEnricher{}
+	enricherReg.Register("admissionregistration.k8s.io.v1.mutatingwebhookconfigurations", webhookEnricher)
+	enricherReg.Register("admissionregistration.k8s.io.v1.validatingwebhookconfigurations", webhookEnricher)
+	enricherReg.Register("scheduling.k8s.io.v1.priorityclasses", &enrichers.PriorityClassEnricher{})
 
 	return nil
 }

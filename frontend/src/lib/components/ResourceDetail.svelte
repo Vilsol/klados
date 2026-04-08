@@ -31,6 +31,7 @@
   import CSICapabilitiesPanel from './panels/CSICapabilitiesPanel.svelte'
   import CRDPanel from './panels/CRDPanel.svelte'
   import CRDSchemaPanel from './panels/CRDSchemaPanel.svelte'
+  import PlaceholderPanel from './panels/PlaceholderPanel.svelte'
   import ActionsToolbar from './panels/ActionsToolbar.svelte'
   import MetricsTab from './charts/MetricsTab.svelte'
   import { YAMLEditor } from '@klados/ui'
@@ -60,6 +61,13 @@
     ['crd', CRDPanel as PanelComponent],
     ['crd-schema', CRDSchemaPanel as PanelComponent],
     ['metrics', MetricsTab as PanelComponent],
+    ['netpol', PlaceholderPanel as PanelComponent],
+    ['endpointslice', PlaceholderPanel as PanelComponent],
+    ['resourcequota', PlaceholderPanel as PanelComponent],
+    ['limitrange', PlaceholderPanel as PanelComponent],
+    ['hpa', PlaceholderPanel as PanelComponent],
+    ['pdb', PlaceholderPanel as PanelComponent],
+    ['webhooks', PlaceholderPanel as PanelComponent],
   ])
 
   const panelLabels: Record<string, string> = {
@@ -85,6 +93,13 @@
     crd: 'CRD',
     'crd-schema': 'Schema',
     metrics: 'Metrics',
+    netpol: 'Rules',
+    endpointslice: 'Addresses',
+    resourcequota: 'Usage',
+    limitrange: 'Limits',
+    hpa: 'Scaling',
+    pdb: 'Budget',
+    webhooks: 'Webhooks',
   }
 
   let {
