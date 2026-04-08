@@ -29,6 +29,10 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Node resource utilization (CPU, memory, pods, ephemeral storage)
 - [x] `v2` Node cordon / uncordon / drain actions
 - [ ] `v2` Cluster API version / feature gate discovery
+- [ ] `v2` MutatingWebhookConfigurations — list, detail with rule summary, failure policy indicators
+- [ ] `v2` ValidatingWebhookConfigurations — list, detail with rule summary, failure policy indicators
+- [ ] `v2` PriorityClasses — list with value, global default, preemption policy
+- [ ] `v2` RuntimeClasses — list with handler
 - [ ] `Future` Workspace grouping — organize clusters into named workspaces
 - [ ] `Future` Hotbar — pinnable quick-access bar for frequently used clusters/resources
 - [ ] `Future` Catalog — unified entity browser aggregating clusters, services, and custom entities
@@ -41,7 +45,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Pod detail view — containers, init containers, ephemeral containers
 - [x] `MVP` Container status breakdown (waiting, running, terminated + reasons)
 - [x] `MVP` Pod conditions (Ready, Initialized, PodScheduled, ContainersReady)
-- [ ] `v2` Pod resource requests/limits vs actual usage
+- [x] `v2` Pod resource requests/limits vs actual usage
 - [x] `MVP` Pod environment variables (resolved, including configmap/secret refs)
 - [x] `MVP` Pod volume mounts visualization
 - [x] `MVP` Pod annotations and labels (view/edit)
@@ -162,6 +166,10 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [ ] `v2` List with allowed disruptions
 - [ ] `v2` Detail view — min available / max unavailable
 
+### Leases
+- [ ] `v2` List leases with holder, duration, renew time
+- [ ] `v2` Detail view — leader election debugging
+
 ## 5. Storage
 
 ### PersistentVolumes (PV)
@@ -262,18 +270,18 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Warning event highlighting
 
 ### Resource Metrics
-- [ ] `v2` Node CPU/memory graphs (requires metrics-server)
-- [ ] `v2` Pod CPU/memory graphs
-- [ ] `v2` Container-level metrics
-- [ ] `v2` Namespace resource usage aggregation
-- [ ] `v2` Historical metric trends (if metrics available)
-- [ ] `v2` Prometheus auto-detection — discover in-cluster Prometheus and wire up metrics automatically
-- [ ] `v2` Custom Prometheus endpoint configuration (supports Thanos, Mimir, VictoriaMetrics)
-- [ ] `v2` Resource requests/limits overlay on CPU/memory graphs
-- [ ] `v2` OOMKill / CPU throttling / warning event annotations on graphs
-- [ ] `v2` Multi-container overlay charts with legend toggle
-- [ ] `v2` Sparkline columns in resource lists (opt-in, batch-queried)
-- [ ] `v2` Plugin-extensible metric queries via descriptor templates
+- [x] `v2` Node CPU/memory graphs (requires metrics-server)
+- [x] `v2` Pod CPU/memory graphs
+- [x] `v2` Container-level metrics
+- [x] `v2` Namespace resource usage aggregation
+- [x] `v2` Historical metric trends (if metrics available)
+- [x] `v2` Prometheus auto-detection — discover in-cluster Prometheus and wire up metrics automatically
+- [x] `v2` Custom Prometheus endpoint configuration (supports Thanos, Mimir, VictoriaMetrics)
+- [x] `v2` Resource requests/limits overlay on CPU/memory graphs
+- [x] `v2` OOMKill / CPU throttling / warning event annotations on graphs
+- [x] `v2` Multi-container overlay charts with legend toggle
+- [x] `v2` Sparkline columns in resource lists (opt-in, batch-queried)
+- [x] `v2` Plugin-extensible metric queries via descriptor templates
 - [ ] `Future` Alerting rules viewer — show firing Prometheus alerts per resource (Plugin candidate)
 - [ ] `Future` GPU metrics — NVIDIA DCGM exporter integration (Plugin candidate)
 
@@ -311,7 +319,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Filter by labels
 - [ ] `v2` Filter by annotations
 - [x] `MVP` Sort by any column
-- [ ] `v2` Column visibility customization
+- [x] `v2` Column visibility customization
 - [ ] `v2` Saved filters / views
 - [ ] `v2` Keyboard-driven navigation (vim-like bindings optional)
 - [x] `MVP` Command palette (Ctrl+K / Cmd+K)
