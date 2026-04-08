@@ -4,13 +4,15 @@
   import { SectionHeader, KeyValueBadge, EmptyState, KeyValuePairEditor } from '@klados/ui'
 
   let {
-    obj = $bindable(),
+    obj,
+    onupdate,
     ctxName,
     gvr,
     namespace,
     name,
   }: {
     obj: Record<string, any>
+    onupdate?: (updated: Record<string, any>) => void
     ctxName: string
     gvr: string
     namespace: string
@@ -40,7 +42,7 @@
       updated.metadata.labels = Object.fromEntries(editLabels.filter(([k]) => k.trim()))
       updated.metadata.annotations = Object.fromEntries(editAnnotations.filter(([k]) => k.trim()))
       const result = await ResourceService.UpdateResource(ctxName, gvr, namespace, updated)
-      if (result) obj = result
+      if (result) onupdate?.(result)
       editing = false
       notificationStore.push('Labels and annotations saved.', 'success')
     } catch (e: any) {

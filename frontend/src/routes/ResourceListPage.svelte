@@ -172,9 +172,10 @@
             try { return await ResourceService.GetResource(ctx, g, ns, n) } catch { return null }
           }}
         >
-          {#snippet children({ obj, onrefresh })}
+          {#snippet children({ obj, onrefresh, onupdate })}
             <ResourceDetail
               {obj}
+              {onupdate}
               {descriptor}
               {ctxName}
               {gvr}

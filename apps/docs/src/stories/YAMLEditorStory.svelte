@@ -32,7 +32,7 @@
 
 <div class="h-96 border border-border rounded overflow-hidden">
   <YAMLEditor
-    bind:obj
+    {obj}
     ctxName="prod"
     gvr="apps.v1.deployments"
     namespace="default"

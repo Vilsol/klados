@@ -14,7 +14,8 @@
   import { rainbowIndent, rainbowIndentTheme } from './cm-rainbow-indent'
 
   let {
-    obj = $bindable(),
+    obj,
+    onupdate,
     ctxName,
     gvr,
     namespace,
@@ -29,6 +30,7 @@
     onOpenUrl,
   }: {
     obj: Record<string, any>
+    onupdate?: (updated: Record<string, any>) => void
     ctxName: string
     gvr: string
     namespace: string
@@ -216,7 +218,7 @@
       const parsed = parse(yamlText) as Record<string, any>
       const result = await onSave?.(ctxName, gvr, namespace, parsed)
       if (result) {
-        obj = result
+        onupdate?.(result)
         editing = false
         initEditor(makeYaml(result), true)
         onNotify?.('Changes applied.', 'success')

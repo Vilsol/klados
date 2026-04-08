@@ -13,7 +13,8 @@
   import PortButton from '$lib/components/PortButton.svelte'
 
   let {
-    obj = $bindable(),
+    obj,
+    onupdate,
     descriptor,
     gvr = '',
     ctxName = '',
@@ -21,6 +22,7 @@
     name = '',
   }: {
     obj: Record<string, any>
+    onupdate?: (updated: Record<string, any>) => void
     descriptor: DescriptorDef
     gvr?: string
     ctxName?: string
@@ -67,7 +69,7 @@
       updated.metadata.labels = Object.fromEntries(editLabels.filter(([k]) => k.trim()))
       updated.metadata.annotations = Object.fromEntries(editAnnotations.filter(([k]) => k.trim()))
       const result = await ResourceService.UpdateResource(ctxName, gvr, namespace, updated)
-      if (result) obj = result
+      if (result) onupdate?.(result)
       editingLabels = false
       notificationStore.push('Labels and annotations saved.', 'success')
     } catch (e: any) {

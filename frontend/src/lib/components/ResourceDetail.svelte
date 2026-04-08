@@ -95,6 +95,7 @@
     namespace,
     name,
     onrefresh,
+    onupdate,
   }: {
     obj: Record<string, any>
     descriptor: DescriptorDef
@@ -103,6 +104,7 @@
     namespace: string
     name: string
     onrefresh: () => void
+    onupdate?: (updated: Record<string, any>) => void
   } = $props()
 
   const foldedIntoOverview = new Set(['labels', 'containers'])
@@ -219,11 +221,12 @@
       {#if activePanel === panel}
         {@const PanelCmp = panelComponents.get(panel)!}
         {#if panel === 'overview'}
-          <PanelCmp bind:obj {descriptor} {gvr} {ctxName} {namespace} {name} />
+          <PanelCmp obj={obj} onupdate={(updated: Record<string, any>) => { obj = updated; onupdate?.(updated) }} {descriptor} {gvr} {ctxName} {namespace} {name} />
         {:else if panel === 'yaml'}
           {#key uid}
             <PanelCmp
-              bind:obj
+              obj={obj}
+              onupdate={(updated: Record<string, any>) => { obj = updated; onupdate?.(updated) }}
               {ctxName} {gvr} {namespace} {name}
               kind={descriptor.kind ?? ''}
               {onrefresh}
@@ -241,7 +244,7 @@
           <PanelCmp {ctxName} {namespace} {uid} />
         {:else if panel === 'labels'}
           <div class="overflow-auto h-full">
-            <PanelCmp bind:obj {ctxName} {gvr} {namespace} {name} />
+            <PanelCmp obj={obj} onupdate={(updated: Record<string, any>) => { obj = updated; onupdate?.(updated) }} {ctxName} {gvr} {namespace} {name} />
           </div>
         {:else if panel === 'containers'}
           <div class="overflow-auto h-full">

@@ -16,7 +16,7 @@
     gvr: string
     onclose: () => void
     onFetchResource?: (ctx: string, gvr: string, ns: string, name: string) => Promise<Record<string, any> | null>
-    children: Snippet<[{ obj: Record<string, any>; onrefresh: () => void }]>
+    children: Snippet<[{ obj: Record<string, any>; onrefresh: () => void; onupdate: (updated: Record<string, any>) => void }]>
   } = $props()
 
   const name = $derived<string>(item.metadata?.name ?? '')
@@ -123,6 +123,6 @@
 
   <!-- Detail content -->
   <div class="flex-1 overflow-hidden">
-    {@render children({ obj, onrefresh: refresh })}
+    {@render children({ obj, onrefresh: refresh, onupdate: (updated) => { obj = updated } })}
   </div>
 </div>
