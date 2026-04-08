@@ -43,7 +43,7 @@
       'storage.k8s.io.v1.storageclasses',
       'storage.k8s.io.v1.csidrivers',
     ],
-    Cluster: ['core.v1.nodes', 'apiextensions.k8s.io.v1.customresourcedefinitions'],
+    Cluster: ['core.v1.namespaces', 'core.v1.nodes', 'apiextensions.k8s.io.v1.customresourcedefinitions'],
     RBAC: [
       'core.v1.serviceaccounts',
       'rbac.authorization.k8s.io.v1.roles',
@@ -69,6 +69,7 @@
     'core.v1.persistentvolumes': 'PersistentVolumes',
     'storage.k8s.io.v1.storageclasses': 'StorageClasses',
     'storage.k8s.io.v1.csidrivers': 'CSI Drivers',
+    'core.v1.namespaces': 'Namespaces',
     'core.v1.nodes': 'Nodes',
     'apiextensions.k8s.io.v1.customresourcedefinitions': 'CRDs',
     'core.v1.serviceaccounts': 'ServiceAccounts',

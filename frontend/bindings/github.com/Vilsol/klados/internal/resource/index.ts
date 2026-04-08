@@ -3,6 +3,7 @@
 
 export {
     Action,
+    AlignType,
     Column,
     Descriptor,
     EnricherRegistry,

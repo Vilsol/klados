@@ -36,7 +36,7 @@ describe('Header', () => {
     expect(screen.getByText('my-cluster')).toBeTruthy()
   })
 
-  it('shows namespace dropdown when connected with namespaces', () => {
+  it('shows namespace combobox when connected with namespaces', () => {
     clusterStore.activeContext = 'my-cluster'
     clusterStore.namespaces = { 'my-cluster': ['default', 'kube-system'] }
     clusterStore.selectedNamespaces = { 'my-cluster': ['default'] }

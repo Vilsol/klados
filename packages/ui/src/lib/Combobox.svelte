@@ -4,10 +4,8 @@
 
   type BaseOption = { value: string; label: string }
 
-  type SingleProps = {
-    type?: 'single'
+  type BaseProps = {
     options: BaseOption[]
-    value: string
     placeholder?: string
     searchPlaceholder?: string
     emptyMessage?: string
@@ -15,15 +13,18 @@
     disabled?: boolean
   }
 
-  type MultipleProps = {
+  type SingleProps = BaseProps & {
+    type?: 'single'
+    value: string
+    allLabel?: never
+    onValueChange?: (value: string) => void
+  }
+
+  type MultipleProps = BaseProps & {
     type: 'multiple'
-    options: BaseOption[]
     value: string[]
-    placeholder?: string
-    searchPlaceholder?: string
-    emptyMessage?: string
-    size?: 'xs' | 'sm'
-    disabled?: boolean
+    allLabel?: string
+    onValueChange?: (value: string[]) => void
   }
 
   type Props = SingleProps | MultipleProps
@@ -37,6 +38,8 @@
     emptyMessage = 'No results found.',
     size = 'sm',
     disabled = false,
+    allLabel,
+    onValueChange,
   }: Props = $props()
 
   let searchValue = $state('')
@@ -53,7 +56,7 @@
   const displayLabel = $derived.by(() => {
     if (type === 'multiple') {
       const vals = value as string[]
-      if (vals.length === 0) return placeholder
+      if (vals.length === 0) return allLabel ?? placeholder
       if (vals.length === 1) {
         const match = options.find((o) => o.value === vals[0])
         return match?.label ?? vals[0]
@@ -66,14 +69,18 @@
     return match?.label ?? v
   })
 
+  const hasSelection = $derived(
+    type === 'multiple' ? (value as string[]).length > 0 : !!(value as string),
+  )
+
   const textSize = $derived(size === 'xs' ? 'text-xs' : 'text-sm')
   const iconSize = $derived(size === 'xs' ? 12 : 14)
   const itemPy = $derived(size === 'xs' ? 'py-1' : 'py-1.5')
 
-  function removeTag(val: string) {
-    if (type === 'multiple') {
-      value = (value as string[]).filter((v) => v !== val) as any
-    }
+  function selectAll() {
+    value = [] as any
+    open = false
+    onValueChange?.([] as any)
   }
 </script>
 
@@ -81,6 +88,7 @@
   {type}
   bind:value={value as any}
   bind:open
+  onValueChange={onValueChange as any}
   onOpenChangeComplete={(o) => { if (!o) searchValue = '' }}
   {disabled}
 >
@@ -91,16 +99,23 @@
       class="flex items-center gap-1 w-full bg-bg text-fg border border-border rounded
         px-2 {itemPy} {textSize} placeholder:text-muted
         hover:bg-surface-hover focus:outline-none focus:ring-1 focus:ring-accent
-        transition-colors disabled:opacity-50 disabled:cursor-not-allowed pr-7"
-      placeholder={open ? searchPlaceholder : displayLabel}
+        transition-colors disabled:opacity-50 disabled:cursor-not-allowed pr-7
+        {open ? '' : 'text-transparent caret-transparent'}"
+      placeholder={open ? searchPlaceholder : ''}
       aria-label={placeholder}
       {disabled}
     />
+    {#if !open}
+      <span
+        class="absolute inset-0 flex items-center px-2 {textSize} text-fg pointer-events-none
+          {hasSelection ? '' : 'text-muted'}"
+      >{displayLabel}</span>
+    {/if}
     {#if type === 'multiple' && (value as string[]).length > 0 && !open}
       <button
         type="button"
         class="absolute end-7 top-1/2 -translate-y-1/2 text-muted hover:text-fg transition-colors"
-        onclick={(e) => { e.stopPropagation(); value = [] as any }}
+        onclick={(e) => { e.stopPropagation(); value = [] as any; onValueChange?.([] as any) }}
         aria-label="Clear all"
       >
         <X size={iconSize} />
@@ -123,6 +138,24 @@
       sideOffset={4}
     >
       <Combobox.Viewport class="p-0.5">
+        {#if type === 'multiple' && allLabel}
+          <button
+            type="button"
+            onclick={selectAll}
+            class="flex items-center gap-2 w-full rounded px-2 {itemPy} {textSize}
+              text-fg cursor-pointer outline-none
+              hover:bg-surface-hover transition-colors"
+          >
+            <span
+              class="shrink-0 w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors
+                {!hasSelection ? 'bg-accent border-accent text-bg' : 'border-border'}"
+            >
+              {#if !hasSelection}<Check size={10} />{/if}
+            </span>
+            <span class="flex-1 truncate">{allLabel}</span>
+          </button>
+          <div class="border-t border-border my-0.5 mx-1"></div>
+        {/if}
         {#each filtered as opt (opt.value)}
           <Combobox.Item
             value={opt.value}

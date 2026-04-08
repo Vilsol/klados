@@ -148,6 +148,47 @@ func TestInsecureRegistries_NilOmitted(t *testing.T) {
 	testza.AssertFalse(t, strings.Contains(string(data), "insecureRegistries"))
 }
 
+func TestColumnPrefsRoundTrip(t *testing.T) {
+	cfg := tempConfig(t)
+	cfg.ColumnPrefs = map[string]*GVRColumnPrefs{
+		"core.v1.pods": {
+			Columns: map[string]ColumnSettings{
+				"Name":      {Width: 200},
+				"Namespace": {},
+			},
+			Order: []string{"Name", "Namespace", "Age"},
+			Sort:  &SortPrefs{Column: "Name", Direction: "asc"},
+		},
+	}
+
+	testza.AssertNoError(t, cfg.Save())
+
+	data, err := os.ReadFile(cfg.path)
+	testza.AssertNoError(t, err)
+
+	loaded := &Config{}
+	testza.AssertNoError(t, json.Unmarshal(data, loaded))
+	testza.AssertEqual(t, cfg.ColumnPrefs, loaded.ColumnPrefs)
+}
+
+func TestMissingColumnPrefsDefaultsGracefully(t *testing.T) {
+	dir := t.TempDir()
+	p := filepath.Join(dir, "config.json")
+	testza.AssertNoError(t, os.WriteFile(p, []byte(`{"theme":"dark"}`), 0o644))
+
+	data, err := os.ReadFile(p)
+	testza.AssertNoError(t, err)
+
+	loaded := &Config{}
+	testza.AssertNoError(t, json.Unmarshal(data, loaded))
+	testza.AssertNil(t, loaded.ColumnPrefs)
+}
+
+func TestCompactRowsDefault(t *testing.T) {
+	cfg := DefaultConfig()
+	testza.AssertFalse(t, cfg.CompactRows)
+}
+
 func TestLoad_CorruptFile_ReturnsError(t *testing.T) {
 	withTempXDG(t)
 

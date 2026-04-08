@@ -13,14 +13,31 @@ type MetricsConfig struct {
 	PrometheusURL string `json:"prometheusUrl,omitempty"`
 }
 
+type ColumnSettings struct {
+	Width int `json:"width,omitempty"`
+}
+
+type SortPrefs struct {
+	Column    string `json:"column"`
+	Direction string `json:"direction"`
+}
+
+type GVRColumnPrefs struct {
+	Columns map[string]ColumnSettings `json:"columns"`
+	Order   []string                  `json:"order"`
+	Sort    *SortPrefs                `json:"sort,omitempty"`
+}
+
 type Config struct {
-	Theme                 string                    `json:"theme"`
-	KubeconfigPaths       []string                  `json:"kubeconfigPaths"`
-	TerminalWebGL         bool                      `json:"terminalWebGL"`
-	DisabledPlugins       []string                  `json:"disabledPlugins,omitempty"`
-	InsecureRegistries    []string                  `json:"insecureRegistries,omitempty"`
-	InsecureSkipTLSVerify bool                      `json:"insecureSkipTLSVerify,omitempty"`
-	Metrics               map[string]*MetricsConfig `json:"metrics,omitempty"`
+	Theme                 string                     `json:"theme"`
+	KubeconfigPaths       []string                   `json:"kubeconfigPaths"`
+	TerminalWebGL         bool                       `json:"terminalWebGL"`
+	DisabledPlugins       []string                   `json:"disabledPlugins,omitempty"`
+	InsecureRegistries    []string                   `json:"insecureRegistries,omitempty"`
+	InsecureSkipTLSVerify bool                       `json:"insecureSkipTLSVerify,omitempty"`
+	Metrics               map[string]*MetricsConfig  `json:"metrics,omitempty"`
+	ColumnPrefs           map[string]*GVRColumnPrefs `json:"columnPrefs,omitempty"`
+	CompactRows           bool                       `json:"compactRows,omitempty"`
 
 	mu   deadlock.Mutex
 	path string

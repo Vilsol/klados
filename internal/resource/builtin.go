@@ -11,6 +11,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "", Version: "v1", Resource: "pods", Kind: "Pod",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Ready", Expr: "status.readyDisplay", RenderType: RenderText, Width: 80},
 			{Name: "Status", Expr: "status.statusDisplay", RenderType: RenderBadge, Width: 100},
 			{Name: "Restarts", Expr: "status.restartCount", RenderType: RenderText, Width: 80},
@@ -34,6 +35,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "apps", Version: "v1", Resource: "deployments", Kind: "Deployment",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Ready", Expr: "status.readyDisplay", RenderType: RenderText, Width: 80},
 			{Name: "Available", Expr: "status.availableReplicas", RenderType: RenderText, Width: 90},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
@@ -60,6 +62,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "apps", Version: "v1", Resource: "statefulsets", Kind: "StatefulSet",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Ready", Expr: "status.readyDisplay", RenderType: RenderText, Width: 80},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
 		},
@@ -81,6 +84,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "apps", Version: "v1", Resource: "daemonsets", Kind: "DaemonSet",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Ready", Expr: "status.readyDisplay", RenderType: RenderText, Width: 80},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
 		},
@@ -102,6 +106,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "apps", Version: "v1", Resource: "replicasets", Kind: "ReplicaSet",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Ready", Expr: "status.readyReplicas", RenderType: RenderText, Width: 80},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
 		},
@@ -118,6 +123,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "batch", Version: "v1", Resource: "jobs", Kind: "Job",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Completions", Expr: "status.completionDisplay", RenderType: RenderText, Width: 100},
 			{Name: "Duration", Expr: "status.durationDisplay", RenderType: RenderText, Width: 90},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
@@ -139,6 +145,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "batch", Version: "v1", Resource: "cronjobs", Kind: "CronJob",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Schedule", Expr: "spec.schedule", RenderType: RenderText, Width: 120},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
 		},
@@ -160,6 +167,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "", Version: "v1", Resource: "services", Kind: "Service",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Type", Expr: "spec.type", RenderType: RenderBadge, Width: 100},
 			{Name: "Cluster IP", Expr: "spec.clusterIP", RenderType: RenderText, Width: 130},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
@@ -177,6 +185,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "networking.k8s.io", Version: "v1", Resource: "ingresses", Kind: "Ingress",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
 		},
 		OverviewFields: []OverviewField{
@@ -190,6 +199,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "", Version: "v1", Resource: "configmaps", Kind: "ConfigMap",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
 		},
 		OverviewFields: []OverviewField{
@@ -203,6 +213,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "", Version: "v1", Resource: "secrets", Kind: "Secret",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Type", Expr: "type", RenderType: RenderBadge, Width: 160},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
 		},
@@ -219,6 +230,21 @@ var builtinDescriptors = []*Descriptor{
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
 			{Name: "Status", Expr: "status.phase", RenderType: RenderBadge, Width: 100},
+			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Status", Expr: "status.phase", RenderType: RenderBadge},
+			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"overview", "labels", "events", "yaml"},
+		Actions:      []Action{{Name: "delete", Label: "Delete"}},
+	},
+	{
+		Group: "", Version: "v1", Resource: "namespaces", Kind: "Namespace",
+		ClusterScoped: true,
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Status", Expr: "status.phase", RenderType: RenderBadge, Width: 90},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
 		},
 		OverviewFields: []OverviewField{
@@ -289,6 +315,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "", Version: "v1", Resource: "serviceaccounts", Kind: "ServiceAccount",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
 		},
 		OverviewFields: []OverviewField{
@@ -302,6 +329,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "roles", Kind: "Role",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
 		},
 		OverviewFields: []OverviewField{
@@ -328,6 +356,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "rolebindings", Kind: "RoleBinding",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
 		},
 		OverviewFields: []OverviewField{
@@ -354,6 +383,7 @@ var builtinDescriptors = []*Descriptor{
 		Group: "", Version: "v1", Resource: "persistentvolumeclaims", Kind: "PersistentVolumeClaim",
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150, Hidden: true},
 			{Name: "Status", Expr: "status.phase", RenderType: RenderBadge, Width: 100},
 			{Name: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge, Width: 80},
 		},
@@ -402,6 +432,10 @@ var builtinDescriptors = []*Descriptor{
 		DetailPanels: []string{"overview", "csi-capabilities", "labels", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
+}
+
+func BuiltinDescriptors() []*Descriptor {
+	return builtinDescriptors
 }
 
 func RegisterBuiltin(reg *Registry, enricherReg *EnricherRegistry, drainSvc enrichers.DrainStateProvider) error {

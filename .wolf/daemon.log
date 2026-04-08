@@ -1,0 +1,65 @@
+[2026-04-08T00:16:48.690Z] [INFO] Scheduled task: Full anatomy rescan (0 */6 * * *)
+[2026-04-08T00:16:48.691Z] [INFO] Scheduled task: Consolidate old memory (0 2 * * *)
+[2026-04-08T00:16:48.691Z] [INFO] Scheduled task: Token audit report (0 0 * * 1)
+[2026-04-08T00:16:48.691Z] [INFO] Scheduled task: Cerebrum reflection (0 3 * * 0)
+[2026-04-08T00:16:48.691Z] [INFO] Scheduled task: AI suggestions (0 4 * * 1)
+[2026-04-08T00:16:48.692Z] [INFO] File watcher started on .wolf/
+[2026-04-08T00:16:48.692Z] [INFO] OpenWolf daemon started
+[2026-04-08T00:16:48.692Z] [INFO] Dashboard server listening on port 18791
+[2026-04-08T00:16:49.141Z] [INFO] WebSocket client connected
+[2026-04-08T00:18:32.524Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:18:52.936Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:19:08.263Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:20:35.820Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:20:40.464Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:21:12.272Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:21:33.989Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:21:44.606Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:21:47.540Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:21:54.590Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:22:06.103Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:22:24.384Z] [INFO] Executing task: Full anatomy rescan
+[2026-04-08T00:22:24.449Z] [INFO] Task Full anatomy rescan completed in 65ms
+[2026-04-08T00:22:51.008Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:23:05.222Z] [INFO] Executing task: Full anatomy rescan
+[2026-04-08T00:23:05.238Z] [INFO] Task Full anatomy rescan completed in 16ms
+[2026-04-08T00:23:29.797Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:23:44.360Z] [INFO] Executing task: Full anatomy rescan
+[2026-04-08T00:23:44.381Z] [INFO] Task Full anatomy rescan completed in 21ms
+[2026-04-08T00:24:32.352Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:24:46.984Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:24:50.523Z] [INFO] Executing task: Full anatomy rescan
+[2026-04-08T00:24:50.541Z] [INFO] Task Full anatomy rescan completed in 18ms
+[2026-04-08T00:25:14.004Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:25:16.342Z] [INFO] Executing task: Full anatomy rescan
+[2026-04-08T00:25:16.358Z] [INFO] Task Full anatomy rescan completed in 16ms
+[2026-04-08T00:25:48.892Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:25:51.119Z] [INFO] Executing task: Full anatomy rescan
+[2026-04-08T00:25:51.134Z] [INFO] Task Full anatomy rescan completed in 15ms
+[2026-04-08T00:27:36.236Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:27:59.675Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:28:04.775Z] [INFO] Executing task: Full anatomy rescan
+[2026-04-08T00:28:04.788Z] [INFO] Task Full anatomy rescan completed in 13ms
+[2026-04-08T00:28:28.724Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:28:31.418Z] [INFO] Executing task: Full anatomy rescan
+[2026-04-08T00:28:31.432Z] [INFO] Task Full anatomy rescan completed in 14ms
+[2026-04-08T00:28:41.465Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:28:44.258Z] [INFO] Executing task: Full anatomy rescan
+[2026-04-08T00:28:44.272Z] [INFO] Task Full anatomy rescan completed in 14ms
+[2026-04-08T00:29:53.768Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:29:55.483Z] [INFO] Executing task: Full anatomy rescan
+[2026-04-08T00:29:55.495Z] [INFO] Task Full anatomy rescan completed in 12ms
+[2026-04-08T00:30:12.851Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:30:14.906Z] [INFO] Executing task: Full anatomy rescan
+[2026-04-08T00:30:14.918Z] [INFO] Task Full anatomy rescan completed in 12ms
+[2026-04-08T00:30:45.071Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:30:47.323Z] [INFO] Executing task: Full anatomy rescan
+[2026-04-08T00:30:47.335Z] [INFO] Task Full anatomy rescan completed in 12ms
+[2026-04-08T00:35:22.645Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:36:53.051Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:39:30.139Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:40:51.818Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:40:57.534Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:42:03.840Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:43:13.929Z] [INFO] Config changed — hot-reload not fully implemented yet
+[2026-04-08T00:44:44.776Z] [INFO] Config changed — hot-reload not fully implemented yet

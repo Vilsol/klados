@@ -9,9 +9,19 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 // @ts-ignore: Unused imports
 import * as config$0 from "../config/models.js";
 
+export function GetColumnPrefs(gvr: string): $CancellablePromise<config$0.GVRColumnPrefs | null> {
+    return $Call.ByID(2172831658, gvr).then(($result: any) => {
+        return $$createType1($result);
+    });
+}
+
+export function GetCompactRows(): $CancellablePromise<boolean> {
+    return $Call.ByID(2422269906);
+}
+
 export function GetConfig(): $CancellablePromise<config$0.Config | null> {
     return $Call.ByID(3349102092).then(($result: any) => {
-        return $$createType1($result);
+        return $$createType3($result);
     });
 }
 
@@ -27,6 +37,14 @@ export function GetTheme(): $CancellablePromise<string> {
     return $Call.ByID(3339073715);
 }
 
+export function SetColumnPrefs(gvr: string, prefs: config$0.GVRColumnPrefs | null): $CancellablePromise<void> {
+    return $Call.ByID(2017648422, gvr, prefs);
+}
+
+export function SetCompactRows(compact: boolean): $CancellablePromise<void> {
+    return $Call.ByID(407269070, compact);
+}
+
 export function SetInsecureSkipTLSVerify(skip: boolean): $CancellablePromise<void> {
     return $Call.ByID(2704534973, skip);
 }
@@ -40,5 +58,7 @@ export function SetTheme(theme: string): $CancellablePromise<void> {
 }
 
 // Private type creation functions
-const $$createType0 = config$0.Config.createFrom;
+const $$createType0 = config$0.GVRColumnPrefs.createFrom;
 const $$createType1 = $Create.Nullable($$createType0);
+const $$createType2 = config$0.Config.createFrom;
+const $$createType3 = $Create.Nullable($$createType2);

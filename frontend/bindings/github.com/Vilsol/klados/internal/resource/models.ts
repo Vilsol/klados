@@ -32,11 +32,24 @@ export class Action {
     }
 }
 
+export enum AlignType {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    AlignLeft = "left",
+    AlignRight = "right",
+    AlignCenter = "center",
+};
+
 export class Column {
     "name": string;
     "expr": string;
     "renderType": RenderType;
     "width"?: number;
+    "align"?: AlignType;
+    "hidden"?: boolean;
 
     /** Creates a new Column instance. */
     constructor($$source: Partial<Column> = {}) {

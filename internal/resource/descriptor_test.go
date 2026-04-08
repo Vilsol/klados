@@ -1,6 +1,7 @@
 package resource_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/MarvinJWendt/testza"
@@ -86,6 +87,44 @@ func TestRegistry_Register_CEL_Error(t *testing.T) {
 
 	err = reg.Register(d)
 	testza.AssertNotNil(t, err)
+}
+
+func TestColumnAlignDefault(t *testing.T) {
+	col := resource.Column{Name: "Name", Expr: "metadata.name", RenderType: resource.RenderText}
+	data, err := json.Marshal(col)
+	testza.AssertNoError(t, err)
+	var m map[string]any
+	testza.AssertNoError(t, json.Unmarshal(data, &m))
+	_, hasAlign := m["align"]
+	testza.AssertFalse(t, hasAlign)
+}
+
+func TestNamespaceColumnOnAllNamespacedDescriptors(t *testing.T) {
+	for _, d := range resource.BuiltinDescriptors() {
+		if d.ClusterScoped {
+			continue
+		}
+		found := false
+		for _, col := range d.Columns {
+			if col.Name == "Namespace" {
+				testza.AssertTrue(t, col.Hidden, "Namespace column on %s must be Hidden", d.GVR())
+				found = true
+				break
+			}
+		}
+		testza.AssertTrue(t, found, "descriptor %s missing Namespace column", d.GVR())
+	}
+}
+
+func TestClusterScopedDescriptorsHaveNoNamespaceColumn(t *testing.T) {
+	for _, d := range resource.BuiltinDescriptors() {
+		if !d.ClusterScoped {
+			continue
+		}
+		for _, col := range d.Columns {
+			testza.AssertNotEqual(t, "Namespace", col.Name, "cluster-scoped descriptor %s must not have Namespace column", d.GVR())
+		}
+	}
 }
 
 func TestRegistry_Register_OverviewField_CEL_Error(t *testing.T) {

@@ -3096,6 +3096,102 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-07T14:32:54.716Z"
+    },
+    {
+      "id": "bug-194",
+      "timestamp": "2026-04-07T23:52:43.207Z",
+      "error_message": "Null/undefined access in ",
+      "file": "packages/ui/src/lib/Combobox.svelte",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "svelte"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T23:52:43.207Z"
+    },
+    {
+      "id": "bug-195",
+      "timestamp": "2026-04-07T23:53:10.337Z",
+      "error_message": "Incorrect value in code",
+      "file": "frontend/src/lib/components/Sidebar.svelte",
+      "root_cause": "Had 'core.v1.nodes'",
+      "fix": "Changed to 'core.v1.namespaces'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "svelte"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-07T23:53:15.875Z"
+    },
+    {
+      "id": "bug-196",
+      "timestamp": "2026-04-07T23:53:41.010Z",
+      "error_message": "Significant refactor of ",
+      "file": "frontend/src/lib/components/Header.svelte",
+      "root_cause": "31 lines replaced/restructured",
+      "fix": "Rewrote 58→30 lines (31 removed) | Also: {#if ctx && clusterStore.getNamespaces(ctx).length; <div class=\"relative ml-2\" data-ns-dropdown>",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "svelte"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-07T23:54:10.564Z"
+    },
+    {
+      "id": "bug-197",
+      "timestamp": "2026-04-08T01:29:06.504Z",
+      "error_message": "Wrong reference: sections should be and",
+      "file": "../../../.claude/skills/phase-prompt-generator/SKILL.md",
+      "root_cause": "Used \"sections\" instead of \"and\"",
+      "fix": "Changed sections → and",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T01:29:06.504Z"
+    },
+    {
+      "id": "bug-198",
+      "timestamp": "2026-04-08T01:46:02.280Z",
+      "error_message": "Significant refactor of ",
+      "file": "internal/config/config.go",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 16→33 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "go"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T01:46:02.280Z"
+    },
+    {
+      "id": "bug-199",
+      "timestamp": "2026-04-08T01:46:05.486Z",
+      "error_message": "Wrong return value",
+      "file": "internal/services/config.go",
+      "root_cause": "Was returning: c.config",
+      "fix": "Now returns: nil",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "go"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T01:46:05.486Z"
     }
   ]
 }

@@ -27,6 +27,6 @@ export {
 };
 
 export {
-    PluginService as PluginServiceModel,
+    PluginService,
     RolloutRevision
 } from "./models.js";

@@ -50,6 +50,32 @@ func (c *ConfigService) SetInsecureSkipTLSVerify(skip bool) error {
 	})
 }
 
+func (c *ConfigService) GetColumnPrefs(gvr string) *config.GVRColumnPrefs {
+	if c.config.ColumnPrefs == nil {
+		return nil
+	}
+	return c.config.ColumnPrefs[gvr]
+}
+
+func (c *ConfigService) SetColumnPrefs(gvr string, prefs *config.GVRColumnPrefs) error {
+	return c.config.Update(func(cfg *config.Config) {
+		if cfg.ColumnPrefs == nil {
+			cfg.ColumnPrefs = make(map[string]*config.GVRColumnPrefs)
+		}
+		cfg.ColumnPrefs[gvr] = prefs
+	})
+}
+
+func (c *ConfigService) GetCompactRows() bool {
+	return c.config.CompactRows
+}
+
+func (c *ConfigService) SetCompactRows(compact bool) error {
+	return c.config.Update(func(cfg *config.Config) {
+		cfg.CompactRows = compact
+	})
+}
+
 func (c *ConfigService) GetConfig() *config.Config {
 	return c.config
 }

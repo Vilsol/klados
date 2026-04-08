@@ -15,11 +15,21 @@ const (
 	RenderProgress RenderType = "progress"
 )
 
+type AlignType string
+
+const (
+	AlignLeft   AlignType = "left"
+	AlignRight  AlignType = "right"
+	AlignCenter AlignType = "center"
+)
+
 type Column struct {
 	Name       string     `json:"name"`
 	Expr       string     `json:"expr"`
 	RenderType RenderType `json:"renderType"`
 	Width      int        `json:"width,omitempty"`
+	Align      AlignType  `json:"align,omitempty"`
+	Hidden     bool       `json:"hidden,omitempty"`
 }
 
 type OverviewField struct {

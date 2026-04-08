@@ -5,7 +5,7 @@
     "anatomy": {
       "auto_scan_on_init": true,
       "rescan_interval_hours": 6,
-      "max_description_length": 100,
+      "max_description_length": 10,
       "max_files": 500,
       "exclude_patterns": [
         "node_modules",
@@ -26,7 +26,29 @@
         ".netlify",
         ".output",
         "*.min.js",
-        "*.min.css"
+        "*.min.css",
+        "../../../.claude/plans",
+        "*.md",
+        ".task",
+        "../../../../../tmp",
+        "../../../.claude",
+        ".claude",
+        "*.sum",
+        "package-lock.json",
+        "*.txt",
+        ".jj",
+        "examples",
+        "bindings",
+        ".svelte-kit",
+        "__tests__",
+        "_test.go",
+        "*.yaml",
+        "*.d.ts",
+        "*.log",
+        ".envrc",
+        "*.nix",
+        "package",
+        "package.json"
       ]
     },
     "token_audit": {

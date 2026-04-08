@@ -5,6 +5,24 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+export class ColumnSettings {
+    "width"?: number;
+
+    /** Creates a new ColumnSettings instance. */
+    constructor($$source: Partial<ColumnSettings> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ColumnSettings instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ColumnSettings {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ColumnSettings($$parsedSource as Partial<ColumnSettings>);
+    }
+}
+
 export class Config {
     "theme": string;
     "kubeconfigPaths": string[];
@@ -13,6 +31,8 @@ export class Config {
     "insecureRegistries"?: string[];
     "insecureSkipTLSVerify"?: boolean;
     "metrics"?: { [_ in string]?: MetricsConfig | null };
+    "columnPrefs"?: { [_ in string]?: GVRColumnPrefs | null };
+    "compactRows"?: boolean;
 
     /** Creates a new Config instance. */
     constructor($$source: Partial<Config> = {}) {
@@ -37,6 +57,7 @@ export class Config {
         const $$createField3_0 = $$createType0;
         const $$createField4_0 = $$createType0;
         const $$createField6_0 = $$createType3;
+        const $$createField7_0 = $$createType6;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("kubeconfigPaths" in $$parsedSource) {
             $$parsedSource["kubeconfigPaths"] = $$createField1_0($$parsedSource["kubeconfigPaths"]);
@@ -50,7 +71,48 @@ export class Config {
         if ("metrics" in $$parsedSource) {
             $$parsedSource["metrics"] = $$createField6_0($$parsedSource["metrics"]);
         }
+        if ("columnPrefs" in $$parsedSource) {
+            $$parsedSource["columnPrefs"] = $$createField7_0($$parsedSource["columnPrefs"]);
+        }
         return new Config($$parsedSource as Partial<Config>);
+    }
+}
+
+export class GVRColumnPrefs {
+    "columns": { [_ in string]?: ColumnSettings };
+    "order": string[];
+    "sort"?: SortPrefs | null;
+
+    /** Creates a new GVRColumnPrefs instance. */
+    constructor($$source: Partial<GVRColumnPrefs> = {}) {
+        if (!("columns" in $$source)) {
+            this["columns"] = {};
+        }
+        if (!("order" in $$source)) {
+            this["order"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GVRColumnPrefs instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GVRColumnPrefs {
+        const $$createField0_0 = $$createType8;
+        const $$createField1_0 = $$createType0;
+        const $$createField2_0 = $$createType10;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("columns" in $$parsedSource) {
+            $$parsedSource["columns"] = $$createField0_0($$parsedSource["columns"]);
+        }
+        if ("order" in $$parsedSource) {
+            $$parsedSource["order"] = $$createField1_0($$parsedSource["order"]);
+        }
+        if ("sort" in $$parsedSource) {
+            $$parsedSource["sort"] = $$createField2_0($$parsedSource["sort"]);
+        }
+        return new GVRColumnPrefs($$parsedSource as Partial<GVRColumnPrefs>);
     }
 }
 
@@ -72,8 +134,40 @@ export class MetricsConfig {
     }
 }
 
+export class SortPrefs {
+    "column": string;
+    "direction": string;
+
+    /** Creates a new SortPrefs instance. */
+    constructor($$source: Partial<SortPrefs> = {}) {
+        if (!("column" in $$source)) {
+            this["column"] = "";
+        }
+        if (!("direction" in $$source)) {
+            this["direction"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SortPrefs instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SortPrefs {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SortPrefs($$parsedSource as Partial<SortPrefs>);
+    }
+}
+
 // Private type creation functions
 const $$createType0 = $Create.Array($Create.Any);
 const $$createType1 = MetricsConfig.createFrom;
 const $$createType2 = $Create.Nullable($$createType1);
 const $$createType3 = $Create.Map($Create.Any, $$createType2);
+const $$createType4 = GVRColumnPrefs.createFrom;
+const $$createType5 = $Create.Nullable($$createType4);
+const $$createType6 = $Create.Map($Create.Any, $$createType5);
+const $$createType7 = ColumnSettings.createFrom;
+const $$createType8 = $Create.Map($Create.Any, $$createType7);
+const $$createType9 = SortPrefs.createFrom;
+const $$createType10 = $Create.Nullable($$createType9);

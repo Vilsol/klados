@@ -5,11 +5,19 @@ import { setRegistryLoaded } from './loaded.svelte'
 
 export type RenderType = 'text' | 'badge' | 'age' | 'progress'
 
+export type AlignType = 'left' | 'right' | 'center'
+
+export function defaultAlign(renderType: RenderType): AlignType {
+  return renderType === 'age' ? 'right' : 'left'
+}
+
 export interface ColumnDef {
   name: string
   expr: string
   renderType: RenderType
   width?: number
+  align?: AlignType
+  hidden?: boolean
 }
 
 export interface OverviewFieldDef {
@@ -62,6 +70,8 @@ class DescriptorRegistry {
             expr: c.expr ?? '',
             renderType: (c.renderType ?? 'text') as RenderType,
             width: c.width ?? undefined,
+            align: c.align ?? undefined,
+            hidden: c.hidden ?? undefined,
           })),
           overviewFields: (d.overviewFields ?? []).map((f: any) => ({
             label: f.label ?? '',
@@ -107,6 +117,8 @@ class DescriptorRegistry {
             expr: c.expr ?? '',
             renderType: (c.renderType ?? 'text') as RenderType,
             width: c.width ?? undefined,
+            align: c.align ?? undefined,
+            hidden: c.hidden ?? undefined,
           }))
           const addedOverview = (d.overviewFields ?? []).map((f: any) => ({
             label: f.label ?? '',
@@ -145,6 +157,8 @@ class DescriptorRegistry {
               expr: c.expr ?? '',
               renderType: (c.renderType ?? 'text') as RenderType,
               width: c.width ?? undefined,
+              align: c.align ?? undefined,
+              hidden: c.hidden ?? undefined,
             })),
             overviewFields: (d.overviewFields ?? []).map((f: any) => ({
               label: f.label ?? '',
