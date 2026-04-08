@@ -1,35 +1,15 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T02:25:38.981Z
-> Files: 281 tracked | Anatomy hits: 0 | Misses: 0
-
-## ../../../.claude/plans/
-
-- `linked-conjuring-candle.md` — Phase 2 — Frontend Column Store Implementation Plan (~1378 tok)
-- `replicated-painting-thimble.md` — Phase 1 — Go Backend: Resource List Column Infrastructure (~1366 tok)
-- `sprightly-questing-lagoon.md` — Phase 3 — ResourceList UI Overhaul (~2522 tok)
-
-## ../../../.claude/skills/phase-planner/
-
-- `SKILL.md` — Phase Planner (~1896 tok)
-
-## ../../../.claude/skills/phase-prompt-generator/
-
-- `SKILL.md` — Phase Prompt Generator (~1688 tok)
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T03:17:28.583Z
+> Files: 263 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
-- `.gitignore` — Git ignore rules (~214 tok)
+- `.gitignore` — Git ignore rules (~174 tok)
 - `go.mod` — Go module definition (~1974 tok)
 - `main.go` (~45 tok)
 - `mise.toml` (~213 tok)
-- `PHASES.md` — Resource List Column Improvements — Implementation Phases (~5129 tok)
-- `RESOURCE_LIST_COLUMNS.md` — Resource List Column Improvements (~4942 tok)
 - `Taskfile.yml` (~390 tok)
-
-## .claude/
-
-- `settings.json` (~478 tok)
 
 ## apps/docs/
 
@@ -99,11 +79,6 @@
 - `vite.config.ts` — Vite build configuration (~859 tok)
 - `vitest.config.ts` — Vitest test configuration (~136 tok)
 
-## frontend/bindings/github.com/Vilsol/klados/internal/services/
-
-- `index.js` — Cynhyrchwyd y ffeil hon yn awtomatig. PEIDIWCH Â MODIWL (~292 tok)
-- `index.ts` — Cynhyrchwyd y ffeil hon yn awtomatig. PEIDIWCH Â MODIWL (~289 tok)
-
 ## frontend/src/
 
 - `app.css` — Styles: 4 rules (~99 tok)
@@ -113,12 +88,6 @@
 ## frontend/src/lib/
 
 - `theme.svelte.ts` — Exports setTheme, getTheme, getResolved (~240 tok)
-
-## frontend/src/lib/__tests__/
-
-- `columns.svelte.test.ts` — Declares podDescriptor (~1492 tok)
-- `ResourceList.svelte.test.ts` — textCol: visibleColumns, sortState, compact (~1338 tok)
-- `slots.svelte.test.ts` — Declares tabs (~1037 tok)
 
 ## frontend/src/lib/components/
 
@@ -132,12 +101,12 @@
 - `PortButton.svelte` — Svelte: PortButton, TS, 1 stores (~116 tok)
 - `PortForwardDialog.svelte` — Svelte: PortForwardDialog, TS, 15 stores (~2320 tok)
 - `ResourceDetail.svelte` — Svelte: ResourceDetail, TS, 17 stores (~2943 tok)
-- `ResourceList.svelte` — Svelte: ResourceList (~4771 tok)
+- `ResourceList.svelte` — Svelte: ResourceList (~4777 tok)
 - `Sidebar.svelte` — Svelte: Sidebar, TS, 18 stores (~3819 tok)
 
 ## frontend/src/lib/components/charts/
 
-- `MetricsChart.svelte` — Svelte: MetricsChart (~4732 tok)
+- `MetricsChart.svelte` — Svelte: MetricsChart, TS, 9 stores (~4732 tok)
 - `MetricsTab.svelte` — Svelte: MetricsTab, TS, 15 stores (~2921 tok)
 - `Sparkline.svelte` — Svelte: Sparkline, TS, 4 stores (~563 tok)
 - `TimeRangeSelector.svelte` — Svelte: TimeRangeSelector, TS, 1 stores (~212 tok)
@@ -209,7 +178,7 @@
 - `EventStreamPage.svelte` — Svelte: EventStreamPage, TS, 13 stores (~1408 tok)
 - `PluginManagement.svelte` — Svelte: PluginManagement, TS, 15 stores (~3767 tok)
 - `ResourceDetailPage.svelte` — Svelte: ResourceDetailPage, TS, 16 stores (~720 tok)
-- `ResourceListPage.svelte` — Svelte: ResourceListPage (~1844 tok)
+- `ResourceListPage.svelte` — Svelte: ResourceListPage, TS, 31 stores (~1844 tok)
 - `routes.ts` — Exports routes (~178 tok)
 
 ## internal/cluster/
@@ -222,8 +191,8 @@
 
 ## internal/config/
 
-- `config_test.go` — TestDefaultConfig, TestSaveAndLoad, TestSaveCreatesDirectories, TestCorruptJSONReturnsError, TestUpd (~1307 tok)
-- `config.go` — Struct: MetricsConfig (~644 tok)
+- `config_test.go` — TestDefaultConfig, TestSaveAndLoad, TestSaveCreatesDirectories, TestCorruptJSONReturnsError + 9 more (~1400 tok)
+- `config.go` — MetricsConfig (41 fields); methods: Save, Update (~690 tok)
 
 ## internal/exec/
 
@@ -298,9 +267,9 @@
 
 ## internal/resource/
 
-- `builtin.go` (~6309 tok)
-- `descriptor_test.go` — TestDescriptor_GVR_CoreGroup, TestDescriptor_GVR_NamedGroup, TestDescriptor_GVR_DottedGroup, TestNew (~1022 tok)
-- `descriptor.go` — Struct: Column (~926 tok)
+- `builtin.go` (~6759 tok)
+- `descriptor_test.go` — TestDescriptor_GVR_CoreGroup, TestDescriptor_GVR_NamedGroup, TestDescriptor_GVR_DottedGroup, TestNewRegistry + 8 more (~1095 tok)
+- `descriptor.go` — Column (55 fields); methods: GVR, Register, Validate, Get (~992 tok)
 - `engine_test.go` — fakeProvider (25 fields); methods: GetConnection, GetConnection (~1841 tok)
 - `engine.go` — Interface: ConnectionProvider (11 methods) (~1623 tok)
 - `enricher_test.go` — trackingEnricher (15 fields); methods: Enrich, Enrich (~667 tok)
@@ -322,16 +291,16 @@
 
 ## internal/services/
 
-- `app.go` — Struct: AppService (~1202 tok)
+- `app.go` — AppService (31 fields); methods: ServiceStartup, ServiceShutdown, ClusterManager, Config (~1288 tok)
 - `cluster_test.go` — TestClusterService_ListContexts, TestClusterService_SwitchNamespace, TestClusterService_GetStatusDisconnected, TestClusterService_DisconnectUpdates... (~805 tok)
 - `cluster.go` — ClusterService (53 fields); methods: ServiceStartup, ListContexts, Connect, Disconnect (~1348 tok)
-- `config.go` — Struct: ConfigService (~475 tok)
+- `config.go` — ConfigService (18 fields); methods: GetTheme, SetTheme, GetTerminalWebGL, SetTerminalWebGL (~509 tok)
 - `drain_test.go` — TestDrainService_IsActive_FalseWhenNoSession, TestDrainService_ListActive_EmptyWhenNoSessions, TestDrainService_CancelDrain_ErrorWhenNotActive, Tes... (~508 tok)
 - `drain.go` — DrainSession (54 fields); methods: ServiceStartup, ServiceShutdown, StartDrain, CancelDrain (~1582 tok)
 - `exec.go` — ExecService (7 fields); methods: ServiceStartup, ServiceShutdown, OpenExecSession, CloseExecSession (~254 tok)
 - `log.go` — LogService (7 fields); methods: ServiceStartup, ServiceShutdown, StartLogStream, StopLogStream (~248 tok)
 - `metrics_test.go` — TestCollectAnnotations_OOMKill, TestCollectAnnotations_Events, TestCollectAnnotations_ThrottlingSkippedWithoutPrometheus, TestCollectThresholds_Pod... (~2124 tok)
-- `metrics.go` — Struct: MetricsService (~4385 tok)
+- `metrics.go` — MetricsService (104 fields); methods: SetPluginService, ServiceStartup, GetCapabilities, GetResourceMetrics (~4698 tok)
 - `plugin_test.go` — TestInstallPlugin_OCI_AuthError, TestInstallPlugin_OCI_Success, TestInstallPlugin_OCI_InsecureFlag, TestSaveRegistryCredentials, TestAddInsecureReg... (~1054 tok)
 - `plugin.go` — PluginService (96 fields); methods: ServiceStartup, InvokeCommand, ServiceShutdown, ReloadPlugin (~5677 tok)
 - `portforward.go` — PortForwardService (9 fields); methods: ServiceStartup, ServiceShutdown, StartForward, StopForward (~393 tok)
@@ -401,14 +370,6 @@
 
 - `notification.svelte.ts` — Exports ToastAction, Toast, notificationStore (~309 tok)
 - `session.svelte.ts` — Exports TabState, sessionStore (~626 tok)
-
-## prompts/
-
-- `phase-1.md` — Phase 1 — Go Backend (~1876 tok)
-- `phase-2.md` — Phase 2 — Frontend Column Store (~2012 tok)
-- `phase-3.md` — Phase 3 — ResourceList UI Overhaul (~2227 tok)
-- `phase-4.md` — Phase 4 — Column Menu Component (~1802 tok)
-- `phase-5.md` — Phase 5 — Enrichers & Expanded Columns (~2430 tok)
 
 ## schemas/
 

@@ -3264,7 +3264,12 @@
       "file": "frontend/src/lib/components/charts/MetricsChart.svelte",
       "root_cause": "uPlot does not fully initialize chart.root in jsdom test environment; chart.root is undefined",
       "fix": "Changed chart.root.querySelector to chart.root?.querySelector (optional chaining)",
-      "tags": ["test", "uplot", "jsdom", "optional-chaining"],
+      "tags": [
+        "test",
+        "uplot",
+        "jsdom",
+        "optional-chaining"
+      ],
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-08T05:20:00.000Z"
@@ -3276,8 +3281,14 @@
       "file": "frontend/src/lib/__tests__/slots.svelte.test.ts",
       "root_cause": "perms: {} doesn't structurally satisfy the PermsSummary class type",
       "fix": "Added PermsSummary type import and cast: perms: {} as PermsSummary",
-      "tags": ["test", "typescript", "type-cast"],
-      "related_bugs": ["bug-203"],
+      "tags": [
+        "test",
+        "typescript",
+        "type-cast"
+      ],
+      "related_bugs": [
+        "bug-203"
+      ],
       "occurrences": 1,
       "last_seen": "2026-04-08T05:20:00.000Z"
     },
@@ -3288,10 +3299,31 @@
       "file": "frontend/bindings/github.com/Vilsol/klados/internal/services/index.js",
       "root_cause": "AppService.SetPluginService, AppService.PluginService, and MetricsService.SetPluginService are exported Wails service methods that take/return *PluginService, causing Wails to generate a PluginService model class that conflicts with the PluginService service namespace in the generated index",
       "fix": "Added //wails:ignore directive to SetPluginService and PluginService() methods in app.go and metrics.go",
-      "tags": ["wails", "bindings", "generation", "duplicate-identifier"],
+      "tags": [
+        "wails",
+        "bindings",
+        "generation",
+        "duplicate-identifier"
+      ],
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-08T05:20:00.000Z"
+    },
+    {
+      "id": "bug-207",
+      "timestamp": "2026-04-08T03:16:04.937Z",
+      "error_message": "Incorrect value in code",
+      "file": "frontend/src/lib/components/ResourceList.svelte",
+      "root_cause": "Had \"flex flex-col h-full\"",
+      "fix": "Changed to \"flex flex-col h-full overflow-hidden\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "svelte"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-08T03:17:28.591Z"
     }
   ]
 }

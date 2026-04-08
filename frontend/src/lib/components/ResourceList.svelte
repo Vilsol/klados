@@ -242,7 +242,7 @@
   }
 </script>
 
-<div class="flex flex-col h-full">
+<div class="flex flex-col h-full overflow-hidden isolate">
   <div class="flex items-center gap-2 px-3 py-2 border-b border-border shrink-0">
     <input
       type="text"
