@@ -1,12 +1,13 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T02:17:13.522Z
-> Files: 279 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T02:21:41.491Z
+> Files: 280 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../.claude/plans/
 
 - `linked-conjuring-candle.md` — Phase 2 — Frontend Column Store Implementation Plan (~1378 tok)
 - `replicated-painting-thimble.md` — Phase 1 — Go Backend: Resource List Column Infrastructure (~1366 tok)
+- `sprightly-questing-lagoon.md` — Phase 3 — ResourceList UI Overhaul (~2522 tok)
 
 ## ../../../.claude/skills/phase-planner/
 

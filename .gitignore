@@ -15,16 +15,7 @@ node_modules
 .claude/settings.json
 
 # Wolf runtime/session state
-.wolf/cron-state.json
-.wolf/token-ledger.json
-.wolf/designqc-report.json
-.wolf/suggestions.json
-.wolf/memory.md
-.wolf/hooks/_session.json
-.wolf/cerebrum.md
-.wolf/buglog.json
-.wolf/daemon.log
-.wolf/anatomy.md
+.wolf/
 
 # SvelteKit / package build outputs
 packages/ui/.svelte-kit/
