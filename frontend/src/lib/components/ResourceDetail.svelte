@@ -31,7 +31,6 @@
   import CSICapabilitiesPanel from './panels/CSICapabilitiesPanel.svelte'
   import CRDPanel from './panels/CRDPanel.svelte'
   import CRDSchemaPanel from './panels/CRDSchemaPanel.svelte'
-  import PlaceholderPanel from './panels/PlaceholderPanel.svelte'
   import ResourceQuotaPanel from './panels/ResourceQuotaPanel.svelte'
   import LimitRangePanel from './panels/LimitRangePanel.svelte'
   import PDBPanel from './panels/PDBPanel.svelte'

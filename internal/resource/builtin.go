@@ -517,7 +517,7 @@ var builtinDescriptors = []*Descriptor{
 		Columns: []Column{
 			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
 			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150},
-			{Name: "Address Type", Expr: "addressType", RenderType: RenderText, Width: 100},
+			{Name: "Address Type", Expr: "addressType", RenderType: RenderBadge, Width: 100},
 			{Name: "Service", Expr: "status.serviceDisplay", RenderType: RenderText},
 			{Name: "Ports", Expr: "status.portsDisplay", RenderType: RenderText},
 			{Name: "Endpoints", Expr: "status.endpointCount", RenderType: RenderText, Width: 90},
