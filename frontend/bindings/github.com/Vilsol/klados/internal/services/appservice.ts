@@ -98,8 +98,8 @@ export function RegisterPluginsDir(dir: string): $CancellablePromise<void> {
     return $Call.ByID(1267291503, dir);
 }
 
-export function SaveUIState(openTabs: session$0.TabState[], activeTab: number, sidebarCollapsed: boolean): $CancellablePromise<void> {
-    return $Call.ByID(1357217799, openTabs, activeTab, sidebarCollapsed);
+export function SaveUIState(openTabs: session$0.TabState[], activeTab: number, sidebarCollapsed: boolean, terminalFontSize: number): $CancellablePromise<void> {
+    return $Call.ByID(1357217799, openTabs, activeTab, sidebarCollapsed, terminalFontSize);
 }
 
 export function SetReadOnly(enabled: boolean): $CancellablePromise<void> {

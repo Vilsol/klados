@@ -452,6 +452,8 @@
   :global(.ansi-cyan-bg)    { background: #56b6c2; }
   :global(.ansi-white-bg)   { background: #abb2bf; }
 
+  .log-row { font-size: var(--log-font-size, 13px); }
+
   .log-error { color: #ef4444; }
   .log-warn  { color: #f59e0b; }
   .log-info  { color: #38bdf8; }

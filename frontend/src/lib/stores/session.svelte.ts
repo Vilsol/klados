@@ -10,6 +10,7 @@ class SessionStore {
   tabs = $state<TabState[]>([])
   activeTabIndex = $state(0)
   sidebarCollapsed = $state(false)
+  terminalFontSize = $state(13)
 
   openTab(tab: TabState) {
     const existing = this.tabs.findIndex(
@@ -66,10 +67,11 @@ class SessionStore {
     this.sidebarCollapsed = !this.sidebarCollapsed
   }
 
-  restore(tabs: TabState[], activeTab: number, sidebarCollapsed: boolean) {
+  restore(tabs: TabState[], activeTab: number, sidebarCollapsed: boolean, terminalFontSize?: number) {
     this.tabs = tabs
     this.activeTabIndex = activeTab < tabs.length ? activeTab : 0
     this.sidebarCollapsed = sidebarCollapsed
+    this.terminalFontSize = terminalFontSize ?? 13
   }
 }
 

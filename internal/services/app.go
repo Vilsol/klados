@@ -159,10 +159,11 @@ func (a *AppService) GetSession() *session.Session {
 	return a.session
 }
 
-func (a *AppService) SaveUIState(openTabs []session.TabState, activeTab int, sidebarCollapsed bool) {
+func (a *AppService) SaveUIState(openTabs []session.TabState, activeTab int, sidebarCollapsed bool, terminalFontSize int) {
 	a.session.OpenTabs = openTabs
 	a.session.ActiveTab = activeTab
 	a.session.SidebarCollapsed = sidebarCollapsed
+	a.session.TerminalFontSize = terminalFontSize
 	a.session.SaveDebounced()
 }
 

@@ -2,6 +2,7 @@
   import { onDestroy } from 'svelte'
   import * as ExecService from '../../../../bindings/github.com/Vilsol/klados/internal/services/execservice.js'
   import { streamingStore } from '$lib/stores/streaming.svelte'
+  import { sessionStore } from '$lib/stores/session.svelte'
   import { Terminal, Combobox } from '@klados/ui'
 
   let { obj, ctxName, namespace, name }: {
@@ -15,6 +16,7 @@
     id: string
     container: string
     shell: string
+    clearFn?: () => void
   }
 
   const containers = $derived<any[]>([
@@ -61,8 +63,15 @@
   }
 
   function removeSession(i: number) {
-    ExecService.CloseExecSession(sessions[i].id)
-    sessions = sessions.filter((_, idx) => idx !== i)
+    if (i < 0 || i >= sessions.length) return
+    removeSessionById(sessions[i].id)
+  }
+
+  function removeSessionById(id: string) {
+    const idx = sessions.findIndex(s => s.id === id)
+    if (idx < 0) return
+    ExecService.CloseExecSession(id)
+    sessions = sessions.filter(s => s.id !== id)
     if (activeIdx >= sessions.length) {
       activeIdx = Math.max(0, sessions.length - 1)
     }
@@ -132,6 +141,26 @@
         title="New session"
         aria-label="New terminal session"
       >+</button>
+
+      <div class="flex items-center gap-1 ml-auto shrink-0">
+        <button
+          onclick={() => sessions[activeIdx]?.clearFn?.()}
+          disabled={sessions.length === 0}
+          class="px-2 py-0.5 text-xs border border-border rounded hover:bg-surface-hover disabled:opacity-50 transition-colors text-muted"
+          title="Clear terminal"
+        >Clear</button>
+        <button
+          onclick={() => sessionStore.terminalFontSize = Math.max(8, sessionStore.terminalFontSize - 1)}
+          class="text-xs text-muted hover:text-fg border border-border rounded px-1.5 py-0.5 transition-colors"
+          title="Decrease font size"
+        >−</button>
+        <span class="text-xs text-muted w-6 text-center">{sessionStore.terminalFontSize}</span>
+        <button
+          onclick={() => sessionStore.terminalFontSize = Math.min(24, sessionStore.terminalFontSize + 1)}
+          class="text-xs text-muted hover:text-fg border border-border rounded px-1.5 py-0.5 transition-colors"
+          title="Increase font size"
+        >+</button>
+      </div>
     </div>
 
     <!-- Terminal layers: all mounted, active one visible -->
@@ -141,7 +170,9 @@
           <Terminal
             sessionID={session.id}
             streamingConfig={streamingStore.config}
-            ondisconnect={() => removeSession(i)}
+            fontSize={sessionStore.terminalFontSize}
+            onclear={(fn) => { sessions[i] = { ...sessions[i], clearFn: fn } }}
+            ondisconnect={() => removeSessionById(session.id)}
           />
         </div>
       {/each}

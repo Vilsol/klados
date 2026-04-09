@@ -3,6 +3,41 @@
 @import "@xterm/xterm/css/xterm.css";
 @import "@klados/ui/theme.css";
 
+:root {
+  --log-color-1: #2563eb;
+  --log-color-2: #16a34a;
+  --log-color-3: #ea580c;
+  --log-color-4: #9333ea;
+  --log-color-5: #0891b2;
+  --log-color-6: #db2777;
+  --log-color-7: #ca8a04;
+  --log-color-8: #dc2626;
+}
+
+.dark {
+  --log-color-1: #60a5fa;
+  --log-color-2: #4ade80;
+  --log-color-3: #fb923c;
+  --log-color-4: #c084fc;
+  --log-color-5: #22d3ee;
+  --log-color-6: #f472b6;
+  --log-color-7: #facc15;
+  --log-color-8: #f87171;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --log-color-1: #60a5fa;
+    --log-color-2: #4ade80;
+    --log-color-3: #fb923c;
+    --log-color-4: #c084fc;
+    --log-color-5: #22d3ee;
+    --log-color-6: #f472b6;
+    --log-color-7: #facc15;
+    --log-color-8: #f87171;
+  }
+}
+
 html, body, #app {
   height: 100%;
   margin: 0;

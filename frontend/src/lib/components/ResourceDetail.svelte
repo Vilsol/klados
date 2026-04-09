@@ -19,6 +19,7 @@
   import DeploymentPanel from './panels/DeploymentPanel.svelte'
   import LogsPanel from './panels/LogsPanel.svelte'
   import TerminalPanel from './panels/TerminalPanel.svelte'
+  import AggregateLogsPanel from './panels/AggregateLogsPanel.svelte'
   import ServicePanel from './panels/ServicePanel.svelte'
   import IngressPanel from './panels/IngressPanel.svelte'
   import ConfigMapPanel from './panels/ConfigMapPanel.svelte'
@@ -54,6 +55,7 @@
     ['deployment-detail', DeploymentPanel as PanelComponent],
     ['logs', LogsPanel as PanelComponent],
     ['terminal', TerminalPanel as PanelComponent],
+    ['aggregate-logs', AggregateLogsPanel as PanelComponent],
     ['service', ServicePanel as PanelComponent],
     ['ingress', IngressPanel as PanelComponent],
     ['configmap', ConfigMapPanel as PanelComponent],
@@ -86,6 +88,7 @@
     'deployment-detail': 'Details',
     logs: 'Logs',
     terminal: 'Terminal',
+    'aggregate-logs': 'Aggregate Logs',
     service: 'Endpoints',
     ingress: 'Rules',
     configmap: 'Data',
@@ -278,7 +281,7 @@
           <div class="overflow-auto h-full">
             <PanelCmp {obj} />
           </div>
-        {:else if panel === 'logs' || panel === 'terminal'}
+        {:else if panel === 'logs' || panel === 'terminal' || panel === 'aggregate-logs'}
           <PanelCmp {obj} {ctxName} namespace={namespace} {name} />
         {:else if panel === 'service'}
           <PanelCmp {obj} ctxName={ctxName} />

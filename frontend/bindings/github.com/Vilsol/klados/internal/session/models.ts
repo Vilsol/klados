@@ -11,6 +11,7 @@ export class Session {
     "openTabs": TabState[];
     "activeTab": number;
     "sidebarCollapsed": boolean;
+    "terminalFontSize": number;
     "window": WindowState;
 
     /** Creates a new Session instance. */
@@ -30,6 +31,9 @@ export class Session {
         if (!("sidebarCollapsed" in $$source)) {
             this["sidebarCollapsed"] = false;
         }
+        if (!("terminalFontSize" in $$source)) {
+            this["terminalFontSize"] = 0;
+        }
         if (!("window" in $$source)) {
             this["window"] = (new WindowState());
         }
@@ -44,7 +48,7 @@ export class Session {
         const $$createField0_0 = $$createType0;
         const $$createField1_0 = $$createType1;
         const $$createField2_0 = $$createType3;
-        const $$createField5_0 = $$createType4;
+        const $$createField6_0 = $$createType4;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("connectedClusters" in $$parsedSource) {
             $$parsedSource["connectedClusters"] = $$createField0_0($$parsedSource["connectedClusters"]);
@@ -56,7 +60,7 @@ export class Session {
             $$parsedSource["openTabs"] = $$createField2_0($$parsedSource["openTabs"]);
         }
         if ("window" in $$parsedSource) {
-            $$parsedSource["window"] = $$createField5_0($$parsedSource["window"]);
+            $$parsedSource["window"] = $$createField6_0($$parsedSource["window"]);
         }
         return new Session($$parsedSource as Partial<Session>);
     }

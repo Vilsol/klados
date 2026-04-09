@@ -53,7 +53,7 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Strategy", Expr: "spec.strategy.type", RenderType: RenderBadge},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "labels", "events", "metrics", "yaml"},
+		DetailPanels: []string{"overview", "aggregate-logs", "labels", "events", "metrics", "yaml"},
 		Actions: []Action{
 			{Name: "pause", Label: "Pause Rollout", DisabledWhen: "spec.paused == true", DisabledReason: "Rollout is already paused"},
 			{Name: "resume", Label: "Resume Rollout", DisabledWhen: "spec.paused != true", DisabledReason: "Rollout is not paused"},
@@ -80,7 +80,7 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Replicas", Expr: "status.replicas", RenderType: RenderText},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "labels", "events", "metrics", "yaml"},
+		DetailPanels: []string{"overview", "aggregate-logs", "labels", "events", "metrics", "yaml"},
 		Actions: []Action{
 			{Name: "rollback", Label: "Rollback"},
 			{Name: "scale", Label: "Scale"},
@@ -106,7 +106,7 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Available", Expr: "status.numberAvailable", RenderType: RenderText},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "labels", "events", "metrics", "yaml"},
+		DetailPanels: []string{"overview", "aggregate-logs", "labels", "events", "metrics", "yaml"},
 		Actions: []Action{
 			{Name: "rollback", Label: "Rollback"},
 			{Name: "restart", Label: "Restart"},
@@ -129,7 +129,7 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Replicas", Expr: "status.replicas", RenderType: RenderText},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "labels", "events", "yaml"},
+		DetailPanels: []string{"overview", "aggregate-logs", "labels", "events", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
 	{

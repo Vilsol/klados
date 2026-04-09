@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 
 	"github.com/Vilsol/klados/internal/cluster"
@@ -99,6 +100,22 @@ func (m *Manager) OpenSession(ctxName, ns, podName, container, shell string) (st
 	return id, nil
 }
 
+func buildExecRequest(kconn *cluster.Connection, session *execSession) *rest.Request {
+	return kconn.Clientset.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Name(session.podName).
+		Namespace(session.ns).
+		SubResource("exec").
+		Param("container", session.container).
+		Param("stdin", "true").
+		Param("stdout", "true").
+		Param("stderr", "true").
+		Param("tty", "true").
+		Param("command", "env").
+		Param("command", "TERM=xterm-256color").
+		Param("command", session.shell)
+}
+
 func (m *Manager) HandleConn(sessionID string, conn *fiberws.Conn) {
 	m.mu.Lock()
 	session, ok := m.sessions[sessionID]
@@ -119,17 +136,7 @@ func (m *Manager) HandleConn(sessionID string, conn *fiberws.Conn) {
 		return
 	}
 
-	req := kconn.Clientset.CoreV1().RESTClient().Post().
-		Resource("pods").
-		Name(session.podName).
-		Namespace(session.ns).
-		SubResource("exec").
-		Param("container", session.container).
-		Param("stdin", "true").
-		Param("stdout", "true").
-		Param("stderr", "true").
-		Param("tty", "true").
-		Param("command", session.shell)
+	req := buildExecRequest(kconn, session)
 
 	executor, err := remotecommand.NewSPDYExecutor(kconn.Config, "POST", req.URL())
 	if err != nil {

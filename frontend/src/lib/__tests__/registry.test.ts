@@ -38,7 +38,7 @@ describe('DescriptorRegistry — plugin column behaviour', () => {
   it('without plugins the builtin columns are returned', async () => {
     await descriptorRegistry.load()
     const desc = descriptorRegistry.get('core.v1.nodes')
-    expect(desc.columns.map((c) => c.name)).toEqual(['Name', 'Status', 'Roles', 'Age'])
+    expect(desc.columns.map((c) => c.name)).toEqual(['Name', 'Status', 'Roles', 'Controlled By', 'Age'])
   })
 
   it('plugin columns replace builtin columns when plugin provides non-empty columns', async () => {
@@ -61,7 +61,7 @@ describe('DescriptorRegistry — plugin column behaviour', () => {
     await descriptorRegistry.load()
 
     const desc = descriptorRegistry.get('core.v1.nodes')
-    expect(desc.columns.map((c) => c.name)).toEqual(['Name', 'Status', 'Taints', 'Age'])
+    expect(desc.columns.map((c) => c.name)).toEqual(['Name', 'Status', 'Taints', 'Controlled By', 'Age'])
     expect(desc.columns.find((c) => c.name === 'Taints')?.expr).toBe("has(status.taintCount) ? string(status.taintCount) : '0'")
     expect(desc.columns.find((c) => c.name === 'Roles')).toBeUndefined()
   })
@@ -81,7 +81,7 @@ describe('DescriptorRegistry — plugin column behaviour', () => {
     await descriptorRegistry.load()
 
     const desc = descriptorRegistry.get('core.v1.nodes')
-    expect(desc.columns.map((c) => c.name)).toEqual(['Name', 'Status', 'Roles', 'Age'])
+    expect(desc.columns.map((c) => c.name)).toEqual(['Name', 'Status', 'Roles', 'Controlled By', 'Age'])
   })
 
   it('plugin detail panels are appended and duplicates are dropped', async () => {
@@ -122,7 +122,7 @@ describe('DescriptorRegistry — plugin column behaviour', () => {
     await descriptorRegistry.load()
 
     const desc = descriptorRegistry.get('cert-manager.io.v1.certificates')
-    expect(desc.columns.map((c) => c.name)).toEqual(['Name', 'Ready'])
+    expect(desc.columns.map((c) => c.name)).toEqual(['Name', 'Ready', 'Controlled By'])
   })
 
   it('reloadPlugins resets to builtins then re-merges', async () => {
@@ -137,11 +137,11 @@ describe('DescriptorRegistry — plugin column behaviour', () => {
       actions: [],
     }])
     await descriptorRegistry.load()
-    expect(descriptorRegistry.get('core.v1.nodes').columns.map((c) => c.name)).toEqual(['Custom'])
+    expect(descriptorRegistry.get('core.v1.nodes').columns.map((c) => c.name)).toEqual(['Custom', 'Controlled By'])
 
     mockGetPluginDescriptors.mockResolvedValue([])
     await descriptorRegistry.reloadPlugins()
-    expect(descriptorRegistry.get('core.v1.nodes').columns.map((c) => c.name)).toEqual(['Name', 'Status', 'Roles', 'Age'])
+    expect(descriptorRegistry.get('core.v1.nodes').columns.map((c) => c.name)).toEqual(['Name', 'Status', 'Roles', 'Controlled By', 'Age'])
   })
 
   describe('nodes.yaml descriptor format', () => {
@@ -165,7 +165,7 @@ describe('DescriptorRegistry — plugin column behaviour', () => {
       // With wrong field names, the GVR computes to "core.." — does NOT match "core.v1.nodes"
       const desc = descriptorRegistry.get('core.v1.nodes')
       // Builtin columns are returned unchanged — plugin descriptor was unrecognised
-      expect(desc.columns.map((c) => c.name)).toEqual(['Name', 'Status', 'Roles', 'Age'])
+      expect(desc.columns.map((c) => c.name)).toEqual(['Name', 'Status', 'Roles', 'Controlled By', 'Age'])
     })
 
     it('descriptor with correct field names works', async () => {
@@ -189,7 +189,7 @@ describe('DescriptorRegistry — plugin column behaviour', () => {
       await descriptorRegistry.load()
 
       const desc = descriptorRegistry.get('core.v1.nodes')
-      expect(desc.columns.map((c) => c.name)).toEqual(['Name', 'Status', 'Taints', 'Age'])
+      expect(desc.columns.map((c) => c.name)).toEqual(['Name', 'Status', 'Taints', 'Controlled By', 'Age'])
     })
   })
 })

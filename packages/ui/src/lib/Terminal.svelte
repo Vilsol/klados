@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, untrack } from 'svelte'
   import { Terminal } from '@xterm/xterm'
   import { FitAddon } from '@xterm/addon-fit'
   import { WebglAddon } from '@xterm/addon-webgl'
@@ -7,15 +7,32 @@
 
   interface StreamingConfig { port: number; token: string }
 
-  let { sessionID, streamingConfig, ondisconnect, useWebGL, onSetShortcutMode }: {
+  let { sessionID, streamingConfig, ondisconnect, useWebGL, onSetShortcutMode, fontSize = 13, onclear }: {
     sessionID: string
     streamingConfig: StreamingConfig
     ondisconnect?: () => void
     useWebGL?: boolean
     onSetShortcutMode?: (mode: string) => void
+    fontSize?: number
+    onclear?: (fn: () => void) => void
   } = $props()
 
   let container: HTMLDivElement
+
+  let readyFlag = $state(false)
+  let termRef: Terminal | null = null
+  let fitAddonRef: FitAddon | null = null
+
+  // Isolated font size effect — only tracks fontSize and readyFlag, not WS state
+  $effect(() => {
+    const size = fontSize
+    if (!readyFlag) return
+    const t = untrack(() => termRef)
+    const fa = untrack(() => fitAddonRef)
+    if (!t || !fa) return
+    t.options.fontSize = size
+    requestAnimationFrame(() => fa.fit())
+  })
 
   function buildURL() {
     return `ws://127.0.0.1:${streamingConfig.port}/${streamingConfig.token}/ws/exec/${sessionID}`
@@ -25,7 +42,7 @@
     const term = new Terminal({
       scrollback: 10000,
       fontFamily: 'monospace',
-      fontSize: 13,
+      fontSize,
       cursorBlink: true,
     })
 
@@ -48,6 +65,11 @@
     } catch {
       // optional
     }
+
+    termRef = term
+    fitAddonRef = fitAddon
+    onclear?.(() => term.clear())
+    readyFlag = true
 
     const ws = new WebSocket(buildURL())
     ws.binaryType = 'arraybuffer'
@@ -91,6 +113,9 @@
     ro.observe(container)
 
     return () => {
+      readyFlag = false
+      termRef = null
+      fitAddonRef = null
       ro.disconnect()
       ws.close()
       term.dispose()

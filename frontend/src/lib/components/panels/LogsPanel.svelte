@@ -3,6 +3,7 @@
   import * as LogService from '../../../../bindings/github.com/Vilsol/klados/internal/services/logservice.js'
   import { LogOptions } from '../../../../bindings/github.com/Vilsol/klados/internal/logs/models.js'
   import { streamingStore } from '$lib/stores/streaming.svelte'
+  import { sessionStore } from '$lib/stores/session.svelte'
   import { LogViewer, Combobox } from '@klados/ui'
 
   let { obj, ctxName, namespace, name }: {
@@ -176,6 +177,20 @@
         title="Load full history and jump to beginning"
       >Full history</button>
 
+      <div class="flex items-center gap-1">
+        <button
+          onclick={() => sessionStore.terminalFontSize = Math.max(8, sessionStore.terminalFontSize - 1)}
+          class="text-xs text-muted hover:text-fg border border-border rounded px-1.5 py-0.5 transition-colors"
+          title="Decrease font size"
+        >−</button>
+        <span class="text-xs text-muted w-6 text-center">{sessionStore.terminalFontSize}</span>
+        <button
+          onclick={() => sessionStore.terminalFontSize = Math.min(24, sessionStore.terminalFontSize + 1)}
+          class="text-xs text-muted hover:text-fg border border-border rounded px-1.5 py-0.5 transition-colors"
+          title="Increase font size"
+        >+</button>
+      </div>
+
       <div class="relative ml-auto" data-download-dropdown>
         <button
           onclick={() => (downloadDropdownOpen = !downloadDropdownOpen)}
@@ -201,7 +216,7 @@
     </div>
 
     <!-- Log viewer -->
-    <div class="flex-1 overflow-hidden">
+    <div class="flex-1 overflow-hidden" style="--log-font-size: {sessionStore.terminalFontSize}px">
       {#if streamID}
         <LogViewer bind:this={logViewer} {streamID} streamingConfig={streamingStore.config} {showTimestamps} {filename} {scrollToTopOnLoad} />
       {:else}
