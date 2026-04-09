@@ -28,17 +28,30 @@ type GVRColumnPrefs struct {
 	Sort    *SortPrefs                `json:"sort,omitempty"`
 }
 
+type SavedPortForward struct {
+	ID         string `json:"id"`
+	Namespace  string `json:"namespace"`
+	Resource   string `json:"resource"`
+	TargetKind string `json:"targetKind"`
+	TargetName string `json:"targetName"`
+	TargetGVR  string `json:"targetGVR,omitempty"`
+	LocalPort  int    `json:"localPort"`
+	RemotePort int    `json:"remotePort"`
+	Enabled    bool   `json:"enabled"`
+}
+
 type Config struct {
-	Theme                 string                     `json:"theme"`
-	KubeconfigPaths       []string                   `json:"kubeconfigPaths"`
-	TerminalWebGL         bool                       `json:"terminalWebGL"`
-	DisabledPlugins       []string                   `json:"disabledPlugins,omitempty"`
-	InsecureRegistries    []string                   `json:"insecureRegistries,omitempty"`
-	InsecureSkipTLSVerify bool                       `json:"insecureSkipTLSVerify,omitempty"`
-	Metrics               map[string]*MetricsConfig  `json:"metrics,omitempty"`
-	ColumnPrefs           map[string]*GVRColumnPrefs `json:"columnPrefs,omitempty"`
-	CompactRows           bool                       `json:"compactRows,omitempty"`
-	ReadOnly              bool                       `json:"readOnly,omitempty"`
+	Theme                 string                       `json:"theme"`
+	KubeconfigPaths       []string                     `json:"kubeconfigPaths"`
+	TerminalWebGL         bool                         `json:"terminalWebGL"`
+	DisabledPlugins       []string                     `json:"disabledPlugins,omitempty"`
+	InsecureRegistries    []string                     `json:"insecureRegistries,omitempty"`
+	InsecureSkipTLSVerify bool                         `json:"insecureSkipTLSVerify,omitempty"`
+	Metrics               map[string]*MetricsConfig    `json:"metrics,omitempty"`
+	ColumnPrefs           map[string]*GVRColumnPrefs   `json:"columnPrefs,omitempty"`
+	CompactRows           bool                         `json:"compactRows,omitempty"`
+	ReadOnly              bool                         `json:"readOnly,omitempty"`
+	PortForwards          map[string][]SavedPortForward `json:"portForwards,omitempty"`
 
 	mu   deadlock.Mutex
 	path string
@@ -108,4 +121,10 @@ func (c *Config) Update(fn func(*Config)) error {
 	fn(c)
 	c.mu.Unlock()
 	return c.Save()
+}
+
+func (c *Config) Read(fn func(*Config)) {
+	c.mu.Lock()
+	fn(c)
+	c.mu.Unlock()
 }

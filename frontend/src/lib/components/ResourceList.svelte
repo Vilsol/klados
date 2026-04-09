@@ -39,6 +39,7 @@
     sparklineData = {},
     sparklineColumns = [],
     onSparklineToggle,
+    rowActions,
   }: {
     items: Record<string, any>[]
     contextName: string
@@ -55,6 +56,7 @@
     sparklineData?: Record<string, MetricResult[]>
     sparklineColumns?: string[]
     onSparklineToggle?: (columns: string[]) => void
+    rowActions?: (item: Record<string, any>) => Array<{ label: string; onClick: () => void; variant?: 'default' | 'destructive' }>
   } = $props()
 
   let filterText = $state('')
@@ -396,15 +398,25 @@
                     {/if}
                   </div>
                 {/each}
-                <div class="flex items-center justify-end">
-                  <button
-                    onclick={(e) => { e.stopPropagation(); requestDelete(item) }}
-                    class="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-destructive transition-all"
-                    title="Delete"
-                    aria-label="Delete {item.metadata?.name}"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                <div class="flex items-center justify-end gap-1">
+                  {#if rowActions}
+                    {#each rowActions(item) as action}
+                      <button
+                        onclick={(e) => { e.stopPropagation(); action.onClick() }}
+                        class="px-1.5 py-0.5 rounded text-xs opacity-0 group-hover:opacity-80 hover:!opacity-100 transition-all {action.variant === 'destructive' ? 'hover:text-destructive' : 'hover:text-accent'}"
+                        title={action.label}
+                      >{action.label}</button>
+                    {/each}
+                  {:else}
+                    <button
+                      onclick={(e) => { e.stopPropagation(); requestDelete(item) }}
+                      class="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-destructive transition-all"
+                      title="Delete"
+                      aria-label="Delete {item.metadata?.name}"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  {/if}
                 </div>
               </div>
             </div>

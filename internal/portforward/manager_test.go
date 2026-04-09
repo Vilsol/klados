@@ -4,14 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/MarvinJWendt/testza"
 	"github.com/Vilsol/slox"
+	"github.com/adrg/xdg"
 
 	"github.com/Vilsol/klados/internal/cluster"
+	"github.com/Vilsol/klados/internal/config"
 )
 
 type fakeProvider struct {
@@ -43,9 +46,18 @@ func failingTunnel(_ context.Context, _ *cluster.Connection, _, _ string, _, _ i
 }
 
 func newTestManager(p ConnectionProvider) *Manager {
+	return newTestManagerWithConfig(p, config.DefaultConfig())
+}
+
+func newTestManagerWithConfig(p ConnectionProvider, cfg *config.Config) *Manager {
 	ctx := slox.Into(context.Background(), slog.Default())
-	m := NewManager(p, func(_ string, _ any) {}, ctx)
+	m := NewManager(p, cfg, func(_ string, _ any) {}, ctx)
 	return m
+}
+
+func newTestManagerWithEvents(p ConnectionProvider, cfg *config.Config, emit func(string, any)) *Manager {
+	ctx := slox.Into(context.Background(), slog.Default())
+	return NewManager(p, cfg, emit, ctx)
 }
 
 func TestStartForward_UnknownContext(t *testing.T) {
@@ -194,4 +206,162 @@ func TestStartForward_StatusSetToReconnecting(t *testing.T) {
 	testza.AssertEqual(t, StatusReconnecting, spec.Status)
 
 	m.StopAll()
+}
+
+func TestSaveForward_PersistsToConfig(t *testing.T) {
+	cfg := config.DefaultConfig()
+	m := newTestManagerWithConfig(&fakeProvider{}, cfg)
+
+	fwd := config.SavedPortForward{
+		Namespace:  "default",
+		Resource:   "pods/my-pod",
+		TargetKind: "pod",
+		TargetName: "my-pod",
+		LocalPort:  8080,
+		RemotePort: 80,
+		Enabled:    true,
+	}
+	err := m.SaveForward("ctx1", fwd)
+	testza.AssertNoError(t, err)
+
+	saved := m.ListSavedForwards("ctx1")
+	testza.AssertLen(t, saved, 1)
+	testza.AssertNotEqual(t, "", saved[0].ID)
+	testza.AssertEqual(t, "my-pod", saved[0].TargetName)
+	testza.AssertEqual(t, true, saved[0].Enabled)
+}
+
+func TestRemoveSavedForward_DeletesEntry(t *testing.T) {
+	cfg := config.DefaultConfig()
+	m := newTestManagerWithConfig(&fakeProvider{}, cfg)
+
+	fwd := config.SavedPortForward{
+		Namespace:  "default",
+		Resource:   "pods/my-pod",
+		TargetKind: "pod",
+		TargetName: "my-pod",
+		LocalPort:  8080,
+		RemotePort: 80,
+		Enabled:    true,
+	}
+	testza.AssertNoError(t, m.SaveForward("ctx1", fwd))
+	saved := m.ListSavedForwards("ctx1")
+	testza.AssertLen(t, saved, 1)
+
+	testza.AssertNoError(t, m.RemoveSavedForward("ctx1", saved[0].ID))
+	testza.AssertLen(t, m.ListSavedForwards("ctx1"), 0)
+}
+
+func TestSetForwardEnabled_SkippedByReconnect(t *testing.T) {
+	cfg := config.DefaultConfig()
+	var started []string
+	var mu sync.Mutex
+
+	// Track StartForward calls via a tunnel that records which pod was targeted
+	conn := fakeConnWithPods(makePod("my-pod", "Running", true, time.Now()))
+	m := newTestManagerWithConfig(&fakeProvider{conn: conn}, cfg)
+	m.tunnel = func(ctx context.Context, _ *cluster.Connection, _, podName string, _, _ int, onReady func(uint16)) error {
+		mu.Lock()
+		started = append(started, podName)
+		mu.Unlock()
+		onReady(0)
+		<-ctx.Done()
+		return ctx.Err()
+	}
+
+	fwd := config.SavedPortForward{
+		Namespace:  "default",
+		Resource:   "pods/my-pod",
+		TargetKind: "pod",
+		TargetName: "my-pod",
+		LocalPort:  18080,
+		RemotePort: 80,
+		Enabled:    true,
+	}
+	testza.AssertNoError(t, m.SaveForward("ctx1", fwd))
+	saved := m.ListSavedForwards("ctx1")
+
+	testza.AssertNoError(t, m.SetForwardEnabled("ctx1", saved[0].ID, false))
+
+	m.ReconnectSaved("ctx1")
+
+	// Give goroutines time to start (they shouldn't, but allow a moment)
+	time.Sleep(50 * time.Millisecond)
+	m.StopAll()
+
+	mu.Lock()
+	count := len(started)
+	mu.Unlock()
+	testza.AssertEqual(t, 0, count)
+}
+
+func TestReconnectSaved_EmitsErrorOnFailure(t *testing.T) {
+	cfg := config.DefaultConfig()
+
+	var events []string
+	var mu sync.Mutex
+	emit := func(name string, _ any) {
+		mu.Lock()
+		events = append(events, name)
+		mu.Unlock()
+	}
+
+	m := newTestManagerWithEvents(&fakeProvider{err: fmt.Errorf("not connected")}, cfg, emit)
+
+	fwd := config.SavedPortForward{
+		ID:         "test-id-1",
+		Namespace:  "default",
+		Resource:   "pods/my-pod",
+		TargetKind: "pod",
+		TargetName: "my-pod",
+		LocalPort:  18081,
+		RemotePort: 80,
+		Enabled:    true,
+	}
+	testza.AssertNoError(t, m.SaveForward("ctx1", fwd))
+
+	m.ReconnectSaved("ctx1")
+
+	mu.Lock()
+	evtCount := len(events)
+	mu.Unlock()
+	testza.AssertTrue(t, evtCount > 0)
+}
+
+func TestConfigRoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	xdg.Reload()
+	t.Cleanup(func() { xdg.Reload() })
+
+	cfg, err := config.Load()
+	testza.AssertNoError(t, err)
+
+	m := newTestManagerWithConfig(&fakeProvider{}, cfg)
+
+	fwd := config.SavedPortForward{
+		Namespace:  "default",
+		Resource:   "pods/my-pod",
+		TargetKind: "pod",
+		TargetName: "my-pod",
+		LocalPort:  9090,
+		RemotePort: 80,
+		Enabled:    true,
+	}
+	testza.AssertNoError(t, m.SaveForward("ctx1", fwd))
+
+	// Verify file was written
+	cfgPath := dir + "/klados/config.json"
+	_, statErr := os.Stat(cfgPath)
+	testza.AssertNoError(t, statErr)
+
+	// Reload from disk
+	cfg2, err := config.Load()
+	testza.AssertNoError(t, err)
+
+	m2 := newTestManagerWithConfig(&fakeProvider{}, cfg2)
+	saved := m2.ListSavedForwards("ctx1")
+	testza.AssertLen(t, saved, 1)
+	testza.AssertEqual(t, "my-pod", saved[0].TargetName)
+	testza.AssertEqual(t, 9090, saved[0].LocalPort)
 }

@@ -7,12 +7,33 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as config$0 from "../config/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as portforward$0 from "../portforward/models.js";
 
 export function ListForwards(contextName: string): $CancellablePromise<portforward$0.ForwardSpec[]> {
     return $Call.ByID(4274792300, contextName).then(($result: any) => {
         return $$createType1($result);
     });
+}
+
+export function ListSavedPortForwards(ctxName: string): $CancellablePromise<config$0.SavedPortForward[]> {
+    return $Call.ByID(2424660924, ctxName).then(($result: any) => {
+        return $$createType3($result);
+    });
+}
+
+export function RemoveSavedPortForward(ctxName: string, id: string): $CancellablePromise<void> {
+    return $Call.ByID(1339133687, ctxName, id);
+}
+
+export function SavePortForward(ctxName: string, fwd: config$0.SavedPortForward): $CancellablePromise<void> {
+    return $Call.ByID(334273145, ctxName, fwd);
+}
+
+export function SetPortForwardEnabled(ctxName: string, id: string, enabled: boolean): $CancellablePromise<void> {
+    return $Call.ByID(1617244075, ctxName, id, enabled);
 }
 
 export function StartForward(contextName: string, $namespace: string, targetKind: portforward$0.TargetKind, targetName: string, targetGVR: string, localPort: number, remotePort: number): $CancellablePromise<portforward$0.ForwardSpec> {
@@ -28,3 +49,5 @@ export function StopForward(forwardID: string): $CancellablePromise<void> {
 // Private type creation functions
 const $$createType0 = portforward$0.ForwardSpec.createFrom;
 const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = config$0.SavedPortForward.createFrom;
+const $$createType3 = $Create.Array($$createType2);

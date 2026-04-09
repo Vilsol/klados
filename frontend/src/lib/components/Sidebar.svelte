@@ -10,7 +10,6 @@
   import * as PluginService from '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
   import { notificationStore } from '$lib/stores/notification.svelte.js'
   import { unwrapError } from '$lib/utils/async.js'
-  import PortForwardDialog from './PortForwardDialog.svelte'
   import { descriptorRegistry } from '$lib/registry/index'
   import { registryLoaded } from '$lib/registry/loaded.svelte'
   import { buildCRDTree } from '$lib/utils/crdTree'
@@ -155,7 +154,6 @@
   }
 
   let forwards = $state<ForwardSpec[]>([])
-  let showPortForwardDialog = $state(false)
   let pluginEntries = $state<PluginSidebarEntry[]>([])
 
   async function loadPluginEntries() {
@@ -375,10 +373,10 @@
         <span class="text-xs font-semibold uppercase tracking-wider text-muted">Port Forwards</span>
         {#if ctx}
           <button
-            onclick={() => showPortForwardDialog = true}
+            onclick={() => push(`/c/${ctx}/port-forwards`)}
             class="p-1 rounded hover:bg-surface-hover transition-colors text-muted hover:text-fg"
-            title="New port forward"
-            aria-label="New port forward"
+            title="Manage port forwards"
+            aria-label="Manage port forwards"
           >
             <Plus size={12} />
           </button>
@@ -420,9 +418,6 @@
   </div>
 </aside>
 
-{#if showPortForwardDialog}
-  <PortForwardDialog onclose={() => { showPortForwardDialog = false; loadForwards() }} />
-{/if}
 
 {#if sessionStore.sidebarCollapsed}
   <button

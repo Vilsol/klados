@@ -11,6 +11,7 @@ import (
 	"github.com/Vilsol/slox"
 
 	"github.com/Vilsol/klados/internal/cluster"
+	"github.com/Vilsol/klados/internal/config"
 )
 
 type TargetKind string
@@ -62,18 +63,123 @@ type Manager struct {
 	mu        deadlock.Mutex
 	forwards  map[string]*forwardEntry
 	connMgr   ConnectionProvider
+	cfg       *config.Config
 	emitEvent func(string, any)
 	ctx       context.Context
 	tunnel    tunnelFunc
 }
 
-func NewManager(connMgr ConnectionProvider, emitEvent func(string, any), ctx context.Context) *Manager {
+func NewManager(connMgr ConnectionProvider, cfg *config.Config, emitEvent func(string, any), ctx context.Context) *Manager {
 	return &Manager{
 		forwards:  make(map[string]*forwardEntry),
 		connMgr:   connMgr,
+		cfg:       cfg,
 		emitEvent: emitEvent,
 		ctx:       ctx,
 		tunnel:    defaultRunTunnel,
+	}
+}
+
+func (m *Manager) SaveForward(ctxName string, fwd config.SavedPortForward) error {
+	if fwd.ID == "" {
+		id, err := newForwardID()
+		if err != nil {
+			return err
+		}
+		fwd.ID = id
+	}
+	return m.cfg.Update(func(c *config.Config) {
+		if c.PortForwards == nil {
+			c.PortForwards = make(map[string][]config.SavedPortForward)
+		}
+		forwards := c.PortForwards[ctxName]
+		for i, f := range forwards {
+			if f.ID == fwd.ID {
+				forwards[i] = fwd
+				c.PortForwards[ctxName] = forwards
+				return
+			}
+		}
+		c.PortForwards[ctxName] = append(forwards, fwd)
+	})
+}
+
+func (m *Manager) RemoveSavedForward(ctxName, id string) error {
+	return m.cfg.Update(func(c *config.Config) {
+		forwards := c.PortForwards[ctxName]
+		filtered := forwards[:0]
+		for _, f := range forwards {
+			if f.ID != id {
+				filtered = append(filtered, f)
+			}
+		}
+		if len(filtered) == 0 {
+			delete(c.PortForwards, ctxName)
+		} else {
+			c.PortForwards[ctxName] = filtered
+		}
+	})
+}
+
+func (m *Manager) SetForwardEnabled(ctxName, id string, enabled bool) error {
+	return m.cfg.Update(func(c *config.Config) {
+		for i, f := range c.PortForwards[ctxName] {
+			if f.ID == id {
+				c.PortForwards[ctxName][i].Enabled = enabled
+				return
+			}
+		}
+	})
+}
+
+func (m *Manager) ListSavedForwards(ctxName string) []config.SavedPortForward {
+	var result []config.SavedPortForward
+	m.cfg.Read(func(c *config.Config) {
+		forwards := c.PortForwards[ctxName]
+		result = make([]config.SavedPortForward, len(forwards))
+		copy(result, forwards)
+	})
+	return result
+}
+
+func (m *Manager) ReconnectSaved(ctxName string) {
+	var saved []config.SavedPortForward
+	m.cfg.Read(func(c *config.Config) {
+		forwards := c.PortForwards[ctxName]
+		saved = make([]config.SavedPortForward, len(forwards))
+		copy(saved, forwards)
+	})
+
+	for _, fwd := range saved {
+		if !fwd.Enabled {
+			continue
+		}
+		spec := ForwardSpec{
+			ID:          fwd.ID,
+			ContextName: ctxName,
+			Namespace:   fwd.Namespace,
+			TargetKind:  TargetKind(fwd.TargetKind),
+			TargetName:  fwd.TargetName,
+			TargetGVR:   fwd.TargetGVR,
+			LocalPort:   fwd.LocalPort,
+			RemotePort:  fwd.RemotePort,
+		}
+		if _, err := m.StartForward(spec); err != nil {
+			slox.Warn(m.ctx, "reconnect saved forward failed", "id", fwd.ID, "error", err)
+			errSpec := ForwardSpec{
+				ID:          fwd.ID,
+				ContextName: ctxName,
+				Namespace:   fwd.Namespace,
+				TargetKind:  TargetKind(fwd.TargetKind),
+				TargetName:  fwd.TargetName,
+				LocalPort:   fwd.LocalPort,
+				RemotePort:  fwd.RemotePort,
+				Status:      StatusFailed,
+				Error:       err.Error(),
+			}
+			m.emitEvent(fmt.Sprintf("portforward:%s:%s", ctxName, fwd.ID), errSpec)
+			m.emitEvent(fmt.Sprintf("portforward:%s:updated", ctxName), nil)
+		}
 	}
 }
 

@@ -51,7 +51,7 @@ func (a *AppService) ServiceStartup(ctx context.Context, options application.Ser
 	a.clusterMgr = cluster.NewManager(emitEvent, a.config, a.ctx)
 	a.logStreamer = logs.NewStreamer(a.clusterMgr, a.ctx)
 	a.execManager = exec.NewManager(a.clusterMgr, a.ctx)
-	a.portForwardManager = portforward.NewManager(a.clusterMgr, emitEvent, a.ctx)
+	a.portForwardManager = portforward.NewManager(a.clusterMgr, a.config, emitEvent, a.ctx)
 	a.streamingSrv = streaming.NewServer(emitEvent, a.ctx)
 	a.streamingSrv.RegisterHandlers(a.logStreamer, a.execManager)
 

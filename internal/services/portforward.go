@@ -5,6 +5,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
+	"github.com/Vilsol/klados/internal/config"
 	"github.com/Vilsol/klados/internal/portforward"
 )
 
@@ -49,4 +50,20 @@ func (s *PortForwardService) StopForward(forwardID string) error {
 
 func (s *PortForwardService) ListForwards(contextName string) []portforward.ForwardSpec {
 	return s.manager.ListForwards(contextName)
+}
+
+func (s *PortForwardService) SavePortForward(ctxName string, fwd config.SavedPortForward) error {
+	return s.manager.SaveForward(ctxName, fwd)
+}
+
+func (s *PortForwardService) RemoveSavedPortForward(ctxName, id string) error {
+	return s.manager.RemoveSavedForward(ctxName, id)
+}
+
+func (s *PortForwardService) SetPortForwardEnabled(ctxName, id string, enabled bool) error {
+	return s.manager.SetForwardEnabled(ctxName, id, enabled)
+}
+
+func (s *PortForwardService) ListSavedPortForwards(ctxName string) []config.SavedPortForward {
+	return s.manager.ListSavedForwards(ctxName)
 }

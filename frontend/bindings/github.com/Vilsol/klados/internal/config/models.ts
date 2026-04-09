@@ -34,6 +34,7 @@ export class Config {
     "columnPrefs"?: { [_ in string]?: GVRColumnPrefs | null };
     "compactRows"?: boolean;
     "readOnly"?: boolean;
+    "portForwards"?: { [_ in string]?: SavedPortForward[] };
 
     /** Creates a new Config instance. */
     constructor($$source: Partial<Config> = {}) {
@@ -59,6 +60,7 @@ export class Config {
         const $$createField4_0 = $$createType0;
         const $$createField6_0 = $$createType3;
         const $$createField7_0 = $$createType6;
+        const $$createField10_0 = $$createType9;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("kubeconfigPaths" in $$parsedSource) {
             $$parsedSource["kubeconfigPaths"] = $$createField1_0($$parsedSource["kubeconfigPaths"]);
@@ -74,6 +76,9 @@ export class Config {
         }
         if ("columnPrefs" in $$parsedSource) {
             $$parsedSource["columnPrefs"] = $$createField7_0($$parsedSource["columnPrefs"]);
+        }
+        if ("portForwards" in $$parsedSource) {
+            $$parsedSource["portForwards"] = $$createField10_0($$parsedSource["portForwards"]);
         }
         return new Config($$parsedSource as Partial<Config>);
     }
@@ -100,9 +105,9 @@ export class GVRColumnPrefs {
      * Creates a new GVRColumnPrefs instance from a string or object.
      */
     static createFrom($$source: any = {}): GVRColumnPrefs {
-        const $$createField0_0 = $$createType8;
+        const $$createField0_0 = $$createType11;
         const $$createField1_0 = $$createType0;
-        const $$createField2_0 = $$createType10;
+        const $$createField2_0 = $$createType13;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("columns" in $$parsedSource) {
             $$parsedSource["columns"] = $$createField0_0($$parsedSource["columns"]);
@@ -132,6 +137,56 @@ export class MetricsConfig {
     static createFrom($$source: any = {}): MetricsConfig {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new MetricsConfig($$parsedSource as Partial<MetricsConfig>);
+    }
+}
+
+export class SavedPortForward {
+    "id": string;
+    "namespace": string;
+    "resource": string;
+    "targetKind": string;
+    "targetName": string;
+    "targetGVR"?: string;
+    "localPort": number;
+    "remotePort": number;
+    "enabled": boolean;
+
+    /** Creates a new SavedPortForward instance. */
+    constructor($$source: Partial<SavedPortForward> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("namespace" in $$source)) {
+            this["namespace"] = "";
+        }
+        if (!("resource" in $$source)) {
+            this["resource"] = "";
+        }
+        if (!("targetKind" in $$source)) {
+            this["targetKind"] = "";
+        }
+        if (!("targetName" in $$source)) {
+            this["targetName"] = "";
+        }
+        if (!("localPort" in $$source)) {
+            this["localPort"] = 0;
+        }
+        if (!("remotePort" in $$source)) {
+            this["remotePort"] = 0;
+        }
+        if (!("enabled" in $$source)) {
+            this["enabled"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SavedPortForward instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SavedPortForward {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SavedPortForward($$parsedSource as Partial<SavedPortForward>);
     }
 }
 
@@ -168,7 +223,10 @@ const $$createType3 = $Create.Map($Create.Any, $$createType2);
 const $$createType4 = GVRColumnPrefs.createFrom;
 const $$createType5 = $Create.Nullable($$createType4);
 const $$createType6 = $Create.Map($Create.Any, $$createType5);
-const $$createType7 = ColumnSettings.createFrom;
-const $$createType8 = $Create.Map($Create.Any, $$createType7);
-const $$createType9 = SortPrefs.createFrom;
-const $$createType10 = $Create.Nullable($$createType9);
+const $$createType7 = SavedPortForward.createFrom;
+const $$createType8 = $Create.Array($$createType7);
+const $$createType9 = $Create.Map($Create.Any, $$createType8);
+const $$createType10 = ColumnSettings.createFrom;
+const $$createType11 = $Create.Map($Create.Any, $$createType10);
+const $$createType12 = SortPrefs.createFrom;
+const $$createType13 = $Create.Nullable($$createType12);

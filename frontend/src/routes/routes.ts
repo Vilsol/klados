@@ -4,6 +4,7 @@ import ResourceListPage from './ResourceListPage.svelte'
 import ResourceDetailPage from './ResourceDetailPage.svelte'
 import EventStreamPage from './EventStreamPage.svelte'
 import PluginManagement from './PluginManagement.svelte'
+import PortForwardPage from './portforwards/PortForwardPage.svelte'
 
 export const routes = {
   '/': ClusterList,
@@ -11,6 +12,7 @@ export const routes = {
   '/plugins': PluginManagement,
   '/c/:ctx/:gvr/:ns/:name': ResourceDetailPage,
   '/c/:ctx/events': EventStreamPage,
+  '/c/:ctx/port-forwards': PortForwardPage,
   '/c/:ctx/:gvr': ResourceListPage,
   '/c/:ctx': ClusterOverview,
   '/c/:ctx/*': ClusterOverview,

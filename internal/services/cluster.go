@@ -53,6 +53,9 @@ func (c *ClusterService) Connect(contextName string) error {
 	if ps := c.appService.PluginService(); ps != nil {
 		ps.EmitClusterEvent("cluster:connected", clusterEventPayload(contextName))
 	}
+
+	go c.appService.PortForwardManager().ReconnectSaved(contextName)
+
 	return nil
 }
 

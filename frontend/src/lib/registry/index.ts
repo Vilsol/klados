@@ -191,6 +191,10 @@ class DescriptorRegistry {
     return { ...d, columns }
   }
 
+  registerVirtual(gvr: string, descriptor: DescriptorDef): void {
+    this.descriptors.set(gvr, descriptor)
+  }
+
   get(gvr: string): DescriptorDef {
     const d = this.descriptors.get(gvr) ?? this.fallback(gvr)
     return this.withControlledBy(d)

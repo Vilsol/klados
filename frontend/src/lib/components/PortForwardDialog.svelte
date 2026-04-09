@@ -10,6 +10,7 @@
 
   let {
     onclose,
+    oncreated,
     // Quick mode: all context pre-filled, only ask about local port
     prefillContext = '',
     prefillNamespace = '',
@@ -19,6 +20,7 @@
     prefillRemotePort = 0,
   }: {
     onclose: () => void
+    oncreated?: (spec: any) => void
     prefillContext?: string
     prefillNamespace?: string
     prefillTargetKind?: string
@@ -64,6 +66,7 @@
       if (!name || isNaN(remote) || remote <= 0 || !ns) return
 
       const spec = await PortForwardService.StartForward(ctx, ns, kind as TargetKind, name, gvr, local, remote)
+      oncreated?.(spec)
       if (openInBrowser) {
         const unsub = Events.On(`portforward:${ctx}:${spec.id}`, (e: any) => {
           const fw = e.data

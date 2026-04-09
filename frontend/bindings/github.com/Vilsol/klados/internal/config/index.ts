@@ -6,5 +6,6 @@ export {
     Config,
     GVRColumnPrefs,
     MetricsConfig,
+    SavedPortForward,
     SortPrefs
 } from "./models.js";
