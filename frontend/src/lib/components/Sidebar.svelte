@@ -183,6 +183,7 @@
     const gvrs = new Set(resources.map((r) => r.gvr))
     discoveredGVRs = gvrs
     descriptorRegistry.setAvailableGVRs(Array.from(gvrs))
+    clusterStore.setDiscoveryResources(resources)
 
     const knownGVRs = new Set(Object.values(gvrGroups).flat())
     // Show resources not in any builtin group and not purely internal/meta resources

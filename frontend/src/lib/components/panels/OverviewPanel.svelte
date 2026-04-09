@@ -2,6 +2,8 @@
   import { evalExpr } from '$lib/registry/index'
   import type { DescriptorDef } from '$lib/registry/index'
   import { formatAge } from '$lib/utils/age'
+  import { getControllerRef, type ControllerRef } from '$lib/utils/relationships'
+  import { clusterStore } from '$lib/stores/cluster.svelte'
   import { toggleSet } from '$lib/utils/collections'
   import { SectionHeader, KeyValueBadge, EmptyState, StatusBadge, KeyValuePairEditor } from '@klados/ui'
   import { slotRegistry } from '$lib/plugins/slots.svelte.js'
@@ -20,6 +22,7 @@
     ctxName = '',
     namespace = '',
     name = '',
+    onopenowner,
   }: {
     obj: Record<string, any>
     onupdate?: (updated: Record<string, any>) => void
@@ -28,6 +31,7 @@
     ctxName?: string
     namespace?: string
     name?: string
+    onopenowner?: (ref: ControllerRef) => void
   } = $props()
 
   const basePluginURL = $derived(
@@ -79,6 +83,7 @@
     }
   }
 
+  const controllerRef = $derived(getControllerRef(obj))
   const labels = $derived(Object.entries(obj.metadata?.labels ?? {}))
   const annotations = $derived(Object.entries(obj.metadata?.annotations ?? {}))
 
@@ -130,6 +135,19 @@
           {/if}
         </div>
       {/each}
+      {#if controllerRef}
+        <div class="min-w-0">
+          <div class="text-xs text-muted mb-0.5">Controlled By</div>
+          {#if onopenowner && clusterStore.resolveOwnerGVR(controllerRef.apiVersion, controllerRef.kind)}
+            <button
+              class="text-xs font-mono text-accent hover:underline"
+              onclick={() => onopenowner!(controllerRef)}
+            >{controllerRef.kind}/{controllerRef.name}</button>
+          {:else}
+            <div class="text-xs font-mono truncate">{controllerRef.kind}/{controllerRef.name}</div>
+          {/if}
+        </div>
+      {/if}
     </div>
     {#if basePluginURL}
       {#each slotRegistry.getOverviewFields(gvr) as field (field.id)}

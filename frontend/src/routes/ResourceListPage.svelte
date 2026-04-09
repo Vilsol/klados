@@ -15,6 +15,8 @@
   import { columnStore } from '$lib/stores/columns.svelte'
   import { Plus } from 'lucide-svelte'
   import type { MetricResult } from '$lib/components/charts/types'
+  import { notificationStore } from '$lib/stores/notification.svelte'
+  import type { ControllerRef } from '$lib/utils/relationships'
 
   let { params = {} }: { params?: Record<string, string> } = $props()
 
@@ -22,6 +24,8 @@
   const gvr = $derived(params.gvr ?? '')
   const selectedNamespaces = $derived(clusterStore.getSelectedNamespaces(ctxName))
   const descriptor = $derived(registryLoaded() ? descriptorRegistry.get(gvr) : null)
+  let selectedGVR = $state('')
+  const selectedDescriptor = $derived(selectedGVR && registryLoaded() ? descriptorRegistry.get(selectedGVR) : descriptor)
   const rawWatchNamespace = $derived(selectedNamespaces.length === 1 ? selectedNamespaces[0] : '')
   const watchNamespace = $derived(descriptor?.clusterScoped ? '' : rawWatchNamespace)
 
@@ -59,7 +63,7 @@
   })
 
   // Close drawer when GVR changes
-  $effect(() => { gvr; selectedItem = null })
+  $effect(() => { gvr; selectedItem = null; selectedGVR = gvr })
 
   let createOpen = $state(false)
   let selectedItem = $state<Record<string, any> | null>(null)
@@ -115,6 +119,21 @@
     return () => clearInterval(id)
   })
 
+  async function openOwnerDrawer(ref: ControllerRef) {
+    const ownerGVR = clusterStore.resolveOwnerGVR(ref.apiVersion, ref.kind)
+    if (!ownerGVR) return
+    const namespace = selectedItem?.metadata?.namespace ?? ''
+    try {
+      const owner = await ResourceService.GetResource(ctxName, ownerGVR, namespace, ref.name)
+      if (owner) {
+        selectedItem = owner as Record<string, any>
+        selectedGVR = ownerGVR
+      }
+    } catch {
+      notificationStore.push('Owner resource not found', 'error')
+    }
+  }
+
   async function refresh() {
     if (ctxName && gvr) {
       await store.start(ctxName, gvr, watchNamespace)
@@ -155,7 +174,8 @@
         {selectedName}
         bind:scrollContainer={listScrollContainer}
         onrefresh={refresh}
-        onselect={(item) => selectedItem = item}
+        onselect={(item) => { selectedItem = item; selectedGVR = gvr }}
+        onopenowner={openOwnerDrawer}
         {sparklineGvrs}
         {sparklineData}
         {sparklineColumns}
@@ -166,8 +186,8 @@
         <DetailDrawer
           item={selectedItem}
           {ctxName}
-          {gvr}
-          onclose={() => selectedItem = null}
+          gvr={selectedGVR}
+          onclose={() => { selectedItem = null; selectedGVR = gvr }}
           onFetchResource={async (ctx, g, ns, n) => {
             try { return await ResourceService.GetResource(ctx, g, ns, n) } catch { return null }
           }}
@@ -176,12 +196,13 @@
             <ResourceDetail
               {obj}
               {onupdate}
-              {descriptor}
+              descriptor={selectedDescriptor ?? descriptor!}
               {ctxName}
-              {gvr}
+              gvr={selectedGVR}
               namespace={obj.metadata?.namespace ?? ''}
               name={obj.metadata?.name ?? ''}
               {onrefresh}
+              onopenowner={openOwnerDrawer}
             />
           {/snippet}
         </DetailDrawer>

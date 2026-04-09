@@ -3,7 +3,7 @@ import * as PluginService from '../../../bindings/github.com/Vilsol/klados/inter
 import { evaluate } from 'cel-js'
 import { setRegistryLoaded } from './loaded.svelte'
 
-export type RenderType = 'text' | 'badge' | 'age' | 'progress'
+export type RenderType = 'text' | 'badge' | 'age' | 'progress' | 'controlledBy'
 
 export type AlignType = 'left' | 'right' | 'center'
 
@@ -181,8 +181,19 @@ class DescriptorRegistry {
     }
   }
 
+  private withControlledBy(d: DescriptorDef): DescriptorDef {
+    if (d.columns.some((c) => c.name === 'Controlled By')) return d
+    const insertBefore = d.columns.findIndex((c) => c.renderType === 'age')
+    const col: ColumnDef = { name: 'Controlled By', expr: 'metadata.ownerReferences', renderType: 'controlledBy' }
+    const columns = insertBefore >= 0
+      ? [...d.columns.slice(0, insertBefore), col, ...d.columns.slice(insertBefore)]
+      : [...d.columns, col]
+    return { ...d, columns }
+  }
+
   get(gvr: string): DescriptorDef {
-    return this.descriptors.get(gvr) ?? this.fallback(gvr)
+    const d = this.descriptors.get(gvr) ?? this.fallback(gvr)
+    return this.withControlledBy(d)
   }
 
   private fallback(gvr: string): DescriptorDef {

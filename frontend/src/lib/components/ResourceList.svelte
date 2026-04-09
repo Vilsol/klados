@@ -4,6 +4,7 @@
   import { ConfirmDialog } from '@klados/ui'
   import { notificationStore } from '$lib/stores/notification.svelte'
   import { evalExpr, defaultAlign, type ColumnDef, type RenderType } from '$lib/registry/index'
+  import { getControllerRef, type ControllerRef } from '$lib/utils/relationships'
   import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
   import { formatAge } from '$lib/utils/age'
   import { onMount } from 'svelte'
@@ -33,6 +34,7 @@
     scrollContainer = $bindable<HTMLDivElement | undefined>(undefined),
     onrefresh,
     onselect,
+    onopenowner,
     sparklineGvrs = [],
     sparklineData = {},
     sparklineColumns = [],
@@ -48,6 +50,7 @@
     scrollContainer?: HTMLDivElement
     onrefresh?: () => void
     onselect?: (item: Record<string, any>) => void
+    onopenowner?: (ref: ControllerRef) => void
     sparklineGvrs?: string[]
     sparklineData?: Record<string, MetricResult[]>
     sparklineColumns?: string[]
@@ -344,7 +347,20 @@
                     onclick={col.name === 'Namespace' ? (e) => { e.stopPropagation(); clusterStore.setNamespaces(contextName, [String(value)]) } : undefined}
                     role={col.name === 'Namespace' ? 'button' : undefined}
                   >
-                    {#if col.renderType === 'badge'}
+                    {#if col.renderType === 'controlledBy'}
+                      {@const ref = getControllerRef(item)}
+                      {#if ref}
+                        {#if onopenowner && clusterStore.resolveOwnerGVR(ref.apiVersion, ref.kind)}
+                          <button
+                            class="text-accent hover:underline cursor-pointer"
+                            title="{ref.kind}/{ref.name}"
+                            onclick={(e) => { e.stopPropagation(); onopenowner!(ref) }}
+                          >{ref.kind}</button>
+                        {:else}
+                          <span title="{ref.kind}/{ref.name}">{ref.kind}</span>
+                        {/if}
+                      {/if}
+                    {:else if col.renderType === 'badge'}
                       <span class="px-1.5 py-0.5 text-xs rounded border {badgeClass(value)}"
                             title={renderValue(value, col.renderType)}>
                         {renderValue(value, col.renderType)}

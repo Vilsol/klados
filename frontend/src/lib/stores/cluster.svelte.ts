@@ -3,6 +3,7 @@ import * as ClusterService from '../../../bindings/github.com/Vilsol/klados/inte
 import * as AppService from '../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js'
 import * as ConfigService from '../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js'
 import { KubeContext, ConnectionStatus } from '../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js'
+import { buildKindGVRMap, resolveGVR, type APIResource } from '$lib/utils/relationships'
 
 export type { KubeContext }
 export { ConnectionStatus }
@@ -32,6 +33,7 @@ class ClusterStore {
   connectionStatus = $state<Record<string, ConnectionStatusType>>({})
   permissions = $state<Record<string, PermissionSet>>({})
   isReadOnly = $state<boolean>(false)
+  kindGVRMap = $state<Map<string, string>>(new Map())
 
   private statusUnsubs: Array<() => void> = []
   private metaUnsubs: Array<() => void> = []
@@ -55,6 +57,14 @@ class ClusterStore {
     } catch (e) {
       console.error('Failed to save read-only state:', e)
     }
+  }
+
+  setDiscoveryResources(resources: APIResource[]): void {
+    this.kindGVRMap = buildKindGVRMap(resources)
+  }
+
+  resolveOwnerGVR(apiVersion: string, kind: string): string | undefined {
+    return resolveGVR(this.kindGVRMap, apiVersion, kind)
   }
 
   /** Set the currently-viewed cluster context (called by route components on mount) */

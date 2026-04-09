@@ -10,6 +10,7 @@
   import * as SchemaService from '../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js'
   import { notificationStore } from '$lib/stores/notification.svelte.js'
   import { unwrapError } from '$lib/utils/async.js'
+  import type { ControllerRef } from '$lib/utils/relationships'
 
   import OverviewPanel from './panels/OverviewPanel.svelte'
   import EventsPanel from './panels/EventsPanel.svelte'
@@ -117,6 +118,7 @@
     name,
     onrefresh,
     onupdate,
+    onopenowner,
   }: {
     obj: Record<string, any>
     descriptor: DescriptorDef
@@ -126,6 +128,7 @@
     name: string
     onrefresh: () => void
     onupdate?: (updated: Record<string, any>) => void
+    onopenowner?: (ref: ControllerRef) => void
   } = $props()
 
   const foldedIntoOverview = new Set(['labels', 'containers'])
@@ -242,7 +245,7 @@
       {#if activePanel === panel}
         {@const PanelCmp = panelComponents.get(panel)!}
         {#if panel === 'overview'}
-          <PanelCmp obj={obj} onupdate={(updated: Record<string, any>) => { obj = updated; onupdate?.(updated) }} {descriptor} {gvr} {ctxName} {namespace} {name} />
+          <PanelCmp obj={obj} onupdate={(updated: Record<string, any>) => { obj = updated; onupdate?.(updated) }} {descriptor} {gvr} {ctxName} {namespace} {name} {onopenowner} />
         {:else if panel === 'yaml'}
           {#key uid}
             <PanelCmp
