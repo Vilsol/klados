@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PanelLeftClose, PanelLeft, ChevronRight, Plus, X, Circle, Puzzle } from 'lucide-svelte'
+  import { PanelLeftClose, PanelLeft, ChevronRight, X, Circle, Puzzle, LayoutList } from 'lucide-svelte'
   import { sessionStore } from '$lib/stores/session.svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
   import { Events } from '@wailsio/runtime'
@@ -378,7 +378,7 @@
             title="Manage port forwards"
             aria-label="Manage port forwards"
           >
-            <Plus size={12} />
+            <LayoutList size={12} />
           </button>
         {/if}
       </div>

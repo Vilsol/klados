@@ -188,21 +188,23 @@ func (m *Manager) StartForward(spec ForwardSpec) (ForwardSpec, error) {
 		return ForwardSpec{}, fmt.Errorf("getting connection: %w", err)
 	}
 
-	id, err := newForwardID()
-	if err != nil {
-		return ForwardSpec{}, err
+	if spec.ID == "" {
+		id, err := newForwardID()
+		if err != nil {
+			return ForwardSpec{}, err
+		}
+		spec.ID = id
 	}
-	spec.ID = id
 	spec.Status = StatusReconnecting
 
 	fwCtx, cancel := context.WithCancel(context.Background())
 	entry := &forwardEntry{spec: spec, cancel: cancel}
 
 	m.mu.Lock()
-	m.forwards[id] = entry
+	m.forwards[spec.ID] = entry
 	m.mu.Unlock()
 
-	slox.Info(m.ctx, "starting port forward", "id", id, "target", spec.TargetName, "namespace", spec.Namespace, "remotePort", spec.RemotePort)
+	slox.Info(m.ctx, "starting port forward", "id", spec.ID, "target", spec.TargetName, "namespace", spec.Namespace, "remotePort", spec.RemotePort)
 
 	go m.runLoop(fwCtx, entry)
 

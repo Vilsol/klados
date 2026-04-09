@@ -10,7 +10,6 @@
   import { notificationStore } from '$lib/stores/notification.svelte'
   import { Browser } from '@wailsio/runtime'
   import * as PortForwardService from '../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js'
-  import { SavedPortForward } from '../../../bindings/github.com/Vilsol/klados/internal/config/models.js'
 
   const PF_GVR = '_internal.v1.portforwards'
 
@@ -51,11 +50,14 @@
         PortForwardService.ListSavedPortForwards(ctxName),
         PortForwardService.ListForwards(ctxName),
       ])
+
+      const savedIds = new Set((saved ?? []).map((s: any) => s?.id).filter(Boolean))
       const activeMap = new Map<string, any>()
       for (const f of active ?? []) {
         if (f?.id) activeMap.set(f.id, f)
       }
-      items = (saved ?? []).map((s: any) => {
+
+      const savedItems = (saved ?? []).map((s: any) => {
         const live = activeMap.get(s?.id)
         return {
           id: s?.id ?? '',
@@ -73,29 +75,34 @@
           metadata: { name: s?.id ?? '', namespace: s?.namespace ?? '' },
         }
       })
+
+      // Include active forwards not yet in saved list (e.g. created before auto-save)
+      const unsavedActive = (active ?? [])
+        .filter((f: any) => f?.id && !savedIds.has(f.id))
+        .map((f: any) => ({
+          id: f.id,
+          resource: f.targetName ?? '',
+          namespace: f.namespace ?? '',
+          localPort: f.localPort ?? 0,
+          remotePort: f.remotePort ?? 0,
+          enabled: false,
+          targetKind: f.targetKind ?? '',
+          targetName: f.targetName ?? '',
+          targetGVR: f.targetGVR ?? '',
+          status: f.status ?? 'active',
+          error: f.error ?? '',
+          podName: f.podName ?? '',
+          metadata: { name: f.id, namespace: f.namespace ?? '' },
+        }))
+
+      items = [...savedItems, ...unsavedActive]
     } finally {
       loading = false
     }
   }
 
-  async function handleCreated(spec: any) {
-    if (!spec || !ctxName) return
-    const fwd = new SavedPortForward({
-      id: spec.id,
-      namespace: spec.namespace,
-      resource: `${spec.targetKind}s/${spec.targetName}`,
-      targetKind: spec.targetKind,
-      targetName: spec.targetName,
-      targetGVR: spec.targetGVR ?? '',
-      localPort: spec.localPort,
-      remotePort: spec.remotePort,
-      enabled: true,
-    })
-    try {
-      await PortForwardService.SavePortForward(ctxName, fwd)
-    } catch (e: any) {
-      notificationStore.error(`Failed to save port-forward: ${e?.message ?? e}`)
-    }
+  async function handleCreated(_spec: any) {
+    // StartForward auto-saves; just refresh
     await refresh()
   }
 

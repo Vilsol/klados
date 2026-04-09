@@ -33,7 +33,7 @@ func (s *PortForwardService) ServiceShutdown() error {
 }
 
 func (s *PortForwardService) StartForward(contextName, namespace string, targetKind portforward.TargetKind, targetName, targetGVR string, localPort, remotePort int) (portforward.ForwardSpec, error) {
-	return s.manager.StartForward(portforward.ForwardSpec{
+	spec, err := s.manager.StartForward(portforward.ForwardSpec{
 		ContextName: contextName,
 		Namespace:   namespace,
 		TargetKind:  targetKind,
@@ -42,6 +42,21 @@ func (s *PortForwardService) StartForward(contextName, namespace string, targetK
 		LocalPort:   localPort,
 		RemotePort:  remotePort,
 	})
+	if err != nil {
+		return portforward.ForwardSpec{}, err
+	}
+	_ = s.manager.SaveForward(contextName, config.SavedPortForward{
+		ID:         spec.ID,
+		Namespace:  namespace,
+		Resource:   targetName,
+		TargetKind: string(targetKind),
+		TargetName: targetName,
+		TargetGVR:  targetGVR,
+		LocalPort:  localPort,
+		RemotePort: remotePort,
+		Enabled:    true,
+	})
+	return spec, nil
 }
 
 func (s *PortForwardService) StopForward(forwardID string) error {
