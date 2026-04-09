@@ -307,6 +307,19 @@ func (m *Manager) updateStatus(entry *forwardEntry, status ForwardStatus, podNam
 	specCopy := entry.spec
 	m.mu.Unlock()
 
+	// When a forward goes active with an auto-assigned port, persist it so
+	// reconnects use the same port and the management page shows a real port.
+	if status == StatusActive && specCopy.LocalPort != 0 && m.cfg != nil {
+		_ = m.cfg.Update(func(c *config.Config) {
+			for i, f := range c.PortForwards[specCopy.ContextName] {
+				if f.ID == specCopy.ID && f.LocalPort == 0 {
+					c.PortForwards[specCopy.ContextName][i].LocalPort = specCopy.LocalPort
+					return
+				}
+			}
+		})
+	}
+
 	// Emit per-forward event and aggregate event for list subscribers.
 	m.emitEvent(fmt.Sprintf("portforward:%s:%s", specCopy.ContextName, specCopy.ID), specCopy)
 	m.emitEvent(fmt.Sprintf("portforward:%s:updated", specCopy.ContextName), nil)

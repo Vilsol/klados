@@ -64,7 +64,7 @@
           id: s?.id ?? '',
           resource: s?.resource ?? '',
           namespace: s?.namespace ?? '',
-          localPort: s?.localPort ?? 0,
+          localPort: live?.localPort || s?.localPort || 0,
           remotePort: s?.remotePort ?? 0,
           enabled: s?.enabled ?? false,
           targetKind: s?.targetKind ?? '',
