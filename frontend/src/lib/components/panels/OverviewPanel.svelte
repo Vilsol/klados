@@ -31,7 +31,7 @@
     ctxName?: string
     namespace?: string
     name?: string
-    onopenowner?: (ref: ControllerRef) => void
+    onopenowner?: (ref: ControllerRef, namespace: string) => void
   } = $props()
 
   const basePluginURL = $derived(
@@ -140,8 +140,8 @@
           <div class="text-xs text-muted mb-0.5">Controlled By</div>
           {#if onopenowner && clusterStore.resolveOwnerGVR(controllerRef.apiVersion, controllerRef.kind)}
             <button
-              class="text-xs font-mono text-accent hover:underline"
-              onclick={() => onopenowner!(controllerRef)}
+              class="text-xs font-mono text-accent hover:underline text-left"
+              onclick={() => onopenowner!(controllerRef, obj.metadata?.namespace ?? '')}
             >{controllerRef.kind}/{controllerRef.name}</button>
           {:else}
             <div class="text-xs font-mono truncate">{controllerRef.kind}/{controllerRef.name}</div>

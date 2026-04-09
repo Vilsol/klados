@@ -119,10 +119,9 @@
     return () => clearInterval(id)
   })
 
-  async function openOwnerDrawer(ref: ControllerRef) {
+  async function openOwnerDrawer(ref: ControllerRef, namespace: string) {
     const ownerGVR = clusterStore.resolveOwnerGVR(ref.apiVersion, ref.kind)
     if (!ownerGVR) return
-    const namespace = selectedItem?.metadata?.namespace ?? ''
     try {
       const owner = await ResourceService.GetResource(ctxName, ownerGVR, namespace, ref.name)
       if (owner) {

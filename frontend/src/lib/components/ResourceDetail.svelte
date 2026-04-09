@@ -128,7 +128,7 @@
     name: string
     onrefresh: () => void
     onupdate?: (updated: Record<string, any>) => void
-    onopenowner?: (ref: ControllerRef) => void
+    onopenowner?: (ref: ControllerRef, namespace: string) => void
   } = $props()
 
   const foldedIntoOverview = new Set(['labels', 'containers'])

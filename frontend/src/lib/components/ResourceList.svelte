@@ -50,7 +50,7 @@
     scrollContainer?: HTMLDivElement
     onrefresh?: () => void
     onselect?: (item: Record<string, any>) => void
-    onopenowner?: (ref: ControllerRef) => void
+    onopenowner?: (ref: ControllerRef, namespace: string) => void
     sparklineGvrs?: string[]
     sparklineData?: Record<string, MetricResult[]>
     sparklineColumns?: string[]
@@ -354,7 +354,7 @@
                           <button
                             class="text-accent hover:underline cursor-pointer"
                             title="{ref.kind}/{ref.name}"
-                            onclick={(e) => { e.stopPropagation(); onopenowner!(ref) }}
+                            onclick={(e) => { e.stopPropagation(); onopenowner!(ref, item.metadata?.namespace ?? '') }}
                           >{ref.kind}</button>
                         {:else}
                           <span title="{ref.kind}/{ref.name}">{ref.kind}</span>
