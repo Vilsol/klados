@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/Vilsol/slox"
@@ -176,4 +177,18 @@ func (a *AppService) LogFrontend(level, message, detail string) {
 	default:
 		slox.Info(a.ctx, message, args...)
 	}
+}
+
+func (a *AppService) SetReadOnly(ctx context.Context, enabled bool) error {
+	return a.config.Update(func(c *config.Config) {
+		c.ReadOnly = enabled
+	})
+}
+
+func (a *AppService) GetClusterHealth(ctx context.Context, connCtx string) (cluster.ClusterHealth, error) {
+	conn, err := a.clusterMgr.GetConnection(connCtx)
+	if err != nil {
+		return cluster.ClusterHealth{}, fmt.Errorf("not connected to %q", connCtx)
+	}
+	return cluster.CheckHealth(ctx, conn), nil
 }

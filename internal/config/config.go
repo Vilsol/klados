@@ -38,6 +38,7 @@ type Config struct {
 	Metrics               map[string]*MetricsConfig  `json:"metrics,omitempty"`
 	ColumnPrefs           map[string]*GVRColumnPrefs `json:"columnPrefs,omitempty"`
 	CompactRows           bool                       `json:"compactRows,omitempty"`
+	ReadOnly              bool                       `json:"readOnly,omitempty"`
 
 	mu   deadlock.Mutex
 	path string

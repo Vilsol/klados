@@ -49,6 +49,7 @@ export interface DescriptorDef {
 class DescriptorRegistry {
   private descriptors = new Map<string, DescriptorDef>()
   private builtins = new Map<string, DescriptorDef>()
+  private availableGVRs = new Set<string>()
 
   async load() {
     try {
@@ -211,6 +212,21 @@ class DescriptorRegistry {
 
   list(): DescriptorDef[] {
     return Array.from(this.descriptors.values())
+  }
+
+  /** Called by Sidebar after each discovery event to update the set of available GVRs. */
+  setAvailableGVRs(gvrs: string[]): void {
+    this.availableGVRs = new Set(gvrs)
+  }
+
+  /**
+   * Returns true if the GVR is available on the connected cluster.
+   * Before the first discovery event (empty set) returns true to avoid
+   * briefly flashing the entire sidebar as disabled on connect.
+   */
+  isGVRAvailable(gvr: string): boolean {
+    if (this.availableGVRs.size === 0) return true
+    return this.availableGVRs.has(gvr)
   }
 }
 

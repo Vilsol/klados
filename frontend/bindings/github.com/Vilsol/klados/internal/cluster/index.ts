@@ -3,7 +3,12 @@
 
 export {
     APIResource,
+    APIServerHealth,
+    ClusterHealth,
+    ComponentHealth,
     ConnectionStatus,
+    HealthStatus,
     KubeContext,
-    Manager
+    Manager,
+    NodeSummary
 } from "./models.js";

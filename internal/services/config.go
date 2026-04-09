@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/Vilsol/klados/internal/config"
-	"github.com/Vilsol/slox"
 )
 
 type ConfigService struct {
@@ -57,15 +56,10 @@ func (c *ConfigService) GetColumnPrefs(gvr string) *config.GVRColumnPrefs {
 	if c.config.ColumnPrefs == nil {
 		return nil
 	}
-	prefs := c.config.ColumnPrefs[gvr]
-	if prefs != nil {
-		slox.Info(c.ctx, "loaded column prefs", "gvr", gvr, "order", prefs.Order)
-	}
-	return prefs
+	return c.config.ColumnPrefs[gvr]
 }
 
 func (c *ConfigService) SetColumnPrefs(gvr string, prefs *config.GVRColumnPrefs) error {
-	slox.Info(c.ctx, "saving column prefs", "gvr", gvr, "order", prefs.Order)
 	return c.config.Update(func(cfg *config.Config) {
 		if cfg.ColumnPrefs == nil {
 			cfg.ColumnPrefs = make(map[string]*config.GVRColumnPrefs)
@@ -75,7 +69,6 @@ func (c *ConfigService) SetColumnPrefs(gvr string, prefs *config.GVRColumnPrefs)
 }
 
 func (c *ConfigService) DeleteColumnPrefs(gvr string) error {
-	slox.Info(c.ctx, "deleting column prefs", "gvr", gvr)
 	return c.config.Update(func(cfg *config.Config) {
 		delete(cfg.ColumnPrefs, gvr)
 	})

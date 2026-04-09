@@ -75,12 +75,14 @@ func detectProvider(clusterName, serverVersion string) string {
 
 type Connection struct {
 	KubeContext
-	Config              *rest.Config
-	Clientset           kubernetes.Interface
-	Dynamic             dynamic.Interface
-	Discovery           discovery.DiscoveryInterface
-	MetricsCapability   metrics.MetricsCapability
-	cancel              context.CancelFunc
+	Config            *rest.Config
+	Clientset         kubernetes.Interface
+	Dynamic           dynamic.Interface
+	Discovery         discovery.DiscoveryInterface
+	MetricsCapability metrics.MetricsCapability
+	Permissions       PermissionSet
+	cancel            context.CancelFunc
+	healthStop        context.CancelFunc
 }
 
 type Manager struct {
@@ -191,6 +193,8 @@ func (m *Manager) Connect(ctx context.Context, contextName string) error {
 		return fmt.Errorf("building rest config for %q: %w", contextName, err)
 	}
 
+	restCfg.WarningHandler = FilteredWarningHandler
+
 	if m.config != nil && m.config.InsecureSkipTLSVerify {
 		restCfg.TLSClientConfig.Insecure = true
 		restCfg.TLSClientConfig.CAFile = ""
@@ -244,6 +248,8 @@ func (m *Manager) Connect(ctx context.Context, contextName string) error {
 	m.emitStatus(contextName, StatusConnected)
 
 	go m.healthMonitor(connCtx, conn)
+	go m.fetchAndStorePermissions(connCtx, contextName, conn)
+	go m.startHealthPoller(connCtx, contextName, conn)
 	go m.emitDiscovery(contextName)
 	go func() {
 		if sv, err := conn.Clientset.Discovery().ServerVersion(); err == nil {
@@ -489,4 +495,40 @@ func (m *Manager) emitStatus(contextName string, status ConnectionStatus) {
 		m.emitEvent(fmt.Sprintf("status:%s:connection", contextName), status.String())
 	}
 	slox.Info(m.ctx, "cluster status changed", "context", contextName, "status", status)
+}
+
+func (m *Manager) startHealthPoller(ctx context.Context, contextName string, conn *Connection) {
+	healthCtx, stop := context.WithCancel(ctx)
+	m.mu.Lock()
+	if c, ok := m.connections[contextName]; ok {
+		c.healthStop = stop
+	}
+	m.mu.Unlock()
+	defer stop()
+
+	// Emit immediately on connect, then every 10s
+	h := CheckHealth(healthCtx, conn)
+	m.emitEvent(fmt.Sprintf("cluster:%s:health", contextName), h)
+
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-healthCtx.Done():
+			return
+		case <-ticker.C:
+			h := CheckHealth(healthCtx, conn)
+			m.emitEvent(fmt.Sprintf("cluster:%s:health", contextName), h)
+		}
+	}
+}
+
+func (m *Manager) fetchAndStorePermissions(ctx context.Context, contextName string, conn *Connection) {
+	perms := FetchPermissions(ctx, conn.Clientset)
+	m.mu.Lock()
+	if c, ok := m.connections[contextName]; ok {
+		c.Permissions = perms
+	}
+	m.mu.Unlock()
+	m.emitEvent(fmt.Sprintf("cluster:%s:permissions", contextName), perms)
 }

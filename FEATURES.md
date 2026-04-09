@@ -19,7 +19,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Kubeconfig manual import (file picker, paste)
 - [ ] `Future` In-cluster context detection (when running inside a pod)
 - [x] `MVP` Cluster connection status indicators (connected, degraded, unreachable)
-- [ ] `v2` Cluster health overview (API server health, component statuses)
+- [x] `v2` Cluster health overview (API server health, component statuses)
 - [x] `MVP` Cluster metadata display (version, platform, provider detection)
 - [x] `MVP` Namespace management — list, switch active, create, delete
 - [ ] `v2` Namespace favorites / pinning
@@ -36,7 +36,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [ ] `Future` Workspace grouping — organize clusters into named workspaces
 - [ ] `Future` Hotbar — pinnable quick-access bar for frequently used clusters/resources
 - [ ] `Future` Catalog — unified entity browser aggregating clusters, services, and custom entities
-- [ ] `v2` Read-only mode — lockdown flag for safe browsing (e.g. prod clusters)
+- [x] `v2` Read-only mode — lockdown flag for safe browsing (e.g. prod clusters)
 
 ## 2. Workloads
 

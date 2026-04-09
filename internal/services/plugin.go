@@ -206,6 +206,9 @@ func (s *PluginService) initPluginRuntime(p *plugin.LoadedPlugin, enricherReg *r
 // Returns immediately; errors are emitted as plugin:error events.
 func (s *PluginService) InvokeCommand(pluginName, commandID string) error {
 	slox.Info(s.ctx, "[wasm-cmd] InvokeCommand called", "plugin", pluginName, "command", commandID)
+	if s.appService != nil && s.appService.config != nil && s.appService.config.ReadOnly {
+		return fmt.Errorf("app is in read-only mode")
+	}
 	rt, ok := s.runtimes[pluginName]
 	if !ok {
 		knownRuntimes := make([]string, 0, len(s.runtimes))

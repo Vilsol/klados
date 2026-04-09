@@ -182,6 +182,7 @@
   function handleDiscovery(resources: APIResource[]) {
     const gvrs = new Set(resources.map((r) => r.gvr))
     discoveredGVRs = gvrs
+    descriptorRegistry.setAvailableGVRs(Array.from(gvrs))
 
     const knownGVRs = new Set(Object.values(gvrGroups).flat())
     // Show resources not in any builtin group and not purely internal/meta resources
@@ -264,33 +265,33 @@
         </button>
       {/if}
       {#each Object.entries(gvrGroups) as [groupName, gvrs]}
-        {@const available = gvrs.filter((g) => !ctx || discoveredGVRs.size === 0 || discoveredGVRs.has(g))}
-        {#if available.length > 0}
-          <div>
-            <button
-              onclick={() => toggleGroup(groupName)}
-              class="w-full flex items-center gap-1 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted hover:bg-surface-hover transition-colors"
-            >
-              <ChevronRight
-                size={12}
-                class="transition-transform {expandedGroups[groupName] ? 'rotate-90' : ''}"
-              />
-              {groupName}
-            </button>
-            {#if expandedGroups[groupName]}
-              <div class="ml-4">
-                {#each available as gvr}
-                  <button
-                    onclick={() => navigate(gvr)}
-                    class="w-full text-left px-3 py-1 text-sm hover:bg-surface-hover transition-colors rounded-sm"
-                  >
-                    {kindByGvr[gvr] ?? gvr.split('.').at(-1)}
-                  </button>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
+        <div>
+          <button
+            onclick={() => toggleGroup(groupName)}
+            class="w-full flex items-center gap-1 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted hover:bg-surface-hover transition-colors"
+          >
+            <ChevronRight
+              size={12}
+              class="transition-transform {expandedGroups[groupName] ? 'rotate-90' : ''}"
+            />
+            {groupName}
+          </button>
+          {#if expandedGroups[groupName]}
+            <div class="ml-4">
+              {#each gvrs as gvr}
+                {@const unavailable = ctx && !descriptorRegistry.isGVRAvailable(gvr)}
+                <button
+                  onclick={() => { if (!unavailable) navigate(gvr) }}
+                  disabled={!!unavailable}
+                  title={unavailable ? `API group not available on this cluster` : undefined}
+                  class="w-full text-left px-3 py-1 text-sm transition-colors rounded-sm {unavailable ? 'opacity-40 cursor-not-allowed text-muted' : 'hover:bg-surface-hover'}"
+                >
+                  {kindByGvr[gvr] ?? gvr.split('.').at(-1)}
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
       {/each}
 
       {#if crdTree.length > 0}

@@ -1,9 +1,17 @@
 import { Events } from '@wailsio/runtime'
 import * as ClusterService from '../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js'
+import * as AppService from '../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js'
+import * as ConfigService from '../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js'
 import { KubeContext, ConnectionStatus } from '../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js'
 
 export type { KubeContext }
 export { ConnectionStatus }
+
+// PermissionSet mirrors internal/cluster/permissions.go — emitted via event, not a service return type.
+export interface PermissionSet {
+  rules: Array<{ verbs: string[]; resources: string[]; apiGroups: string[] }>
+  inferred: boolean
+}
 
 export type ConnectionStatusType = 'disconnected' | 'connecting' | 'connected' | 'error'
 
@@ -22,9 +30,32 @@ class ClusterStore {
   selectedNamespaces = $state<Record<string, string[]>>({})
   namespaces = $state<Record<string, string[]>>({})
   connectionStatus = $state<Record<string, ConnectionStatusType>>({})
+  permissions = $state<Record<string, PermissionSet>>({})
+  isReadOnly = $state<boolean>(false)
 
   private statusUnsubs: Array<() => void> = []
   private metaUnsubs: Array<() => void> = []
+  private permUnsubs: Array<() => void> = []
+
+  /** Returns false when either the global read-only toggle is on or detected RBAC permits no writes. */
+  canMutate(): boolean {
+    if (this.isReadOnly) return false
+    const perms = this.permissions[this.activeContext ?? '']
+    if (!perms) return true // not yet fetched — optimistic
+    if (perms.inferred) return true
+    return perms.rules.some((r) =>
+      r.verbs.some((v) => v === '*' || v === 'delete' || v === 'patch' || v === 'update' || v === 'create'),
+    )
+  }
+
+  async setReadOnly(enabled: boolean) {
+    this.isReadOnly = enabled
+    try {
+      await AppService.SetReadOnly(enabled)
+    } catch (e) {
+      console.error('Failed to save read-only state:', e)
+    }
+  }
 
   /** Set the currently-viewed cluster context (called by route components on mount) */
   setActiveContext(ctxName: string) {
@@ -50,6 +81,15 @@ class ClusterStore {
       this.statusUnsubs = []
       this.metaUnsubs.forEach((u) => u())
       this.metaUnsubs = []
+      this.permUnsubs.forEach((u) => u())
+      this.permUnsubs = []
+
+      // Load read-only state from persisted config
+      try {
+        const cfg = await ConfigService.GetConfig()
+        this.isReadOnly = cfg?.readOnly ?? false
+      } catch {}
+
       for (const ctx of this.contexts) {
         this.connectionStatus[ctx.name] = statusToString[ctx.status] ?? 'disconnected'
         const unsub = Events.On(`status:${ctx.name}:connection`, (wailsEvent: any) => {
@@ -64,6 +104,11 @@ class ClusterStore {
           this.loadContexts()
         })
         this.metaUnsubs.push(metaUnsub)
+        const permUnsub = Events.On(`cluster:${ctx.name}:permissions`, (wailsEvent: any) => {
+          const perms = (wailsEvent.data ?? wailsEvent) as PermissionSet
+          this.permissions[ctx.name] = perms
+        })
+        this.permUnsubs.push(permUnsub)
       }
 
       const connected = this.contexts.find(

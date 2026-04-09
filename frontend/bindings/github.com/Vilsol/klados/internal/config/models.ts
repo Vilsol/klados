@@ -33,6 +33,7 @@ export class Config {
     "metrics"?: { [_ in string]?: MetricsConfig | null };
     "columnPrefs"?: { [_ in string]?: GVRColumnPrefs | null };
     "compactRows"?: boolean;
+    "readOnly"?: boolean;
 
     /** Creates a new Config instance. */
     constructor($$source: Partial<Config> = {}) {

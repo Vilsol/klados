@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Sun, Moon, Monitor } from 'lucide-svelte'
+  import { Sun, Moon, Monitor, Lock, LockOpen } from 'lucide-svelte'
   import { getTheme, setTheme } from '$lib/theme.svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
   import ConnectionIndicator from './ConnectionIndicator.svelte'
@@ -107,7 +107,21 @@
     </div>
   {/if}
 
-  <div class="ml-auto">
+  <div class="ml-auto flex items-center gap-2">
+    <button
+      onclick={() => clusterStore.setReadOnly(!clusterStore.isReadOnly)}
+      title={clusterStore.isReadOnly ? 'Read-only mode (click to disable)' : 'Click to enable read-only mode'}
+      aria-label="Toggle read-only mode"
+      class="flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors {clusterStore.isReadOnly ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'hover:bg-surface-hover text-muted'}"
+    >
+      {#if clusterStore.isReadOnly}
+        <Lock size={13} />
+        <span>Read-only</span>
+      {:else}
+        <LockOpen size={13} />
+      {/if}
+    </button>
+
     <button
       onclick={cycleTheme}
       class="p-1.5 rounded hover:bg-surface-hover transition-colors"

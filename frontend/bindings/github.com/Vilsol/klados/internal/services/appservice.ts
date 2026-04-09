@@ -60,15 +60,21 @@ export function ExecManager(): $CancellablePromise<exec$0.Manager | null> {
     });
 }
 
+export function GetClusterHealth(connCtx: string): $CancellablePromise<cluster$0.ClusterHealth> {
+    return $Call.ByID(3203745337, connCtx).then(($result: any) => {
+        return $$createType6($result);
+    });
+}
+
 export function GetSession(): $CancellablePromise<session$0.Session | null> {
     return $Call.ByID(3130725049).then(($result: any) => {
-        return $$createType7($result);
+        return $$createType8($result);
     });
 }
 
 export function GetStreamingConfig(): $CancellablePromise<streaming$0.StreamingConfig> {
     return $Call.ByID(3228718747).then(($result: any) => {
-        return $$createType8($result);
+        return $$createType9($result);
     });
 }
 
@@ -78,13 +84,13 @@ export function LogFrontend(level: string, message: string, detail: string): $Ca
 
 export function LogStreamer(): $CancellablePromise<logs$0.Streamer | null> {
     return $Call.ByID(2788254666).then(($result: any) => {
-        return $$createType10($result);
+        return $$createType11($result);
     });
 }
 
 export function PortForwardManager(): $CancellablePromise<portforward$0.Manager | null> {
     return $Call.ByID(3269944274).then(($result: any) => {
-        return $$createType12($result);
+        return $$createType13($result);
     });
 }
 
@@ -96,6 +102,10 @@ export function SaveUIState(openTabs: session$0.TabState[], activeTab: number, s
     return $Call.ByID(1357217799, openTabs, activeTab, sidebarCollapsed);
 }
 
+export function SetReadOnly(enabled: boolean): $CancellablePromise<void> {
+    return $Call.ByID(1908353457, enabled);
+}
+
 // Private type creation functions
 const $$createType0 = cluster$0.Manager.createFrom;
 const $$createType1 = $Create.Nullable($$createType0);
@@ -103,10 +113,11 @@ const $$createType2 = config$0.Config.createFrom;
 const $$createType3 = $Create.Nullable($$createType2);
 const $$createType4 = exec$0.Manager.createFrom;
 const $$createType5 = $Create.Nullable($$createType4);
-const $$createType6 = session$0.Session.createFrom;
-const $$createType7 = $Create.Nullable($$createType6);
-const $$createType8 = streaming$0.StreamingConfig.createFrom;
-const $$createType9 = logs$0.Streamer.createFrom;
-const $$createType10 = $Create.Nullable($$createType9);
-const $$createType11 = portforward$0.Manager.createFrom;
-const $$createType12 = $Create.Nullable($$createType11);
+const $$createType6 = cluster$0.ClusterHealth.createFrom;
+const $$createType7 = session$0.Session.createFrom;
+const $$createType8 = $Create.Nullable($$createType7);
+const $$createType9 = streaming$0.StreamingConfig.createFrom;
+const $$createType10 = logs$0.Streamer.createFrom;
+const $$createType11 = $Create.Nullable($$createType10);
+const $$createType12 = portforward$0.Manager.createFrom;
+const $$createType13 = $Create.Nullable($$createType12);

@@ -200,3 +200,24 @@ func TestLoad_CorruptFile_ReturnsError(t *testing.T) {
 	_, err = Load()
 	testza.AssertNotNil(t, err)
 }
+
+func TestReadOnly_RoundTrip(t *testing.T) {
+	cfg := tempConfig(t)
+	cfg.ReadOnly = true
+	testza.AssertNoError(t, cfg.Save())
+
+	data, err := os.ReadFile(cfg.path)
+	testza.AssertNoError(t, err)
+	testza.AssertTrue(t, strings.Contains(string(data), `"readOnly": true`))
+
+	loaded := &Config{path: cfg.path}
+	testza.AssertNoError(t, json.Unmarshal(data, loaded))
+	testza.AssertTrue(t, loaded.ReadOnly)
+
+	// false (zero value) should be omitted
+	cfg.ReadOnly = false
+	testza.AssertNoError(t, cfg.Save())
+	data, err = os.ReadFile(cfg.path)
+	testza.AssertNoError(t, err)
+	testza.AssertFalse(t, strings.Contains(string(data), "readOnly"))
+}

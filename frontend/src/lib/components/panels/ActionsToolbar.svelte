@@ -7,6 +7,7 @@
   import { push } from 'svelte-spa-router'
   import type { ActionDef } from '$lib/registry/index'
   import { evalExpr } from '$lib/registry/index'
+  import { clusterStore } from '$lib/stores/cluster.svelte'
 
   let {
     obj,
@@ -43,12 +44,19 @@
   let expandChecking = $state(false)
 
   function isDisabled(action: ActionDef): boolean {
+    if (!clusterStore.canMutate()) return true
     if (!action.disabledWhen) return false
     try {
       return !!evalExpr(action.disabledWhen, obj)
     } catch {
       return false
     }
+  }
+
+  function disabledReason(action: ActionDef): string | undefined {
+    if (!clusterStore.canMutate()) return 'Read-only mode'
+    if (action.disabledWhen && isDisabled(action)) return action.disabledReason
+    return undefined
   }
 
   const setBusy = (v: boolean) => { busy = v }
@@ -168,9 +176,10 @@
   {#each actions.filter(a => !destructiveActions.has(a.name)) as action}
     {@const disabled = isDisabled(action) || busy}
     {@const handler = getHandler(action.name)}
+    {@const reason = disabledReason(action)}
     {#if handler}
-      {#if action.disabledWhen && isDisabled(action) && action.disabledReason}
-        <Tooltip content={action.disabledReason}>
+      {#if reason}
+        <Tooltip content={reason}>
           {#snippet trigger(props)}
             <button
               {...props}
@@ -195,8 +204,29 @@
   {#each actions.filter(a => destructiveActions.has(a.name)) as action}
     {@const disabled = isDisabled(action) || busy}
     {@const handler = getHandler(action.name)}
+    {@const reason = disabledReason(action)}
     {#if handler}
-      {#if action.name === 'delete'}
+      {#if reason}
+        <Tooltip content={reason}>
+          {#snippet trigger(props)}
+            {#if action.name === 'delete'}
+              <button
+                {...props}
+                onclick={handler}
+                disabled={disabled}
+                class="text-xs px-2.5 py-1 rounded bg-destructive text-destructive-fg hover:opacity-90 transition-opacity disabled:opacity-50"
+              >{action.label}</button>
+            {:else}
+              <button
+                {...props}
+                onclick={handler}
+                disabled={disabled}
+                class="text-xs px-2.5 py-1 rounded border border-destructive text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
+              >{action.label}</button>
+            {/if}
+          {/snippet}
+        </Tooltip>
+      {:else if action.name === 'delete'}
         <button
           onclick={handler}
           disabled={disabled}
