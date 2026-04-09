@@ -6,6 +6,9 @@
   import { slotRegistry } from '$lib/plugins/slots.svelte.js'
   import { loadPluginComponent } from '$lib/plugins/loader.js'
   import { streamingStore } from '$lib/stores/streaming.svelte.js'
+  import BottomPanel from './BottomPanel.svelte'
+  import BottomPanelResizeHandle from './BottomPanelResizeHandle.svelte'
+  import { bottomPanelStore } from '$lib/stores/bottom-panel.svelte'
 
   let { children }: { children: Snippet } = $props()
 
@@ -23,12 +26,18 @@
   <Header />
   <div class="flex flex-1 overflow-hidden relative">
     <Sidebar />
-    <main id="main-content" class="flex flex-col flex-1 overflow-hidden" tabindex="-1">
-      <TabBar />
-      <div class="flex-1 overflow-hidden">
-        {@render children()}
-      </div>
-    </main>
+    <div class="flex flex-col flex-1 overflow-hidden">
+      <main id="main-content" class="flex flex-col flex-1 overflow-hidden min-h-[100px]" tabindex="-1">
+        <TabBar />
+        <div class="flex-1 overflow-hidden">
+          {@render children()}
+        </div>
+      </main>
+      {#if bottomPanelStore.hasVisibleTabs && !bottomPanelStore.collapsed}
+        <BottomPanelResizeHandle />
+      {/if}
+      <BottomPanel />
+    </div>
   </div>
   {#if basePluginURL && slotRegistry.getStatusBarWidgets().length > 0}
     <div class="border-t border-border bg-surface flex items-center gap-2 px-3 py-1">

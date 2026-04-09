@@ -11,6 +11,8 @@
   import { notificationStore } from '$lib/stores/notification.svelte.js'
   import { unwrapError } from '$lib/utils/async.js'
   import type { ControllerRef } from '$lib/utils/relationships'
+  import { ExternalLink } from 'lucide-svelte'
+  import { bottomPanelStore, type PanelKind } from '$lib/stores/bottom-panel.svelte'
 
   import OverviewPanel from './panels/OverviewPanel.svelte'
   import EventsPanel from './panels/EventsPanel.svelte'
@@ -134,6 +136,21 @@
     onopenowner?: (ref: ControllerRef, namespace: string) => void
   } = $props()
 
+  const splittablePanels = new Set<string>(['logs', 'terminal', 'aggregate-logs', 'yaml'])
+
+  function openInBottomPanel(panel: string) {
+    bottomPanelStore.addTab({
+      kind: panel as PanelKind,
+      resourceKind: descriptor.kind ?? gvr.split('.').at(-1) ?? '',
+      resourceName: name,
+      ctxName,
+      gvr,
+      namespace,
+      name,
+      obj,
+    })
+  }
+
   const foldedIntoOverview = new Set(['labels', 'containers'])
   const visiblePanels = $derived(descriptor.detailPanels.filter((p) => panelComponents.has(p) && !foldedIntoOverview.has(p)))
   const pluginTabs = $derived(slotRegistry.getDetailTabs(gvr))
@@ -201,15 +218,27 @@
   <!-- Panel tab bar -->
   <div class="flex items-center border-b border-border bg-surface shrink-0 overflow-x-auto">
     {#each visiblePanels as panel}
-      <button
-        onclick={() => activePanel = panel}
-        class="px-4 py-2 text-xs font-medium whitespace-nowrap transition-colors border-b-2
-          {activePanel === panel
-            ? 'border-accent text-accent'
-            : 'border-transparent text-muted hover:text-fg hover:bg-surface-hover'}"
-      >
-        {panelLabels[panel] ?? panel}
-      </button>
+      <div class="flex items-center border-b-2 {activePanel === panel ? 'border-accent' : 'border-transparent'}">
+        <button
+          onclick={() => activePanel = panel}
+          class="px-4 py-2 text-xs font-medium whitespace-nowrap transition-colors
+            {activePanel === panel
+              ? 'text-accent'
+              : 'text-muted hover:text-fg hover:bg-surface-hover'}"
+        >
+          {panelLabels[panel] ?? panel}
+        </button>
+        {#if splittablePanels.has(panel)}
+          <button
+            onclick={(e) => { e.stopPropagation(); openInBottomPanel(panel) }}
+            class="p-1 mr-1 rounded text-muted hover:text-fg hover:bg-surface-hover transition-colors"
+            aria-label="Open in bottom panel"
+            title="Open in bottom panel"
+          >
+            <ExternalLink size={11} />
+          </button>
+        {/if}
+      </div>
     {/each}
     {#each pluginTabs as pt}
       <button

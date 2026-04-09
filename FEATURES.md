@@ -122,8 +122,9 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 ### Port Forwarding Manager
 - [x] `MVP` Active port-forwards list
 - [x] `MVP` Start/stop port-forwards
-- [ ] `v2` Port-forward history / favorites
-- [ ] `v2` Auto-reconnect on disconnect
+- [x] `v2` Port-forward persistence (saved forwards survive app restarts, keyed by context)
+- [x] `v2` Port-forward management page (`/c/:ctx/port-forwards`) with enable/disable/remove actions
+- [x] `v2` Auto-reconnect on disconnect (enabled forwards auto-reconnect on cluster connect)
 - [x] `MVP` Status indicator (active, failed, reconnecting)
 
 ## 4. Configuration
@@ -247,9 +248,9 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Log highlighting (error, warn, info levels)
 - [x] `MVP` Timestamp toggle
 - [x] `MVP` Log download / export
-- [ ] `v2` Multi-pod log aggregation (tail logs from all pods in a deployment)
+- [x] `v2` Multi-pod log aggregation (tail logs from all pods in a deployment)
 - [x] `MVP` Log wrapping toggle
-- [ ] `v2` Font size control
+- [x] `v2` Font size control
 
 ### Terminal / Shell
 - [x] `MVP` Exec into running containers (interactive shell)
