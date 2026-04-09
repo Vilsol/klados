@@ -12,6 +12,16 @@ import * as config$0 from "../config/models.js";
 // @ts-ignore: Unused imports
 import * as portforward$0 from "../portforward/models.js";
 
+/**
+ * ConnectSavedForward starts a saved forward using its existing ID so it
+ * doesn't create a duplicate saved entry.
+ */
+export function ConnectSavedForward(ctxName: string, savedID: string): $CancellablePromise<portforward$0.ForwardSpec> {
+    return $Call.ByID(646437684, ctxName, savedID).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
 export function ListForwards(contextName: string): $CancellablePromise<portforward$0.ForwardSpec[]> {
     return $Call.ByID(4274792300, contextName).then(($result: any) => {
         return $$createType1($result);

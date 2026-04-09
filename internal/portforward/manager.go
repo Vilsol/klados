@@ -344,6 +344,10 @@ func (m *Manager) ListForwards(contextName string) []ForwardSpec {
 	return result
 }
 
+func (m *Manager) Cfg() *config.Config {
+	return m.cfg
+}
+
 func (m *Manager) StopAll() {
 	m.mu.Lock()
 	defer m.mu.Unlock()

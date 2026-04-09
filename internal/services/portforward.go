@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
@@ -61,6 +62,35 @@ func (s *PortForwardService) StartForward(contextName, namespace string, targetK
 
 func (s *PortForwardService) StopForward(forwardID string) error {
 	return s.manager.StopForward(forwardID)
+}
+
+// ConnectSavedForward starts a saved forward using its existing ID so it
+// doesn't create a duplicate saved entry.
+func (s *PortForwardService) ConnectSavedForward(ctxName, savedID string) (portforward.ForwardSpec, error) {
+	var saved config.SavedPortForward
+	var found bool
+	s.manager.Cfg().Read(func(c *config.Config) {
+		for _, f := range c.PortForwards[ctxName] {
+			if f.ID == savedID {
+				saved = f
+				found = true
+				return
+			}
+		}
+	})
+	if !found {
+		return portforward.ForwardSpec{}, fmt.Errorf("saved forward %q not found", savedID)
+	}
+	return s.manager.StartForward(portforward.ForwardSpec{
+		ID:          savedID,
+		ContextName: ctxName,
+		Namespace:   saved.Namespace,
+		TargetKind:  portforward.TargetKind(saved.TargetKind),
+		TargetName:  saved.TargetName,
+		TargetGVR:   saved.TargetGVR,
+		LocalPort:   saved.LocalPort,
+		RemotePort:  saved.RemotePort,
+	})
 }
 
 func (s *PortForwardService) ListForwards(contextName string) []portforward.ForwardSpec {

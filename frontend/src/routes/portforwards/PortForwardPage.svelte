@@ -20,12 +20,14 @@
     kind: 'PortForward',
     gvr: PF_GVR,
     columns: [
-      { name: 'Resource',    expr: 'resource',    renderType: 'text' },
-      { name: 'Namespace',   expr: 'namespace',   renderType: 'text' },
-      { name: 'Local Port',  expr: 'localPort',   renderType: 'text' },
-      { name: 'Remote Port', expr: 'remotePort',  renderType: 'text' },
-      { name: 'Status',      expr: 'status',      renderType: 'badge' },
-      { name: 'Enabled',     expr: 'enabled',     renderType: 'text' },
+      { name: 'Resource',       expr: 'resource',    renderType: 'text' },
+      { name: 'Namespace',      expr: 'namespace',   renderType: 'text' },
+      { name: 'Local Port',     expr: 'localPort',   renderType: 'text' },
+      { name: 'Remote Port',    expr: 'remotePort',  renderType: 'text' },
+      { name: 'Status',         expr: 'status',      renderType: 'badge' },
+      { name: 'Enabled',        expr: 'enabled',     renderType: 'text' },
+      // Hidden sentinel so withControlledBy() skips adding its column
+      { name: 'Controlled By',  expr: '',            renderType: 'controlledBy', hidden: true },
     ],
     overviewFields: [],
     detailPanels: [],
@@ -72,6 +74,7 @@
           status: live?.status ?? 'stopped',
           error: live?.error ?? '',
           podName: live?.podName ?? '',
+          isSaved: true,
           metadata: { name: s?.id ?? '', namespace: s?.namespace ?? '' },
         }
       })
@@ -92,6 +95,7 @@
           status: f.status ?? 'active',
           error: f.error ?? '',
           podName: f.podName ?? '',
+          isSaved: false,
           metadata: { name: f.id, namespace: f.namespace ?? '' },
         }))
 
@@ -115,6 +119,9 @@
           try {
             if (isActive) {
               await PortForwardService.StopForward(item.id)
+            } else if (item.isSaved) {
+              // Saved forward — reconnect using existing ID to avoid duplicate entry
+              await PortForwardService.ConnectSavedForward(ctxName, item.id)
             } else {
               await PortForwardService.StartForward(
                 ctxName, item.namespace, item.targetKind, item.targetName, item.targetGVR, item.localPort, item.remotePort
@@ -149,6 +156,8 @@
         variant: 'destructive' as const,
         onClick: async () => {
           try {
+            // Stop the tunnel first if running, then remove from config
+            if (isActive) await PortForwardService.StopForward(item.id).catch(() => {})
             await PortForwardService.RemoveSavedPortForward(ctxName, item.id)
           } catch (e: any) {
             notificationStore.error(e?.message ?? String(e))
