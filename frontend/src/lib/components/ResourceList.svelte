@@ -56,7 +56,7 @@
     sparklineData?: Record<string, MetricResult[]>
     sparklineColumns?: string[]
     onSparklineToggle?: (columns: string[]) => void
-    rowActions?: (item: Record<string, any>) => Array<{ label: string; onClick: () => void; variant?: 'default' | 'destructive' }>
+    rowActions?: (item: Record<string, any>) => Array<{ label: string; icon?: any; onClick: () => void; variant?: 'default' | 'destructive' }>
   } = $props()
 
   let filterText = $state('')
@@ -403,9 +403,16 @@
                     {#each rowActions(item) as action}
                       <button
                         onclick={(e) => { e.stopPropagation(); action.onClick() }}
-                        class="px-1.5 py-0.5 rounded text-xs opacity-0 group-hover:opacity-80 hover:!opacity-100 transition-all {action.variant === 'destructive' ? 'hover:text-destructive' : 'hover:text-accent'}"
+                        class="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-all {action.variant === 'destructive' ? 'hover:text-destructive' : 'hover:text-fg'}"
                         title={action.label}
-                      >{action.label}</button>
+                        aria-label={action.label}
+                      >
+                        {#if action.icon}
+                          <action.icon size={13} />
+                        {:else}
+                          <span class="text-xs">{action.label}</span>
+                        {/if}
+                      </button>
                     {/each}
                   {:else}
                     <button

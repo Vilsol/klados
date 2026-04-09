@@ -67,7 +67,9 @@ func (a *AppService) ServiceStartup(ctx context.Context, options application.Ser
 		go func(name string) {
 			if err := a.clusterMgr.Connect(a.ctx, name); err != nil {
 				slox.Warn(a.ctx, "failed to reconnect cluster", "context", name, "error", err)
+				return
 			}
+			a.portForwardManager.ReconnectSaved(name)
 		}(ctxName)
 	}
 

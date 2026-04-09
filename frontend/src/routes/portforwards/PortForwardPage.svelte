@@ -1,14 +1,13 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
   import { Events } from '@wailsio/runtime'
-  import { Plus } from 'lucide-svelte'
+  import { Plus, Play, Square, ToggleLeft, ToggleRight, Copy, Trash2 } from 'lucide-svelte'
   import ResourceList from '$lib/components/ResourceList.svelte'
   import PortForwardDialog from '$lib/components/PortForwardDialog.svelte'
   import { descriptorRegistry, type DescriptorDef } from '$lib/registry/index'
   import { columnStore } from '$lib/stores/columns.svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
   import { notificationStore } from '$lib/stores/notification.svelte'
-  import { Browser } from '@wailsio/runtime'
   import * as PortForwardService from '../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js'
 
   const PF_GVR = '_internal.v1.portforwards'
@@ -115,6 +114,7 @@
     return [
       {
         label: isActive ? 'Disconnect' : 'Connect',
+        icon: isActive ? Square : Play,
         onClick: async () => {
           try {
             if (isActive) {
@@ -135,6 +135,7 @@
       },
       {
         label: item.enabled ? 'Disable' : 'Enable',
+        icon: item.enabled ? ToggleRight : ToggleLeft,
         onClick: async () => {
           try {
             await PortForwardService.SetPortForwardEnabled(ctxName, item.id, !item.enabled)
@@ -146,6 +147,7 @@
       },
       {
         label: 'Copy URL',
+        icon: Copy,
         onClick: () => {
           navigator.clipboard.writeText(`http://localhost:${item.localPort}`)
           notificationStore.push('URL copied', 'success')
@@ -153,6 +155,7 @@
       },
       {
         label: 'Remove',
+        icon: Trash2,
         variant: 'destructive' as const,
         onClick: async () => {
           try {
