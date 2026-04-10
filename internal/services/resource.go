@@ -141,6 +141,11 @@ func (s *ResourceService) WatchMgr() *watcher.WatchManager {
 	return s.watchMgr
 }
 
+//wails:ignore
+func (s *ResourceService) TemplateRegistry() *resource.TemplateRegistry {
+	return s.templateReg
+}
+
 func (s *ResourceService) CreateResource(contextName, gvr, namespace string, obj map[string]any) (map[string]any, error) {
 	return s.engine.Create(s.ctx, contextName, gvr, namespace, obj)
 }

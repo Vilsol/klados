@@ -158,10 +158,11 @@ func (s *PluginService) initPluginRuntime(p *plugin.LoadedPlugin, enricherReg *r
 	}
 
 	deps := plugin.HostAPIDeps{
-		ResourceEngine: s.resourceSvc.Engine(),
-		WatchManager:   s.resourceSvc.WatchMgr(),
-		LogStreamer:    s.appService.LogStreamer(),
-		ExecManager:    s.appService.ExecManager(),
+		ResourceEngine:   s.resourceSvc.Engine(),
+		WatchManager:     s.resourceSvc.WatchMgr(),
+		LogStreamer:      s.appService.LogStreamer(),
+		ExecManager:      s.appService.ExecManager(),
+		TemplateRegistry: s.resourceSvc.TemplateRegistry(),
 		GetActiveContext: func() string {
 			for _, c := range s.appService.ClusterManager().ListContexts() {
 				if c.Status == cluster.StatusConnected {
@@ -312,6 +313,10 @@ func (s *PluginService) unloadPlugin(name string, keepEntry bool) error {
 		if dir, ok := s.pluginDirs[name]; ok {
 			s.watcher.Unwatch(dir)
 		}
+	}
+
+	if tr := s.resourceSvc.TemplateRegistry(); tr != nil {
+		tr.UnregisterPlugin(name)
 	}
 
 	if keepEntry {

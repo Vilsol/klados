@@ -83,6 +83,24 @@ func TestGenerateFromSchema_FallbackForUnknownCRD(t *testing.T) {
 	testza.AssertContains(t, tmpl.Content, "metadata:")
 }
 
+func TestTemplateRegistry_PluginRegisterUnregister_RoundTrip(t *testing.T) {
+	reg := resource.NewTemplateRegistry()
+	reg.RegisterPlugin("istio", resource.Template{
+		GVR:     "networking.istio.io.v1.virtualservices",
+		Name:    "VirtualService",
+		Source:  "plugin:istio",
+		Content: "apiVersion: networking.istio.io/v1\nkind: VirtualService\n",
+	})
+
+	got := reg.GetTemplates("networking.istio.io.v1.virtualservices")
+	testza.AssertLen(t, got, 1)
+	testza.AssertEqual(t, "plugin:istio", got[0].Source)
+
+	reg.UnregisterPlugin("istio")
+	got = reg.GetTemplates("networking.istio.io.v1.virtualservices")
+	testza.AssertLen(t, got, 0)
+}
+
 func TestTemplateRegistry_GetAllGVRs(t *testing.T) {
 	reg := resource.NewTemplateRegistry()
 	reg.Register(resource.Template{GVR: "core.v1.pods", Name: "Pod", Source: "builtin"})

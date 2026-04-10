@@ -21,6 +21,7 @@ type HostAPIDeps struct {
 	WatchManager     *watcher.WatchManager
 	LogStreamer       *logs.Streamer
 	ExecManager      *exec.Manager
+	TemplateRegistry *resource.TemplateRegistry
 	GetActiveContext func() string
 }
 
@@ -465,6 +466,22 @@ func (h *hostAPI) dispatch(method string, reqBytes []byte) []byte {
 			return errorJSON("storage not available")
 		}
 		return marshalJSON(map[string]any{"keys": h.storage.List()})
+
+	case "register_template":
+		gvr, _ := req["gvr"].(string)
+		name, _ := req["name"].(string)
+		description, _ := req["description"].(string)
+		content, _ := req["content"].(string)
+		if h.deps.TemplateRegistry != nil {
+			h.deps.TemplateRegistry.RegisterPlugin(h.pluginName, resource.Template{
+				GVR:         gvr,
+				Name:        name,
+				Description: description,
+				Content:     content,
+				Source:      "plugin:" + h.pluginName,
+			})
+		}
+		return marshalJSON(map[string]any{"ok": true})
 
 	default:
 		return errorJSON("method not available: " + method)
