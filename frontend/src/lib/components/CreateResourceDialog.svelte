@@ -91,7 +91,9 @@
 
   $effect(() => {
     if (selectedGvr && ctxName) {
-      ResourceService.GetTemplates(ctxName, selectedGvr).then((t: TemplateItem[]) => {
+      const gvr = selectedGvr
+      ResourceService.GetTemplates(ctxName, gvr).then((t: TemplateItem[]) => {
+        if (selectedGvr !== gvr) return
         templates = t
         if (t.length > 0) {
           loadTemplate(t[0])
@@ -111,7 +113,10 @@
 
   function injectNamespace(content: string, ns: string): string {
     if (!ns || content.includes('namespace:')) return content
-    return content.replace(/(metadata:\n[\s\S]*?name:[^\n]*\n)/, `$1    namespace: ${ns}\n`)
+    const nameMatch = content.match(/^( +)name:/m)
+    if (!nameMatch) return content
+    const indent = nameMatch[1]
+    return content.replace(/^( +name:[^\n]*\n)/m, `$1${indent}namespace: ${ns}\n`)
   }
 
   function loadTemplate(tmpl: TemplateItem) {
