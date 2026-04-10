@@ -1,0 +1,154 @@
+<script lang="ts">
+  import { preferencesStore, type SavedFilter } from '$lib/stores/preferences.svelte'
+  import { savedFilterToQuery, queryToSavedFilter } from '$lib/search/serialize'
+  import { Bookmark } from 'lucide-svelte'
+  import * as ConfigService from '../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js'
+
+  let {
+    gvr,
+    contextName,
+    currentQuery = '',
+    onapply,
+  }: {
+    gvr: string
+    contextName: string
+    currentQuery: string
+    onapply?: (query: string) => void
+  } = $props()
+
+  let dropdownOpen = $state(false)
+  let showSaveForm = $state(false)
+  let saveName = $state('')
+  let saveScope = $state<'cluster' | 'global'>('cluster')
+
+  let savedFilters = $derived(preferencesStore.getSavedFilters(gvr))
+
+  function toggleDropdown() {
+    dropdownOpen = !dropdownOpen
+    if (!dropdownOpen) showSaveForm = false
+  }
+
+  function applyFilter(filter: SavedFilter) {
+    onapply?.(savedFilterToQuery(filter))
+    dropdownOpen = false
+  }
+
+  function openSaveForm() {
+    showSaveForm = true
+    saveName = ''
+    saveScope = 'cluster'
+  }
+
+  async function saveFilter() {
+    if (!saveName.trim()) return
+
+    const filterData = queryToSavedFilter(currentQuery)
+    const newFilter: SavedFilter = { name: saveName.trim(), ...filterData }
+
+    const existing = [...savedFilters]
+    const dupeIdx = existing.findIndex((f) => f.name === newFilter.name)
+    if (dupeIdx >= 0) {
+      existing[dupeIdx] = newFilter
+    } else {
+      existing.push(newFilter)
+    }
+
+    if (saveScope === 'cluster') {
+      await ConfigService.SetClusterSavedFilters(contextName, gvr, existing)
+    } else {
+      await ConfigService.SetSavedFilters(gvr, existing)
+    }
+
+    showSaveForm = false
+    dropdownOpen = false
+  }
+
+  function filterPreview(filter: SavedFilter): string {
+    return savedFilterToQuery(filter) || '(empty)'
+  }
+
+  function handleClickOutside(e: MouseEvent) {
+    const target = e.target as HTMLElement
+    if (!target.closest('.saved-filter-dropdown')) {
+      dropdownOpen = false
+    }
+  }
+</script>
+
+<svelte:window onclick={handleClickOutside} />
+
+<div class="relative saved-filter-dropdown">
+  <button
+    class="p-1.5 rounded text-muted hover:text-fg hover:bg-surface-hover"
+    title="Saved filters"
+    onclick={toggleDropdown}
+  >
+    <Bookmark size={16} />
+  </button>
+
+  {#if dropdownOpen}
+    <div class="absolute right-0 top-full mt-1 z-50 bg-surface border border-border rounded shadow-lg py-1 min-w-64">
+      {#if !showSaveForm}
+        <div class="px-3 py-1.5 text-xs font-medium text-muted uppercase tracking-wide">Saved Filters</div>
+
+        {#if savedFilters.length === 0}
+          <div class="px-3 py-2 text-sm text-muted">No saved filters for this resource</div>
+        {/if}
+
+        {#each savedFilters as filter}
+          <button
+            class="w-full text-left px-3 py-1.5 hover:bg-surface-hover"
+            onclick={() => applyFilter(filter)}
+          >
+            <div class="text-sm text-fg font-medium">{filter.name}</div>
+            <div class="text-xs text-muted font-mono truncate">{filterPreview(filter)}</div>
+          </button>
+        {/each}
+
+        <div class="border-t border-border mt-1 pt-1">
+          <button
+            class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed text-accent"
+            disabled={!currentQuery.trim()}
+            onclick={openSaveForm}
+          >
+            + Save current filter
+          </button>
+        </div>
+      {:else}
+        <div class="px-3 py-2">
+          <div class="text-xs font-medium text-muted uppercase tracking-wide mb-2">Save Filter</div>
+
+          <input
+            bind:value={saveName}
+            class="w-full px-2 py-1 text-sm bg-surface border border-border rounded text-fg placeholder:text-muted mb-2"
+            placeholder="Filter name"
+            onkeydown={(e) => e.key === 'Enter' && saveFilter()}
+          />
+
+          <div class="flex gap-3 mb-3 text-sm">
+            <label class="flex items-center gap-1.5 text-fg">
+              <input type="radio" bind:group={saveScope} value="cluster" class="accent-accent" />
+              This cluster
+            </label>
+            <label class="flex items-center gap-1.5 text-fg">
+              <input type="radio" bind:group={saveScope} value="global" class="accent-accent" />
+              Global
+            </label>
+          </div>
+
+          <div class="flex justify-end gap-2">
+            <button
+              class="px-2 py-1 text-sm rounded text-muted hover:text-fg"
+              onclick={() => (showSaveForm = false)}
+            >Cancel</button>
+            <button
+              class="px-2 py-1 text-sm rounded bg-accent text-white hover:opacity-90 disabled:opacity-50"
+              disabled={!saveName.trim()}
+              onclick={saveFilter}
+            >Save</button>
+          </div>
+        </div>
+      {/if}
+    </div>
+  {/if}
+</div>
