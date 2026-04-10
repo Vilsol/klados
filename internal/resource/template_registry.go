@@ -1,6 +1,8 @@
 package resource
 
 import (
+	"sort"
+
 	"github.com/sasha-s/go-deadlock"
 )
 
@@ -38,7 +40,7 @@ func (r *TemplateRegistry) UnregisterPlugin(pluginName string) {
 func (r *TemplateRegistry) GetTemplates(gvr string) []Template {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	var out []Template
+	out := make([]Template, 0)
 	out = append(out, r.builtin[gvr]...)
 	for _, templates := range r.plugins {
 		for _, t := range templates {
@@ -66,5 +68,6 @@ func (r *TemplateRegistry) GetAllGVRs() []string {
 	for gvr := range seen {
 		out = append(out, gvr)
 	}
+	sort.Strings(out)
 	return out
 }
