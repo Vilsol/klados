@@ -312,8 +312,8 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Create resource from YAML editor
 - [x] `MVP` YAML syntax highlighting and validation
 - [ ] `Future` Schema-aware autocomplete for known resource types
-- [ ] `v2` Template library (common resource templates)
-- [ ] `v2` Apply from file or clipboard
+- [x] `v2` Template library (common resource templates)
+- [x] `v2` Apply from file or clipboard
 
 ### Search & Navigation
 - [x] `MVP` Global resource search (fuzzy find across all resource types)
@@ -363,7 +363,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [ ] `v2` Multi-select resources
 - [ ] `v2` Bulk delete
 - [ ] `v2` Bulk label/annotate
-- [ ] `v2` Apply YAML with multiple documents (---)
+- [x] `v2` Apply YAML with multiple documents (---)
 - [ ] `v2` Dir view — apply/watch a local manifest directory against the cluster
 
 ### Custom Views
