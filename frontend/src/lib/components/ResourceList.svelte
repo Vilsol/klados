@@ -17,7 +17,10 @@
   import { clusterStore } from '$lib/stores/cluster.svelte'
   import { selectionStore } from '$lib/stores/selection.svelte'
   import ColumnMenu from './ColumnMenu.svelte'
-  import AnnotationFilter from './AnnotationFilter.svelte'
+  import SmartSearch from './SmartSearch.svelte'
+  import SavedFilterDropdown from './SavedFilterDropdown.svelte'
+  import { filterItems } from '$lib/search/filter'
+  import type { SearchTerm } from '$lib/search/parser'
   import { exportItems } from '$lib/utils/export'
 
   function itemKey(obj: Record<string, any>): string {
@@ -68,13 +71,13 @@
     rowActions?: (item: Record<string, any>) => Array<{ label: string; icon?: any; onClick: () => void; variant?: 'default' | 'destructive' }>
   } = $props()
 
-  let filterText = $state('')
+  let searchTerms = $state<SearchTerm[]>([])
+  let searchQuery = $state('')
   let deleteTarget = $state<{ namespace: string; name: string } | null>(null)
   let confirmOpen = $state(false)
   let ctxMenu = $state<{ x: number; y: number; item: Record<string, any> } | null>(null)
   let columnMenuOpen = $state(false)
   let exportMenuOpen = $state(false)
-  let annotationFilters = $state<{ key: string; value: string }[]>([])
   let resizing = $state<{ name: string; startX: number; startWidth: number } | null>(null)
 
   function getSparklinePoints(itemName: string, metricName: string): { t: number; v: number }[] {
@@ -117,7 +120,8 @@
   // Scroll to top when GVR changes
   $effect(() => {
     gvr
-    filterText = ''
+    searchQuery = ''
+    searchTerms = []
     if (scrollContainer) scrollContainer.scrollTop = 0
   })
 
@@ -126,24 +130,7 @@
     if (selectedNamespaces.length > 1) {
       result = result.filter((item) => selectedNamespaces.includes(item.metadata?.namespace ?? ''))
     }
-    if (filterText.trim()) {
-      const q = filterText.trim().toLowerCase()
-      result = result.filter((item) => {
-        const labels = item.metadata?.labels ?? {}
-        const labelsStr = Object.entries(labels)
-          .map(([k, v]) => `${k}=${v}`)
-          .join(',')
-        return labelsStr.includes(q) || (item.metadata?.name ?? '').toLowerCase().includes(q)
-      })
-    }
-    if (annotationFilters.length > 0) {
-      result = result.filter((item) => {
-        const annotations = item.metadata?.annotations ?? {}
-        return annotationFilters.every(f =>
-          f.value ? annotations[f.key] === f.value : f.key in annotations
-        )
-      })
-    }
+    result = filterItems(result, searchTerms)
     if (columnStore.sortState) {
       const { column, direction } = columnStore.sortState
       const col = columnStore.visibleColumns.find((c) => c.name === column)
@@ -290,13 +277,17 @@
 
 <div class="flex flex-col h-full overflow-hidden isolate">
   <div class="flex items-center gap-2 px-3 py-2 border-b border-border shrink-0">
-    <input
-      type="text"
-      placeholder="Filter by name or label (key=value)..."
-      bind:value={filterText}
-      class="flex-1 text-sm bg-transparent outline-none placeholder-muted"
+    <SmartSearch
+      {items}
+      bind:value={searchQuery}
+      ontermschange={(t) => { searchTerms = t }}
     />
-    <AnnotationFilter bind:filters={annotationFilters} />
+    <SavedFilterDropdown
+      {gvr}
+      {contextName}
+      currentQuery={searchQuery}
+      onapply={(q) => { searchQuery = q }}
+    />
     <span class="text-xs text-muted">{filtered.length} items</span>
     <div class="relative">
       <button
