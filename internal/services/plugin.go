@@ -11,6 +11,7 @@ import (
 
 	"github.com/Vilsol/slox"
 	"github.com/adrg/xdg"
+	jsonschema "github.com/santhosh-tekuri/jsonschema/v6"
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/Vilsol/klados/internal/cluster"
@@ -604,6 +605,33 @@ func (s *PluginService) SetPluginSettings(name string, settingsJSON string) erro
 	if !ok {
 		return fmt.Errorf("plugin %q not found", name)
 	}
+
+	// Validate against the plugin's settings schema if present
+	if s.registry != nil {
+		lp := s.registry.GetLoadedPlugin(name)
+		if lp != nil && lp.Manifest != nil && lp.Manifest.Extensions != nil && lp.Manifest.Extensions.Settings != nil {
+			var schemaDoc any
+			schemaBytes, err := json.Marshal(lp.Manifest.Extensions.Settings.Schema)
+			if err == nil {
+				if err := json.Unmarshal(schemaBytes, &schemaDoc); err == nil {
+					compiler := jsonschema.NewCompiler()
+					if err := compiler.AddResource("settings.json", schemaDoc); err == nil {
+						schema, err := compiler.Compile("settings.json")
+						if err == nil {
+							var value any
+							if err := json.Unmarshal([]byte(settingsJSON), &value); err != nil {
+								return fmt.Errorf("invalid JSON: %w", err)
+							}
+							if err := schema.Validate(value); err != nil {
+								return fmt.Errorf("settings validation failed: %w", err)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	st.Set("settings", settingsJSON)
 	return nil
 }

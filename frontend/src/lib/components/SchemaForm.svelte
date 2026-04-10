@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Combobox } from '@klados/ui'
+
   interface Props {
     schema: any
     values: Record<string, any>
@@ -31,14 +33,16 @@
         </label>
       {:else if prop.type === 'string' && prop.enum}
         <label class="block text-sm font-medium text-fg mb-1">{label}</label>
-        <select
-          class="w-full px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
-          onchange={(e) => onchange(key, (e.target as HTMLSelectElement).value)}
-        >
-          {#each prop.enum as opt}
-            <option value={opt} selected={value === opt}>{opt}</option>
-          {/each}
-        </select>
+        <div class="w-full max-w-xs">
+          <Combobox
+            options={prop.enum.map((opt: string) => ({ value: opt, label: opt }))}
+            value={value}
+            placeholder="Select…"
+            searchPlaceholder="Search…"
+            size="sm"
+            onValueChange={(v: string) => onchange(key, v)}
+          />
+        </div>
       {:else if prop.type === 'string' && prop.format === 'color'}
         <label class="block text-sm font-medium text-fg mb-1">{label}</label>
         <input

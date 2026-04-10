@@ -3,10 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"github.com/Vilsol/klados/internal/config"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
+
+var hexColorRe = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 
 type ConfigService struct {
 	ctx    context.Context
@@ -104,6 +107,9 @@ func (c *ConfigService) GetResolvedPrefs(ctxName string) config.ResolvedPrefs {
 }
 
 func (c *ConfigService) SetAccentColor(color string) error {
+	if color != "" && !hexColorRe.MatchString(color) {
+		return fmt.Errorf("invalid hex color: %q", color)
+	}
 	return c.config.Update(func(cfg *config.Config) {
 		cfg.AccentColor = color
 	})

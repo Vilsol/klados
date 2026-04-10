@@ -20,9 +20,19 @@
   let plugins = $state<Array<{ name: string }>>([])
 
   $effect(() => {
-    PluginService.ListPlugins()
-      .then((result: any) => { plugins = (result ?? []) as Array<{ name: string }> })
-      .catch(() => {})
+    ;(async () => {
+      try {
+        const all = (await PluginService.ListPlugins()) ?? []
+        const withSettings: Array<{ name: string }> = []
+        for (const p of all as Array<{ name: string }>) {
+          try {
+            const schema = await PluginService.GetPluginSettingsSchema(p.name)
+            if (schema) withSettings.push(p)
+          } catch {}
+        }
+        plugins = withSettings
+      } catch {}
+    })()
   })
 
   function navTo(id: string) {

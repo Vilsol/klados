@@ -121,7 +121,10 @@ func Load() (*Config, error) {
 func (c *Config) Save() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	return c.saveLocked()
+}
 
+func (c *Config) saveLocked() error {
 	if c.path == "" {
 		p, err := configPath()
 		if err != nil {
@@ -156,9 +159,9 @@ func (c *Config) SetEmit(fn func(string, any)) {
 
 func (c *Config) Update(fn func(*Config)) error {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	fn(c)
-	c.mu.Unlock()
-	return c.Save()
+	return c.saveLocked()
 }
 
 func (c *Config) Read(fn func(*Config)) {

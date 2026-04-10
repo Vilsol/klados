@@ -55,6 +55,41 @@
     "statusBar": [
       { "id": "node-annotator-status", "label": "Node Annotator", "component": "ui/NodeStatusWidget.js" }
     ],
+    "settings": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "refreshInterval": {
+            "type": "integer",
+            "title": "Refresh Interval",
+            "description": "How often to re-enrich node data (in seconds)",
+            "default": 30,
+            "minimum": 5,
+            "maximum": 300
+          },
+          "showTaintCount": {
+            "type": "boolean",
+            "title": "Show Taint Count",
+            "description": "Display taint count badge in node list",
+            "default": true
+          },
+          "healthThreshold": {
+            "type": "string",
+            "title": "Health Threshold",
+            "description": "Minimum readiness level to consider a node healthy",
+            "enum": ["any", "ready", "ready-no-pressure"],
+            "default": "ready"
+          },
+          "highlightColor": {
+            "type": "string",
+            "title": "Highlight Color",
+            "description": "Accent color for annotated nodes",
+            "format": "color",
+            "default": "#22c55e"
+          }
+        }
+      }
+    },
     "metrics": [
       {
         "gvr": "core.v1.nodes",

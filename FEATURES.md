@@ -22,7 +22,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `v2` Cluster health overview (API server health, component statuses)
 - [x] `MVP` Cluster metadata display (version, platform, provider detection)
 - [x] `MVP` Namespace management — list, switch active, create, delete
-- [ ] `v2` Namespace favorites / pinning
+- [x] `v2` Namespace favorites / pinning
 - [x] `MVP` Multi-namespace view (all namespaces simultaneously)
 - [ ] `v2` Cluster resource usage summary (allocatable vs requested vs used)
 - [x] `MVP` Node overview — list, status, conditions, taints, labels
@@ -321,7 +321,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `v2` Filter by annotations
 - [x] `MVP` Sort by any column
 - [x] `v2` Column visibility customization
-- [ ] `v2` Saved filters / views
+- [x] `v2` Saved filters / views
 - [ ] `v2` Keyboard-driven navigation (vim-like bindings optional)
 - [x] `MVP` Command palette (Ctrl+K / Cmd+K)
 - [x] `MVP` Breadcrumb navigation
@@ -382,8 +382,8 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Dark mode (default)
 - [x] `MVP` Light mode
 - [x] `MVP` System theme detection
-- [ ] `v2` Custom accent colors
-- [ ] `v2` Cluster-specific color coding (to distinguish prod from dev)
+- [x] `v2` Custom accent colors
+- [x] `v2` Cluster-specific color coding (to distinguish prod from dev)
 
 ### Status & Feedback
 - [x] `MVP` Global notification system (toast/snackbar)
@@ -395,7 +395,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [ ] `v2` Keyboard navigation throughout
 - [ ] `Future` Screen reader support
 - [ ] `Future` High contrast mode option
-- [ ] `Future` Configurable font size
+- [x] `v2` Configurable font size
 
 ### Performance
 - [x] `MVP` Virtual scrolling for large lists
@@ -427,7 +427,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `v2` Svelte component bundles loaded at runtime
 - [x] `v2` Plugin UI slots (sidebar, detail tabs, modals, status bar)
 - [x] `v2` Host-provided UI component library for consistency
-- [ ] `v2` Plugin settings page
+- [x] `v2` Plugin settings page
 
 ### Plugin Distribution
 - [x] `v2` Local plugin loading (from filesystem)
@@ -438,11 +438,11 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 ## 14. Data Management
 
 ### Preferences
-- [ ] `v2` Per-cluster settings
+- [x] `v2` Per-cluster settings
 - [ ] `v2` Per-namespace defaults
-- [ ] `v2` UI preferences (theme, layout, column widths)
-- [ ] `v2` Keybinding customization
-- [ ] `v2` Startup behavior (last cluster, specific cluster, chooser)
+- [x] `v2` UI preferences (theme, layout, column widths)
+- [x] `v2` Keybinding customization
+- [x] `v2` Startup behavior (last cluster, specific cluster, chooser)
 
 ### Import / Export
 - [x] `MVP` Export resource as YAML

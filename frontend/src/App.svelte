@@ -108,6 +108,12 @@
     }
   })
 
+  // Reload preferences when active cluster changes
+  $effect(() => {
+    const ctx = clusterStore.activeContext
+    preferencesStore.load(ctx ?? '')
+  })
+
   $effect(() => {
     const theme = preferencesStore.prefs.theme
     if (theme) setTheme(theme as 'light' | 'dark' | 'system')
