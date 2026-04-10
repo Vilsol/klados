@@ -20,6 +20,7 @@
   import { createResourceStore } from '$lib/stores/createResource.svelte'
   import ApplyManifestDialog from '$lib/components/ApplyManifestDialog.svelte'
   import { applyManifestStore } from '$lib/stores/applyManifest.svelte'
+  import { preferencesStore } from '$lib/stores/preferences.svelte'
 
   const panelId = new URLSearchParams(window.location.search).get('panel')
   let paletteOpen = $state(false)
@@ -64,13 +65,6 @@
 
     ;(async () => {
       try {
-        const theme = await ConfigService.GetTheme()
-        if (theme) setTheme(theme as 'light' | 'dark' | 'system')
-      } catch {
-        // Config service not available yet
-      }
-
-      try {
         const sess = await AppService.GetSession()
         if (sess) {
           const tabs = (sess.openTabs ?? []).map((t: TabState) => ({
@@ -87,6 +81,8 @@
       }
 
       await clusterStore.loadContexts()
+      preferencesStore.subscribe()
+      await preferencesStore.load(clusterStore.activeContext ?? '')
       await descriptorRegistry.load()
 
       unsubPlugins = Events.On('plugins:loaded', () => {
@@ -108,6 +104,30 @@
     return () => {
       if (handler) window.removeEventListener('keydown', handler)
       unsubPlugins?.()
+      preferencesStore.destroy()
+    }
+  })
+
+  $effect(() => {
+    const theme = preferencesStore.prefs.theme
+    if (theme) setTheme(theme as 'light' | 'dark' | 'system')
+  })
+
+  $effect(() => {
+    const color = preferencesStore.prefs.accentColor
+    if (color) {
+      document.documentElement.style.setProperty('--color-accent', color)
+    } else {
+      document.documentElement.style.removeProperty('--color-accent')
+    }
+  })
+
+  $effect(() => {
+    const size = preferencesStore.prefs.fontSize
+    if (size > 0) {
+      document.documentElement.style.setProperty('font-size', `${size}px`)
+    } else {
+      document.documentElement.style.removeProperty('font-size')
     }
   })
 

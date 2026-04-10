@@ -2,6 +2,7 @@ import { Events } from '@wailsio/runtime'
 import * as ClusterService from '../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js'
 import * as AppService from '../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js'
 import * as ConfigService from '../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js'
+import { preferencesStore } from './preferences.svelte'
 import { KubeContext, ConnectionStatus } from '../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js'
 import { buildKindGVRMap, resolveGVR, type APIResource } from '$lib/utils/relationships'
 
@@ -41,7 +42,7 @@ class ClusterStore {
 
   /** Returns false when either the global read-only toggle is on or detected RBAC permits no writes. */
   canMutate(): boolean {
-    if (this.isReadOnly) return false
+    if (preferencesStore.prefs.readOnly || this.isReadOnly) return false
     const perms = this.permissions[this.activeContext ?? '']
     if (!perms) return true // not yet fetched — optimistic
     if (perms.inferred) return true

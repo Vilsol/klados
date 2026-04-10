@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PanelLeftClose, PanelLeft, ChevronRight, X, Circle, Puzzle, LayoutList } from 'lucide-svelte'
+  import { PanelLeftClose, PanelLeft, ChevronRight, X, Circle, Puzzle, LayoutList, Settings } from 'lucide-svelte'
   import { sessionStore } from '$lib/stores/session.svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
   import { Events } from '@wailsio/runtime'
@@ -364,6 +364,13 @@
       >
         <Puzzle size={12} />
         Plugins
+      </button>
+      <button
+        onclick={() => push('/settings')}
+        class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface-hover transition-colors"
+      >
+        <Settings size={12} />
+        Settings
       </button>
     </div>
 

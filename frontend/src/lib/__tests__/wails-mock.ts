@@ -13,6 +13,30 @@ export const mockConfigService = {
   GetTheme: vi.fn().mockResolvedValue('system'),
   SetTheme: vi.fn().mockResolvedValue(undefined),
   GetConfig: vi.fn().mockResolvedValue(null),
+  GetResolvedPrefs: vi.fn().mockResolvedValue({
+    theme: 'system',
+    accentColor: '',
+    fontSize: 0,
+    compactRows: false,
+    readOnly: false,
+    terminalWebGL: false,
+    metrics: null,
+    columnPrefs: null,
+    favoriteNamespaces: null,
+    keybindings: null,
+    savedFilters: null,
+  }),
+  SetAccentColor: vi.fn().mockResolvedValue(undefined),
+  SetFontSize: vi.fn().mockResolvedValue(undefined),
+  SetStartupBehavior: vi.fn().mockResolvedValue(undefined),
+  SetKeybinding: vi.fn().mockResolvedValue(undefined),
+  ResetKeybindings: vi.fn().mockResolvedValue(undefined),
+  GetClusterPrefs: vi.fn().mockResolvedValue(null),
+  SetClusterPrefs: vi.fn().mockResolvedValue(undefined),
+  DeleteClusterPrefs: vi.fn().mockResolvedValue(undefined),
+  GetSavedFilters: vi.fn().mockResolvedValue([]),
+  SetSavedFilters: vi.fn().mockResolvedValue(undefined),
+  SetClusterSavedFilters: vi.fn().mockResolvedValue(undefined),
 }
 
 export const mockEvents = {
@@ -48,6 +72,9 @@ export const mockPluginService = {
   GetPluginCommands: vi.fn().mockResolvedValue([]),
   SaveRegistryCredentials: vi.fn().mockResolvedValue(undefined),
   AddInsecureRegistry: vi.fn().mockResolvedValue(undefined),
+  GetPluginSettings: vi.fn().mockResolvedValue('{}'),
+  SetPluginSettings: vi.fn().mockResolvedValue(undefined),
+  GetPluginSettingsSchema: vi.fn().mockResolvedValue(''),
 }
 
 export function resetMocks() {

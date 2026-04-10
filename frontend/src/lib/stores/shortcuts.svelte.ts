@@ -1,3 +1,5 @@
+import { preferencesStore } from './preferences.svelte'
+
 export type FocusMode = 'normal' | 'terminal' | 'editor'
 
 export interface ShortcutDef {
@@ -41,6 +43,15 @@ export class ShortcutStore {
     if (idx >= 0) this._shortcuts.splice(idx, 1)
   }
 
+  getEffectiveKeys(def: ShortcutDef): string {
+    const override = preferencesStore.getKeybinding(def.id)
+    return override ?? def.keys
+  }
+
+  getAll(): ShortcutDef[] {
+    return [...this._shortcuts]
+  }
+
   dispatch(e: KeyboardEvent) {
     const combo = buildKeyCombo(e)
 
@@ -54,7 +65,7 @@ export class ShortcutStore {
     }
 
     for (const def of this._shortcuts) {
-      if (combo !== def.keys) continue
+      if (combo !== this.getEffectiveKeys(def)) continue
       const modes = def.modes ?? ['normal']
       if (!modes.includes(this.focusMode)) continue
       e.preventDefault()
