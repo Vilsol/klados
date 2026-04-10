@@ -133,7 +133,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` List configmaps
 - [x] `MVP` Detail view — data keys with syntax-highlighted values
 - [x] `MVP` Edit individual keys or full YAML
-- [ ] `v2` Create new configmap
+- [x] `v2` Create new configmap
 - [x] `MVP` Delete
 
 ### Secrets
@@ -141,7 +141,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Detail view — data keys (base64 decoded toggle)
 - [x] `MVP` Show/hide secret values
 - [x] `MVP` Edit individual keys or full YAML
-- [ ] `v2` Create new secret
+- [x] `v2` Create new secret
 - [x] `MVP` Copy decoded value to clipboard
 - [x] `MVP` Delete
 
