@@ -28,6 +28,24 @@ type GVRColumnPrefs struct {
 	Sort    *SortPrefs                `json:"sort,omitempty"`
 }
 
+type ClusterPrefs struct {
+	ReadOnly     *bool                      `json:"readOnly,omitempty"`
+	CompactRows  *bool                      `json:"compactRows,omitempty"`
+	AccentColor  *string                    `json:"accentColor,omitempty"`
+	DisplayName  *string                    `json:"displayName,omitempty"`
+	Metrics      *MetricsConfig             `json:"metrics,omitempty"`
+	ColumnPrefs  map[string]*GVRColumnPrefs `json:"columnPrefs,omitempty"`
+	FavoriteNS   []string                   `json:"favoriteNamespaces,omitempty"`
+	SavedFilters map[string][]SavedFilter   `json:"savedFilters,omitempty"`
+}
+
+type SavedFilter struct {
+	Name        string            `json:"name"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
+	Search      string            `json:"search,omitempty"`
+}
+
 type SavedPortForward struct {
 	ID         string `json:"id"`
 	Namespace  string `json:"namespace"`
@@ -52,6 +70,13 @@ type Config struct {
 	CompactRows           bool                         `json:"compactRows,omitempty"`
 	ReadOnly              bool                         `json:"readOnly,omitempty"`
 	PortForwards          map[string][]SavedPortForward `json:"portForwards,omitempty"`
+	Clusters              map[string]*ClusterPrefs     `json:"clusters,omitempty"`
+	Keybindings           map[string]string            `json:"keybindings,omitempty"`
+	SavedFilters          map[string][]SavedFilter     `json:"savedFilters,omitempty"`
+	StartupBehavior       string                       `json:"startupBehavior,omitempty"`
+	StartupCluster        string                       `json:"startupCluster,omitempty"`
+	AccentColor           string                       `json:"accentColor,omitempty"`
+	FontSize              int                          `json:"fontSize,omitempty"`
 
 	mu   deadlock.Mutex
 	path string
