@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createVirtualizer } from '@tanstack/svelte-virtual'
-  import { ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw, Columns3 } from 'lucide-svelte'
+  import { ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw, Columns3, Check, Minus } from 'lucide-svelte'
   import { ConfirmDialog } from '@klados/ui'
   import { notificationStore } from '$lib/stores/notification.svelte'
   import { evalExpr, defaultAlign, type ColumnDef, type RenderType } from '$lib/registry/index'
@@ -15,7 +15,14 @@
   import type { MetricResult } from './charts/types'
   import { columnStore } from '$lib/stores/columns.svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
+  import { selectionStore } from '$lib/stores/selection.svelte'
   import ColumnMenu from './ColumnMenu.svelte'
+
+  function itemKey(obj: Record<string, any>): string {
+    const ns = obj.metadata?.namespace ?? ''
+    const name = obj.metadata?.name ?? ''
+    return ns ? `${ns}/${name}` : name
+  }
 
   let now = $state(Date.now())
   onMount(() => {
@@ -132,6 +139,27 @@
     return result
   })
 
+  const filteredKeys = $derived(filtered.map(item => itemKey(item)))
+  const filteredItemsByKey = $derived.by(() => {
+    const map = new Map<string, Record<string, any>>()
+    for (const item of filtered) {
+      map.set(itemKey(item), item)
+    }
+    return map
+  })
+
+  $effect(() => {
+    selectionStore.setVisibleKeys(new Set(filteredKeys))
+  })
+
+  const allVisibleSelected = $derived(
+    filtered.length > 0 && filteredKeys.every(k => selectionStore.isSelected(k))
+  )
+  const someVisibleSelected = $derived(
+    !allVisibleSelected && filteredKeys.some(k => selectionStore.isSelected(k))
+  )
+  const canMutate = $derived(clusterStore.canMutate())
+
   const tooManyForSparklines = $derived(filtered.length > 200)
 
   const rowHeight = $derived(columnStore.compact ? 28 : 36)
@@ -202,7 +230,8 @@
   }
 
   const gridTemplateCols = $derived(
-    columnStore.visibleColumns
+    (canMutate ? '36px ' : '')
+    + columnStore.visibleColumns
       .map((c) => c.width ? `${c.width}px` : 'minmax(20px, 1fr)')
       .join(' ')
     + (pluginColumns.length ? ' ' + pluginColumns.map(() => '1fr').join(' ') : '')
@@ -280,6 +309,28 @@
     <div class="grid text-xs font-semibold uppercase tracking-wider text-muted border-b border-border shrink-0 px-2"
       style="grid-template-columns: {gridTemplateCols}"
     >
+      {#if canMutate}
+        <div class="flex items-center justify-center {columnStore.compact ? 'py-1' : 'py-2'}">
+          <button
+            onclick={() => {
+              if (allVisibleSelected) {
+                selectionStore.deselectAll()
+              } else {
+                selectionStore.selectAll(filteredKeys, filteredItemsByKey)
+              }
+            }}
+            class="w-4 h-4 rounded border border-border flex items-center justify-center hover:border-accent transition-colors
+              {allVisibleSelected || someVisibleSelected ? 'bg-accent border-accent' : ''}"
+            aria-label={allVisibleSelected ? 'Deselect all' : 'Select all'}
+          >
+            {#if allVisibleSelected}
+              <Check size={10} class="text-accent-fg" />
+            {:else if someVisibleSelected}
+              <Minus size={10} class="text-accent-fg" />
+            {/if}
+          </button>
+        </div>
+      {/if}
       {#each columnStore.visibleColumns as col, i}
         <div class="relative">
           <button
@@ -339,6 +390,31 @@
                 class="grid flex-1 min-w-0"
                 style="grid-template-columns: {gridTemplateCols}"
               >
+                {#if canMutate}
+                  {@const key = itemKey(item)}
+                  <div class="flex items-center justify-center"
+                    onclick={(e) => e.stopPropagation()}
+                    role="none"
+                  >
+                    <button
+                      onclick={(e) => {
+                        e.stopPropagation()
+                        if (e.shiftKey) {
+                          selectionStore.selectRange(key, filteredKeys, filteredItemsByKey)
+                        } else {
+                          selectionStore.toggle(key, item)
+                        }
+                      }}
+                      class="w-4 h-4 rounded border border-border flex items-center justify-center hover:border-accent transition-colors
+                        {selectionStore.isSelected(key) ? 'bg-accent border-accent' : ''}"
+                      aria-label={selectionStore.isSelected(key) ? 'Deselect' : 'Select'}
+                    >
+                      {#if selectionStore.isSelected(key)}
+                        <Check size={10} class="text-accent-fg" />
+                      {/if}
+                    </button>
+                  </div>
+                {/if}
                 {#each columnStore.visibleColumns as col, i}
                   {@const value = renderCell(col, item)}
                   <div
