@@ -44,6 +44,7 @@ func Execute(assets embed.FS) {
 			portForwardSvc := services.NewPortForwardService(appSvc)
 			metricsSvc := services.NewMetricsService(appSvc)
 			pluginSvc := services.NewPluginService(appSvc, resourceSvc)
+			windowSvc := services.NewWindowService()
 			appSvc.SetPluginService(pluginSvc)
 			metricsSvc.SetPluginService(pluginSvc)
 
@@ -62,6 +63,7 @@ func Execute(assets embed.FS) {
 					application.NewService(drainSvc),
 					application.NewService(metricsSvc),
 					application.NewService(pluginSvc),
+					application.NewService(windowSvc),
 				},
 				Assets: application.AssetOptions{
 					Handler: application.AssetFileServerFS(assets),

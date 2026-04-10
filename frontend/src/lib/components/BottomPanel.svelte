@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { X, ChevronDown, ChevronUp, ExternalLink, ScrollText, TerminalSquare, Layers, FileCode } from 'lucide-svelte'
+  import { onMount } from 'svelte'
+  import { X, ChevronDown, ChevronUp, PanelTopOpen, ScrollText, TerminalSquare, Layers, FileCode } from 'lucide-svelte'
+  import { Events } from '@wailsio/runtime'
   import { bottomPanelStore, type PanelKind } from '$lib/stores/bottom-panel.svelte'
   import LogsPanel from './panels/LogsPanel.svelte'
   import TerminalPanel from './panels/TerminalPanel.svelte'
@@ -7,6 +9,7 @@
   import { YAMLEditor } from '@klados/ui'
   import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
   import * as SchemaService from '../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js'
+  import * as WindowService from '../../../bindings/github.com/Vilsol/klados/internal/services/windowservice.js'
   import { notificationStore } from '$lib/stores/notification.svelte.js'
   import { unwrapError } from '$lib/utils/async.js'
 
@@ -18,6 +21,46 @@
   }
 
   const visibleTabs = $derived(bottomPanelStore.visibleTabs)
+
+  async function popOutTab(id: string) {
+    const tab = bottomPanelStore.tabs.find((t) => t.id === id)
+    if (!tab) return
+    const title = `${kindLabel[tab.kind]}: ${tab.resourceName}`
+    bottomPanelStore.popOut(id)
+    await WindowService.OpenPanelWindow(id, title)
+  }
+
+  onMount(() => {
+    const unsubClosed = Events.On('panel:closed', (event: { data: string }) => {
+      bottomPanelStore.closeTab(event.data)
+    })
+
+    const unsubReady = Events.On('panel:ready', (event: { data: string }) => {
+      const id = event.data
+      const tab = bottomPanelStore.tabs.find((t) => t.id === id)
+      if (!tab) return
+      Events.Emit(`panel:init:${id}`, {
+        kind: tab.kind,
+        resourceKind: tab.resourceKind,
+        resourceName: tab.resourceName,
+        ctxName: tab.ctxName,
+        gvr: tab.gvr,
+        namespace: tab.namespace,
+        name: tab.name,
+        obj: tab.obj,
+      })
+    })
+
+    const unsubPopIn = Events.On('panel:pop-in', (event: { data: string }) => {
+      bottomPanelStore.popIn(event.data)
+    })
+
+    return () => {
+      unsubClosed()
+      unsubReady()
+      unsubPopIn()
+    }
+  })
 </script>
 
 {#if bottomPanelStore.hasVisibleTabs}
@@ -45,6 +88,14 @@
               <FileCode size={13} />
             {/if}
             <span class="truncate max-w-32">{kindLabel[tab.kind]}: {tab.resourceName}</span>
+            <button
+              onclick={(e) => { e.stopPropagation(); popOutTab(tab.id) }}
+              class="p-0.5 rounded hover:bg-border transition-colors"
+              aria-label="Pop out to window"
+              title="Pop out to window"
+            >
+              <PanelTopOpen size={11} />
+            </button>
             <button
               onclick={(e) => { e.stopPropagation(); bottomPanelStore.closeTab(tab.id) }}
               class="p-0.5 rounded hover:bg-border transition-colors"

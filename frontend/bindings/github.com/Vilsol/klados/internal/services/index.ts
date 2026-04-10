@@ -12,6 +12,7 @@ import * as PluginService from "./pluginservice.js";
 import * as PortForwardService from "./portforwardservice.js";
 import * as ResourceService from "./resourceservice.js";
 import * as SchemaService from "./schemaservice.js";
+import * as WindowService from "./windowservice.js";
 export {
     AppService,
     ClusterService,
@@ -23,7 +24,8 @@ export {
     PluginService,
     PortForwardService,
     ResourceService,
-    SchemaService
+    SchemaService,
+    WindowService
 };
 
 export {

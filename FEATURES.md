@@ -375,8 +375,8 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Sidebar with resource tree / category navigation
 - [x] `MVP` Collapsible sidebar
 - [x] `MVP` Tab-based multi-resource viewing
-- [ ] `v2` Split pane support (e.g., list + detail side by side)
-- [ ] `v2` Resizable panels
+- [x] `v2` Split pane support (e.g., list + detail side by side)
+- [x] `v2` Resizable panels
 
 ### Theming
 - [x] `MVP` Dark mode (default)
@@ -478,4 +478,4 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [ ] `v2` Windows support
 - [ ] `Future` System tray with cluster status
 - [ ] `Future` Native OS notifications for watch alerts (optional)
-- [ ] `Future` Multi-window support
+- [x] `Future` Multi-window support

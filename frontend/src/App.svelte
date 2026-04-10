@@ -14,8 +14,10 @@
   import * as ConfigService from '../bindings/github.com/Vilsol/klados/internal/services/configservice.js'
   import * as AppService from '../bindings/github.com/Vilsol/klados/internal/services/appservice.js'
   import type { TabState } from '../bindings/github.com/Vilsol/klados/internal/session/models.js'
+  import PanelWindow from '$lib/components/PanelWindow.svelte'
   import StackTrace from 'stacktrace-js'
 
+  const panelId = new URLSearchParams(window.location.search).get('panel')
   let paletteOpen = $state(false)
 
   function logToBackend(level: string, message: string, detail: string) {
@@ -126,8 +128,12 @@
   })
 </script>
 
-<Layout>
-  <Router {routes} />
-</Layout>
+{#if panelId}
+  <PanelWindow {panelId} />
+{:else}
+  <Layout>
+    <Router {routes} />
+  </Layout>
+  <CommandPalette bind:open={paletteOpen} />
+{/if}
 <Notification />
-<CommandPalette bind:open={paletteOpen} />
