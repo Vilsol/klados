@@ -12,16 +12,24 @@
   import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
   import { notificationStore } from '$lib/stores/notification.svelte'
 
+  type TemplateItem = {
+    gvr: string
+    name: string
+    description: string
+    content: string
+    source: string
+  }
+
   let {
     open = $bindable(false),
     ctxName,
-    gvr,
+    gvr: initialGvr = '',
     defaultNamespace = 'default',
     onsuccess,
   }: {
     open: boolean
     ctxName: string
-    gvr: string
+    gvr?: string
     defaultNamespace?: string
     onsuccess?: () => void
   } = $props()
@@ -29,15 +37,12 @@
   let container: HTMLDivElement | undefined = $state()
   let view: EditorView | undefined
   let saving = $state(false)
-
   // svelte-ignore state_referenced_locally
-  const TEMPLATE = `apiVersion: ""
-kind: ""
-metadata:
-  name: ""
-  namespace: "${defaultNamespace}"
-spec: {}
-`
+  let selectedGvr = $state(initialGvr)
+  let allGvrs = $state<string[]>([])
+  let templates = $state<TemplateItem[]>([])
+  let selectedTemplateName = $state('')
+  let editorDirty = $state(false)
 
   const editorTheme = EditorView.theme({
     '&': { height: '100%', fontSize: '12.5px', backgroundColor: 'var(--color-bg)', color: 'var(--color-fg)' },
@@ -58,23 +63,84 @@ spec: {}
           keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, ...foldKeymap]),
           EditorView.lineWrapping,
           editorTheme,
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) editorDirty = true
+          }),
         ],
       }),
-      parent: container,
+      parent: container!,
     })
+    editorDirty = false
   }
 
   onDestroy(() => view?.destroy())
 
   $effect(() => {
-    if (open && container && !view) initEditor(TEMPLATE)
+    if (open && ctxName) {
+      ResourceService.GetAllTemplateGVRs(ctxName).then((gvrs: string[]) => {
+        allGvrs = gvrs
+      }).catch(() => {})
+    }
   })
+
+  $effect(() => {
+    if (open) {
+      selectedGvr = initialGvr
+    }
+  })
+
+  $effect(() => {
+    if (selectedGvr && ctxName) {
+      ResourceService.GetTemplates(ctxName, selectedGvr).then((t: TemplateItem[]) => {
+        templates = t
+        if (t.length > 0) {
+          loadTemplate(t[0])
+        }
+      }).catch(() => {})
+    } else {
+      templates = []
+      selectedTemplateName = ''
+    }
+  })
+
+  $effect(() => {
+    if (open && container && !view) {
+      initEditor('')
+    }
+  })
+
+  function injectNamespace(content: string, ns: string): string {
+    if (!ns || content.includes('namespace:')) return content
+    return content.replace(/(metadata:\n[\s\S]*?name:[^\n]*\n)/, `$1    namespace: ${ns}\n`)
+  }
+
+  function loadTemplate(tmpl: TemplateItem) {
+    const content = injectNamespace(tmpl.content, defaultNamespace)
+    selectedTemplateName = tmpl.name
+    if (view) {
+      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: content } })
+      editorDirty = false
+    } else if (container) {
+      initEditor(content)
+    }
+  }
+
+  function onTemplateChange(e: Event) {
+    const name = (e.target as HTMLSelectElement).value
+    const tmpl = templates.find((t) => t.name === name)
+    if (!tmpl) return
+    if (editorDirty && !confirm('Replace current YAML with selected template?')) {
+      return
+    }
+    loadTemplate(tmpl)
+  }
 
   async function importFromClipboard() {
     try {
       const text = await navigator.clipboard.readText()
       if (text.trim()) {
-        view?.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } })
+        view?.dispatch({ changes: { from: 0, to: view!.state.doc.length, insert: text } })
+        editorDirty = true
       }
     } catch {
       notificationStore.push('Could not read clipboard', 'error')
@@ -92,7 +158,8 @@ spec: {}
         return
       }
       const ns = parsed.metadata?.namespace || defaultNamespace
-      await ResourceService.CreateResource(ctxName, gvr, ns, parsed)
+      const gvrToUse = selectedGvr || ''
+      await ResourceService.CreateResource(ctxName, gvrToUse, ns, parsed)
       notificationStore.push(`Created ${parsed.metadata?.name ?? 'resource'}`, 'success')
       open = false
       onsuccess?.()
@@ -109,7 +176,7 @@ spec: {}
     <Dialog.Overlay class="fixed inset-0 bg-black/50 z-40" />
     <Dialog.Content
       class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-surface border border-border rounded-lg shadow-xl flex flex-col"
-      style="width: min(800px, 92vw); height: min(600px, 85vh);"
+      style="width: min(800px, 92vw); height: min(640px, 85vh);"
     >
       <div class="flex items-center gap-2 px-4 py-3 border-b border-border shrink-0">
         <Dialog.Title class="text-sm font-semibold flex-1">Create Resource</Dialog.Title>
@@ -126,6 +193,38 @@ spec: {}
           class="text-xs px-2.5 py-1 rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"
         >{saving ? 'Creating…' : 'Create'}</button>
       </div>
+
+      <div class="flex items-center gap-3 px-4 py-2 border-b border-border shrink-0 flex-wrap">
+        <div class="flex items-center gap-2 min-w-0 flex-1">
+          <label for="create-dialog-gvr" class="text-xs text-muted whitespace-nowrap">Resource Type</label>
+          <select
+            id="create-dialog-gvr"
+            class="text-xs bg-surface border border-border rounded px-2 py-1 flex-1 min-w-0"
+            bind:value={selectedGvr}
+          >
+            <option value="">— select —</option>
+            {#each allGvrs as gvr}
+              <option value={gvr}>{gvr}</option>
+            {/each}
+          </select>
+        </div>
+        {#if templates.length > 0}
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <label for="create-dialog-template" class="text-xs text-muted whitespace-nowrap">Template</label>
+            <select
+              id="create-dialog-template"
+              class="text-xs bg-surface border border-border rounded px-2 py-1 flex-1 min-w-0"
+              value={selectedTemplateName}
+              onchange={onTemplateChange}
+            >
+              {#each templates as t}
+                <option value={t.name}>{t.name}</option>
+              {/each}
+            </select>
+          </div>
+        {/if}
+      </div>
+
       <div bind:this={container} class="flex-1 overflow-hidden"></div>
     </Dialog.Content>
   </Dialog.Portal>
