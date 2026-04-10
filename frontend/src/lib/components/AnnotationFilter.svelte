@@ -57,6 +57,7 @@
       <div
         class="absolute top-full mt-1 left-0 z-50 bg-surface border border-border rounded shadow-lg p-2 flex flex-col gap-1.5 min-w-48"
         onclick={(e) => e.stopPropagation()}
+        onkeydown={(e) => e.stopPropagation()}
       >
         <input
           type="text"

@@ -29,6 +29,24 @@ vi.mock('$lib/stores/columns.svelte', () => ({
 vi.mock('$lib/stores/cluster.svelte', () => ({
   clusterStore: {
     setNamespaces: mockSetNamespaces,
+    canMutate: vi.fn().mockReturnValue(false),
+  },
+}))
+
+vi.mock('$lib/stores/selection.svelte', () => ({
+  selectionStore: {
+    selectedKeys: new Set(),
+    selectedGVR: '',
+    count: 0,
+    notVisibleCount: 0,
+    isSelected: vi.fn().mockReturnValue(false),
+    toggle: vi.fn(),
+    selectRange: vi.fn(),
+    selectAll: vi.fn(),
+    deselectAll: vi.fn(),
+    setVisibleKeys: vi.fn(),
+    setGVR: vi.fn(),
+    items: vi.fn().mockReturnValue([]),
   },
 }))
 
