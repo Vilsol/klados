@@ -17,6 +17,7 @@
   import type { MetricResult } from '$lib/components/charts/types'
   import { notificationStore } from '$lib/stores/notification.svelte'
   import type { ControllerRef } from '$lib/utils/relationships'
+  import { selectionStore } from '$lib/stores/selection.svelte'
 
   let { params = {} }: { params?: Record<string, string> } = $props()
 
@@ -34,6 +35,17 @@
 
   // Initialize column store whenever GVR changes
   $effect(() => { if (gvr) columnStore.loadForGVR(gvr) })
+
+  // Set GVR on selection store (auto-clears on GVR change)
+  $effect(() => {
+    if (gvr) selectionStore.setGVR(gvr)
+  })
+
+  // Clear selection on namespace change
+  $effect(() => {
+    selectedNamespaces
+    selectionStore.deselectAll()
+  })
 
   let listScrollContainer = $state<HTMLDivElement | undefined>()
 

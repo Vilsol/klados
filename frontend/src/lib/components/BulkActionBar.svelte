@@ -17,19 +17,11 @@
   const SCALABLE_GVRS = ['apps.v1.deployments', 'apps.v1.statefulsets']
   const canScale = $derived(SCALABLE_GVRS.includes(gvr))
 
-  let exportMenuRef = $state<HTMLDivElement | null>(null)
-
-  function handleClickOutside(e: MouseEvent) {
-    if (exportMenuRef && !exportMenuRef.contains(e.target as Node)) {
-      exportMenuOpen = false
-    }
-  }
-
   $effect(() => {
-    if (exportMenuOpen) {
-      document.addEventListener('click', handleClickOutside, true)
-      return () => document.removeEventListener('click', handleClickOutside, true)
-    }
+    if (!exportMenuOpen) return
+    const close = () => { exportMenuOpen = false }
+    const timer = setTimeout(() => window.addEventListener('click', close, { once: true }), 0)
+    return () => { clearTimeout(timer); window.removeEventListener('click', close) }
   })
 
   function doExport(format: 'yaml' | 'json') {
@@ -94,7 +86,7 @@
       </button>
     {/if}
 
-    <div class="relative" bind:this={exportMenuRef}>
+    <div class="relative">
       <button
         class="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-sm font-medium hover:bg-surface-hover text-fg"
         onclick={() => (exportMenuOpen = !exportMenuOpen)}

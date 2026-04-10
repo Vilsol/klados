@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createVirtualizer } from '@tanstack/svelte-virtual'
-  import { ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw, Columns3, Check, Minus } from 'lucide-svelte'
+  import { ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw, Columns3, Check, Minus, Download } from 'lucide-svelte'
   import { ConfirmDialog } from '@klados/ui'
   import { notificationStore } from '$lib/stores/notification.svelte'
   import { evalExpr, defaultAlign, type ColumnDef, type RenderType } from '$lib/registry/index'
@@ -17,6 +17,8 @@
   import { clusterStore } from '$lib/stores/cluster.svelte'
   import { selectionStore } from '$lib/stores/selection.svelte'
   import ColumnMenu from './ColumnMenu.svelte'
+  import AnnotationFilter from './AnnotationFilter.svelte'
+  import { exportItems } from '$lib/utils/export'
 
   function itemKey(obj: Record<string, any>): string {
     const ns = obj.metadata?.namespace ?? ''
@@ -71,6 +73,8 @@
   let confirmOpen = $state(false)
   let ctxMenu = $state<{ x: number; y: number; item: Record<string, any> } | null>(null)
   let columnMenuOpen = $state(false)
+  let exportMenuOpen = $state(false)
+  let annotationFilters = $state<{ key: string; value: string }[]>([])
   let resizing = $state<{ name: string; startX: number; startWidth: number } | null>(null)
 
   function getSparklinePoints(itemName: string, metricName: string): { t: number; v: number }[] {
@@ -103,6 +107,13 @@
     return () => { clearTimeout(timer); window.removeEventListener('click', close) }
   })
 
+  $effect(() => {
+    if (!exportMenuOpen) return
+    const close = () => { exportMenuOpen = false }
+    const timer = setTimeout(() => window.addEventListener('click', close, { once: true }), 0)
+    return () => { clearTimeout(timer); window.removeEventListener('click', close) }
+  })
+
   // Scroll to top when GVR changes
   $effect(() => {
     gvr
@@ -123,6 +134,14 @@
           .map(([k, v]) => `${k}=${v}`)
           .join(',')
         return labelsStr.includes(q) || (item.metadata?.name ?? '').toLowerCase().includes(q)
+      })
+    }
+    if (annotationFilters.length > 0) {
+      result = result.filter((item) => {
+        const annotations = item.metadata?.annotations ?? {}
+        return annotationFilters.every(f =>
+          f.value ? annotations[f.key] === f.value : f.key in annotations
+        )
       })
     }
     if (columnStore.sortState) {
@@ -277,7 +296,30 @@
       bind:value={filterText}
       class="flex-1 text-sm bg-transparent outline-none placeholder-muted"
     />
+    <AnnotationFilter bind:filters={annotationFilters} />
     <span class="text-xs text-muted">{filtered.length} items</span>
+    <div class="relative">
+      <button
+        onclick={() => exportMenuOpen = !exportMenuOpen}
+        class="p-1 rounded hover:bg-surface-hover transition-colors"
+        title="Export visible"
+        aria-label="Export visible"
+      >
+        <Download size={14} />
+      </button>
+      {#if exportMenuOpen}
+        <div class="absolute top-full mt-1 right-0 z-50 bg-surface border border-border rounded shadow-lg py-1 min-w-24">
+          <button
+            class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover"
+            onclick={() => { exportItems(filtered, gvr, 'yaml'); exportMenuOpen = false }}
+          >YAML</button>
+          <button
+            class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover"
+            onclick={() => { exportItems(filtered, gvr, 'json'); exportMenuOpen = false }}
+          >JSON</button>
+        </div>
+      {/if}
+    </div>
     <div class="relative">
       <button
         onclick={() => columnMenuOpen = !columnMenuOpen}
