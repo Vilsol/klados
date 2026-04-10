@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 
@@ -26,11 +27,16 @@ type ResourceService struct {
 	watchMgr    *watcher.WatchManager
 	registry    *resource.Registry
 	enricherReg *resource.EnricherRegistry
+	templateReg *resource.TemplateRegistry
 	ctx         context.Context
 }
 
 func NewResourceService(appSvc *AppService, drainSvc *DrainService) *ResourceService {
 	return &ResourceService{appService: appSvc, drainSvc: drainSvc}
+}
+
+func NewResourceServiceWithRegistry(reg *resource.TemplateRegistry) *ResourceService {
+	return &ResourceService{templateReg: reg}
 }
 
 func (s *ResourceService) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
@@ -57,6 +63,12 @@ func (s *ResourceService) ServiceStartup(ctx context.Context, _ application.Serv
 	s.enricherReg = enricherReg
 	s.engine = resource.NewResourceEngine(s.appService.ClusterManager(), enricherReg)
 	s.watchMgr = watcher.NewWatchManager(s.appService.ClusterManager(), enricherReg, emit, s.appService.Ctx())
+
+	templateReg := resource.NewTemplateRegistry()
+	if err := resource.LoadBuiltinTemplates(templateReg); err != nil {
+		return fmt.Errorf("load builtin templates: %w", err)
+	}
+	s.templateReg = templateReg
 	return nil
 }
 
@@ -461,6 +473,65 @@ func (s *ResourceService) ResumeCronJob(contextName, namespace, name string) err
 	patch, _ := json.Marshal(map[string]any{"spec": map[string]any{"suspend": suspendFalse}})
 	_, err := s.engine.Patch(s.ctx, contextName, "batch.v1.cronjobs", namespace, name, types.MergePatchType, patch)
 	return err
+}
+
+func (s *ResourceService) GetTemplates(contextName, gvr string) ([]resource.Template, error) {
+	templates := s.templateReg.GetTemplates(gvr)
+	if len(templates) > 0 {
+		return templates, nil
+	}
+	if s.appService != nil {
+		conn, err := s.appService.ClusterManager().GetConnection(contextName)
+		if err == nil {
+			ctx := s.ctx
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			t, schemaErr := s.templateReg.GenerateFromSchema(ctx, gvr, conn.Clientset.Discovery())
+			if schemaErr == nil {
+				return []resource.Template{t}, nil
+			}
+		}
+	}
+	return []resource.Template{bareSkeletonTemplate(gvr)}, nil
+}
+
+func (s *ResourceService) GetAllTemplateGVRs(contextName string) ([]string, error) {
+	seen := make(map[string]struct{})
+	for _, gvr := range s.templateReg.GetAllGVRs() {
+		seen[gvr] = struct{}{}
+	}
+	if s.appService != nil {
+		conn, err := s.appService.ClusterManager().GetConnection(contextName)
+		if err == nil {
+			lists, discErr := conn.Discovery.ServerPreferredResources()
+			if discErr == nil {
+				for _, list := range lists {
+					for _, res := range list.APIResources {
+						gvrStr, convErr := resource.GVRStringFromAPIResource(list.GroupVersion, res.Name)
+						if convErr == nil {
+							seen[gvrStr] = struct{}{}
+						}
+					}
+				}
+			}
+		}
+	}
+	out := make([]string, 0, len(seen))
+	for gvr := range seen {
+		out = append(out, gvr)
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+func bareSkeletonTemplate(gvr string) resource.Template {
+	return resource.Template{
+		GVR:     gvr,
+		Name:    "Default",
+		Content: "apiVersion: \"\"\nkind: \"\"\nmetadata:\n  name: \"\"\nspec: {}\n",
+		Source:  "schema",
+	}
 }
 
 func nestedString(obj map[string]any, path ...string) (string, bool, error) {

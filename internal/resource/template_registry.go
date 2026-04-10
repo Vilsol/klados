@@ -217,6 +217,24 @@ func (r *TemplateRegistry) GenerateFromSchema(_ context.Context, gvr string, dis
 	}, nil
 }
 
+// GVRStringFromAPIResource converts a groupVersion like "apps/v1" and resource name
+// to the dot-separated GVR format used by klados (e.g. "apps.v1.deployments").
+func GVRStringFromAPIResource(groupVersion, resourceName string) (string, error) {
+	parts := strings.SplitN(groupVersion, "/", 2)
+	var group, version string
+	if len(parts) == 2 {
+		group = parts[0]
+		version = parts[1]
+	} else {
+		group = "core"
+		version = parts[0]
+	}
+	if group == "" {
+		group = "core"
+	}
+	return group + "." + version + "." + resourceName, nil
+}
+
 func (r *TemplateRegistry) GetAllGVRs() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
