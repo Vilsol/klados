@@ -25,16 +25,16 @@ describe('CreateResourceDialog', () => {
     })
   })
 
-  it('pre-fills GVR select when gvr prop provided', async () => {
+  it('pre-fills GVR combobox when gvr prop provided', async () => {
     render(CreateResourceDialog, {
       props: { open: true, ctxName: 'test-ctx', gvr: 'core.v1.pods' },
     })
     await tick()
     await waitFor(() => {
-      const selects = document.querySelectorAll('select')
-      const gvrSelect = selects[0] as HTMLSelectElement
-      expect(gvrSelect).toBeTruthy()
-      expect(gvrSelect.value).toBe('core.v1.pods')
+      // Combobox displays the selected value as visible text in a span overlay
+      const matches = document.querySelectorAll('span')
+      const found = Array.from(matches).some((el) => el.textContent === 'core.v1.pods')
+      expect(found).toBe(true)
     })
   })
 

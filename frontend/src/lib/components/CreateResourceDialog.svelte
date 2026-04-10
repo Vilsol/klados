@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Dialog } from 'bits-ui'
+  import { Combobox } from '@klados/ui'
   import { onDestroy } from 'svelte'
   import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view'
   import { EditorState } from '@codemirror/state'
@@ -119,9 +120,8 @@
     return content.replace(/^( +name:[^\n]*\n)/m, `$1${indent}namespace: ${ns}\n`)
   }
 
-  function loadTemplate(tmpl: TemplateItem) {
+  function loadTemplateContent(tmpl: TemplateItem) {
     const content = injectNamespace(tmpl.content, defaultNamespace)
-    selectedTemplateName = tmpl.name
     if (view) {
       view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: content } })
       editorDirty = false
@@ -130,14 +130,21 @@
     }
   }
 
-  function onTemplateChange(e: Event) {
-    const name = (e.target as HTMLSelectElement).value
+  // Used by the GVR-change $effect to auto-load the first template (also sets selectedTemplateName).
+  function loadTemplate(tmpl: TemplateItem) {
+    selectedTemplateName = tmpl.name
+    loadTemplateContent(tmpl)
+  }
+
+  function onTemplateValueChange(name: string) {
     const tmpl = templates.find((t) => t.name === name)
     if (!tmpl) return
     if (editorDirty && !confirm('Replace current YAML with selected template?')) {
+      // Revert the Combobox binding back to the previous selection
+      selectedTemplateName = selectedTemplateName
       return
     }
-    loadTemplate(tmpl)
+    loadTemplateContent(tmpl)
   }
 
   async function importFromClipboard() {
@@ -201,31 +208,30 @@
 
       <div class="flex items-center gap-3 px-4 py-2 border-b border-border shrink-0 flex-wrap">
         <div class="flex items-center gap-2 min-w-0 flex-1">
-          <label for="create-dialog-gvr" class="text-xs text-muted whitespace-nowrap">Resource Type</label>
-          <select
-            id="create-dialog-gvr"
-            class="text-xs bg-surface border border-border rounded px-2 py-1 flex-1 min-w-0"
-            bind:value={selectedGvr}
-          >
-            <option value="">— select —</option>
-            {#each allGvrs as gvr}
-              <option value={gvr}>{gvr}</option>
-            {/each}
-          </select>
+          <span class="text-xs text-muted whitespace-nowrap">Resource Type</span>
+          <div class="flex-1 min-w-0">
+            <Combobox
+              bind:value={selectedGvr}
+              options={allGvrs.map((g) => ({ value: g, label: g }))}
+              placeholder="Select resource type…"
+              searchPlaceholder="Search GVRs…"
+              size="xs"
+            />
+          </div>
         </div>
         {#if templates.length > 0}
           <div class="flex items-center gap-2 min-w-0 flex-1">
-            <label for="create-dialog-template" class="text-xs text-muted whitespace-nowrap">Template</label>
-            <select
-              id="create-dialog-template"
-              class="text-xs bg-surface border border-border rounded px-2 py-1 flex-1 min-w-0"
-              value={selectedTemplateName}
-              onchange={onTemplateChange}
-            >
-              {#each templates as t}
-                <option value={t.name}>{t.name}</option>
-              {/each}
-            </select>
+            <span class="text-xs text-muted whitespace-nowrap">Template</span>
+            <div class="flex-1 min-w-0">
+              <Combobox
+                bind:value={selectedTemplateName}
+                options={templates.map((t) => ({ value: t.name, label: t.name }))}
+                placeholder="Select template…"
+                searchPlaceholder="Search templates…"
+                size="xs"
+                onValueChange={onTemplateValueChange}
+              />
+            </div>
           </div>
         {/if}
       </div>
