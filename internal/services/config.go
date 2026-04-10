@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Vilsol/klados/internal/config"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type ConfigService struct {
@@ -86,4 +87,130 @@ func (c *ConfigService) SetCompactRows(compact bool) error {
 
 func (c *ConfigService) GetConfig() *config.Config {
 	return c.config
+}
+
+func (c *ConfigService) ServiceStartup(_ context.Context, _ application.ServiceOptions) error {
+	app := application.Get()
+	if app != nil {
+		c.config.SetEmit(func(name string, data any) {
+			app.Event.Emit(name, data)
+		})
+	}
+	return nil
+}
+
+func (c *ConfigService) GetResolvedPrefs(ctxName string) config.ResolvedPrefs {
+	return c.config.ResolveForCluster(ctxName)
+}
+
+func (c *ConfigService) SetAccentColor(color string) error {
+	return c.config.Update(func(cfg *config.Config) {
+		cfg.AccentColor = color
+	})
+}
+
+func (c *ConfigService) SetFontSize(size int) error {
+	return c.config.Update(func(cfg *config.Config) {
+		cfg.FontSize = size
+	})
+}
+
+func (c *ConfigService) SetStartupBehavior(behavior string, cluster string) error {
+	switch behavior {
+	case "last", "chooser", "specific":
+	default:
+		return fmt.Errorf("invalid startup behavior: %q", behavior)
+	}
+	return c.config.Update(func(cfg *config.Config) {
+		cfg.StartupBehavior = behavior
+		cfg.StartupCluster = cluster
+	})
+}
+
+func (c *ConfigService) SetKeybinding(actionID string, keys string) error {
+	return c.config.Update(func(cfg *config.Config) {
+		if cfg.Keybindings == nil {
+			cfg.Keybindings = make(map[string]string)
+		}
+		if keys == "" {
+			delete(cfg.Keybindings, actionID)
+		} else {
+			cfg.Keybindings[actionID] = keys
+		}
+	})
+}
+
+func (c *ConfigService) ResetKeybindings() error {
+	return c.config.Update(func(cfg *config.Config) {
+		cfg.Keybindings = nil
+	})
+}
+
+func (c *ConfigService) GetClusterPrefs(ctxName string) *config.ClusterPrefs {
+	var result *config.ClusterPrefs
+	c.config.Read(func(cfg *config.Config) {
+		if cfg.Clusters != nil {
+			result = cfg.Clusters[ctxName]
+		}
+	})
+	return result
+}
+
+func (c *ConfigService) SetClusterPrefs(ctxName string, prefs *config.ClusterPrefs) error {
+	return c.config.Update(func(cfg *config.Config) {
+		if cfg.Clusters == nil {
+			cfg.Clusters = make(map[string]*config.ClusterPrefs)
+		}
+		cfg.Clusters[ctxName] = prefs
+	})
+}
+
+func (c *ConfigService) DeleteClusterPrefs(ctxName string) error {
+	return c.config.Update(func(cfg *config.Config) {
+		delete(cfg.Clusters, ctxName)
+	})
+}
+
+func (c *ConfigService) GetSavedFilters(gvr string) []config.SavedFilter {
+	var result []config.SavedFilter
+	c.config.Read(func(cfg *config.Config) {
+		if cfg.SavedFilters != nil {
+			result = cfg.SavedFilters[gvr]
+		}
+	})
+	return result
+}
+
+func (c *ConfigService) SetSavedFilters(gvr string, filters []config.SavedFilter) error {
+	return c.config.Update(func(cfg *config.Config) {
+		if cfg.SavedFilters == nil {
+			cfg.SavedFilters = make(map[string][]config.SavedFilter)
+		}
+		if len(filters) == 0 {
+			delete(cfg.SavedFilters, gvr)
+		} else {
+			cfg.SavedFilters[gvr] = filters
+		}
+	})
+}
+
+func (c *ConfigService) SetClusterSavedFilters(ctxName string, gvr string, filters []config.SavedFilter) error {
+	return c.config.Update(func(cfg *config.Config) {
+		if cfg.Clusters == nil {
+			cfg.Clusters = make(map[string]*config.ClusterPrefs)
+		}
+		cp := cfg.Clusters[ctxName]
+		if cp == nil {
+			cp = &config.ClusterPrefs{}
+			cfg.Clusters[ctxName] = cp
+		}
+		if cp.SavedFilters == nil {
+			cp.SavedFilters = make(map[string][]config.SavedFilter)
+		}
+		if len(filters) == 0 {
+			delete(cp.SavedFilters, gvr)
+		} else {
+			cp.SavedFilters[gvr] = filters
+		}
+	})
 }

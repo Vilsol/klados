@@ -80,6 +80,7 @@ type Config struct {
 
 	mu   deadlock.Mutex
 	path string
+	emit func(string, any)
 }
 
 func DefaultConfig() *Config {
@@ -138,7 +139,19 @@ func (c *Config) Save() error {
 		return err
 	}
 
-	return os.WriteFile(c.path, data, 0o644)
+	if err := os.WriteFile(c.path, data, 0o644); err != nil {
+		return err
+	}
+	if c.emit != nil {
+		c.emit("config:updated", nil)
+	}
+	return nil
+}
+
+func (c *Config) SetEmit(fn func(string, any)) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.emit = fn
 }
 
 func (c *Config) Update(fn func(*Config)) error {
