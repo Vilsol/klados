@@ -31,8 +31,10 @@ describe('CreateResourceDialog', () => {
     })
     await tick()
     await waitFor(() => {
-      const select = document.querySelector('select') as HTMLSelectElement
-      expect(select).toBeTruthy()
+      const selects = document.querySelectorAll('select')
+      const gvrSelect = selects[0] as HTMLSelectElement
+      expect(gvrSelect).toBeTruthy()
+      expect(gvrSelect.value).toBe('core.v1.pods')
     })
   })
 
