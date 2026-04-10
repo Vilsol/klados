@@ -318,7 +318,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 ### Search & Navigation
 - [x] `MVP` Global resource search (fuzzy find across all resource types)
 - [x] `MVP` Filter by labels
-- [ ] `v2` Filter by annotations
+- [x] `v2` Filter by annotations
 - [x] `MVP` Sort by any column
 - [x] `v2` Column visibility customization
 - [ ] `v2` Saved filters / views
@@ -360,9 +360,9 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [ ] `v2` Compare same resource across namespaces or clusters
 
 ### Bulk Operations
-- [ ] `v2` Multi-select resources
-- [ ] `v2` Bulk delete
-- [ ] `v2` Bulk label/annotate
+- [x] `v2` Multi-select resources
+- [x] `v2` Bulk delete
+- [x] `v2` Bulk label/annotate
 - [x] `v2` Apply YAML with multiple documents (---)
 - [ ] `v2` Dir view — apply/watch a local manifest directory against the cluster
 
@@ -446,7 +446,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 
 ### Import / Export
 - [x] `MVP` Export resource as YAML
-- [ ] `v2` Export filtered list as YAML/JSON
+- [x] `v2` Export filtered list as YAML/JSON
 - [x] `MVP` Copy resource YAML to clipboard
 - [x] `MVP` Import YAML from clipboard
 
