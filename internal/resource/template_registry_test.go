@@ -1,10 +1,13 @@
 package resource_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/MarvinJWendt/testza"
 	"github.com/Vilsol/klados/internal/resource"
+	k8sfake "k8s.io/client-go/discovery/fake"
+	k8stesting "k8s.io/client-go/testing"
 )
 
 func TestTemplateRegistry_RegisterAndGet(t *testing.T) {
@@ -56,6 +59,28 @@ func TestBuiltinTemplates_AllParseable(t *testing.T) {
 
 	gvrs := reg.GetAllGVRs()
 	testza.AssertTrue(t, len(gvrs) >= 20, "expected at least 20 GVRs from builtin templates")
+}
+
+func TestGenerateFromSchema_ReturnsValidSkeleton(t *testing.T) {
+	reg := resource.NewTemplateRegistry()
+	disc := &k8sfake.FakeDiscovery{Fake: &k8stesting.Fake{}}
+	tmpl, err := reg.GenerateFromSchema(context.Background(), "apps.v1.deployments", disc)
+	testza.AssertNoError(t, err)
+	testza.AssertEqual(t, "schema", tmpl.Source)
+	testza.AssertEqual(t, "apps.v1.deployments", tmpl.GVR)
+	testza.AssertContains(t, tmpl.Content, "apiVersion:")
+	testza.AssertContains(t, tmpl.Content, "kind:")
+	testza.AssertContains(t, tmpl.Content, "metadata:")
+}
+
+func TestGenerateFromSchema_FallbackForUnknownCRD(t *testing.T) {
+	reg := resource.NewTemplateRegistry()
+	disc := &k8sfake.FakeDiscovery{Fake: &k8stesting.Fake{}}
+	tmpl, err := reg.GenerateFromSchema(context.Background(), "example.com.v1.widgets", disc)
+	testza.AssertNoError(t, err)
+	testza.AssertContains(t, tmpl.Content, "apiVersion:")
+	testza.AssertContains(t, tmpl.Content, "kind:")
+	testza.AssertContains(t, tmpl.Content, "metadata:")
 }
 
 func TestTemplateRegistry_GetAllGVRs(t *testing.T) {

@@ -2,6 +2,7 @@ package resource
 
 import (
 	"bufio"
+	"context"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -9,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/sasha-s/go-deadlock"
+	"gopkg.in/yaml.v3"
+	"k8s.io/client-go/discovery"
 )
 
 //go:embed templates/*.yaml
@@ -114,6 +117,104 @@ func LoadBuiltinTemplates(reg *TemplateRegistry) error {
 		})
 	}
 	return nil
+}
+
+func guessKind(resource string) string {
+	if resource == "" {
+		return ""
+	}
+	r := resource
+	if strings.HasSuffix(r, "s") {
+		r = r[:len(r)-1]
+	}
+	if len(r) == 0 {
+		return resource
+	}
+	return strings.ToUpper(r[:1]) + r[1:]
+}
+
+func (r *TemplateRegistry) GenerateFromSchema(_ context.Context, gvr string, disc discovery.DiscoveryInterface) (Template, error) {
+	parsed, err := ParseGVR(gvr)
+	if err != nil {
+		return Template{}, err
+	}
+
+	var apiVersion string
+	if parsed.Group == "" {
+		apiVersion = parsed.Version
+	} else {
+		apiVersion = parsed.Group + "/" + parsed.Version
+	}
+
+	kind := ""
+	if groups, resourceLists, err := disc.ServerGroupsAndResources(); err == nil && groups != nil {
+		gv := apiVersion
+		for _, rl := range resourceLists {
+			if rl.GroupVersion != gv {
+				continue
+			}
+			for _, ar := range rl.APIResources {
+				if ar.Name == parsed.Resource {
+					kind = ar.Kind
+					break
+				}
+			}
+			if kind != "" {
+				break
+			}
+		}
+	}
+	if kind == "" {
+		kind = guessKind(parsed.Resource)
+	}
+
+	includeSpec := true
+	if doc, err := disc.OpenAPISchema(); err == nil && doc != nil {
+		defs := doc.GetDefinitions()
+		if defs != nil {
+			required := []string{}
+			lowerKind := strings.ToLower(kind)
+			for _, ns := range defs.AdditionalProperties {
+				nsName := strings.ToLower(ns.GetName())
+				if nsName == lowerKind || strings.HasSuffix(nsName, "."+lowerKind) {
+					required = ns.GetValue().GetRequired()
+					break
+				}
+			}
+			hasSpec := false
+			for _, f := range required {
+				if f == "spec" {
+					hasSpec = true
+					break
+				}
+			}
+			includeSpec = hasSpec || len(required) == 0
+		}
+	}
+
+	obj := map[string]any{
+		"apiVersion": apiVersion,
+		"kind":       kind,
+		"metadata":   map[string]any{"name": ""},
+	}
+	if includeSpec {
+		obj["spec"] = map[string]any{}
+	}
+
+	content := ""
+	if data, err := yaml.Marshal(obj); err == nil {
+		content = strings.TrimSpace(string(data))
+	} else {
+		content = "apiVersion: " + apiVersion + "\nkind: " + kind + "\nmetadata:\n  name: \"\""
+	}
+
+	return Template{
+		GVR:         gvr,
+		Name:        "Default",
+		Description: "Auto-generated from schema",
+		Content:     content,
+		Source:      "schema",
+	}, nil
 }
 
 func (r *TemplateRegistry) GetAllGVRs() []string {

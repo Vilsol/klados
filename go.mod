@@ -18,6 +18,7 @@ require (
 	github.com/tetratelabs/wazero v1.11.0
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
 	golang.org/x/net v0.52.0
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.35.3
 	k8s.io/apimachinery v0.35.3
 	k8s.io/client-go v0.35.3
