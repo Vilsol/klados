@@ -147,6 +147,9 @@ importers:
       '@klados/ui':
         specifier: workspace:*
         version: link:../packages/ui
+      '@muhgholy/search-query-parser':
+        specifier: ^3.0.0
+        version: 3.0.0
       '@tanstack/svelte-virtual':
         specifier: ^3.13.23
         version: 3.13.23(svelte@5.55.1)
@@ -843,6 +846,10 @@ packages:
 
   '@marijn/find-cluster-break@1.0.2':
     resolution: {integrity: sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g==}
+
+  '@muhgholy/search-query-parser@3.0.0':
+    resolution: {integrity: sha512-xFt0JiL2PbVNap/M3yflm30sMWshGHZ5/GPGGFhMLUKevg+2qBpIHs6u58t9gncDI1RBNbvX3NlZqmPOtEewgg==}
+    engines: {node: '>=18'}
 
   '@napi-rs/wasm-runtime@1.1.2':
     resolution: {integrity: sha512-sNXv5oLJ7ob93xkZ1XnxisYhGYXfaG9f65/ZgYuAu3qt7b3NadcOEhLvx28hv31PgX8SZJRYrAIPQilQmFpLVw==}
@@ -2913,6 +2920,8 @@ snapshots:
       '@lezer/lr': 1.4.8
 
   '@marijn/find-cluster-break@1.0.2': {}
+
+  '@muhgholy/search-query-parser@3.0.0': {}
 
   '@napi-rs/wasm-runtime@1.1.2(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)':
     dependencies:

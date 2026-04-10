@@ -25,6 +25,7 @@
     "@codemirror/view": "^6",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@klados/ui": "workspace:*",
+    "@muhgholy/search-query-parser": "^3.0.0",
     "@tanstack/svelte-virtual": "^3.13.23",
     "@wailsio/runtime": "latest",
     "@xterm/addon-clipboard": "^0.2.0",
