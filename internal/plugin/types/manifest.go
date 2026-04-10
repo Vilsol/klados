@@ -180,6 +180,9 @@ type Extensions struct {
 	// OverviewFields corresponds to the JSON schema field "overviewFields".
 	OverviewFields []ComponentRef `json:"overviewFields,omitempty"`
 
+	// Settings corresponds to the JSON schema field "settings".
+	Settings *SettingsDeclaration `json:"settings,omitempty"`
+
 	// Sidebar corresponds to the JSON schema field "sidebar".
 	Sidebar []SidebarEntry `json:"sidebar,omitempty"`
 
@@ -416,6 +419,34 @@ func (j *ResourcePermission) UnmarshalJSON(value []byte) error {
 		return fmt.Errorf("field %s length: must be >= %d", "verbs", 1)
 	}
 	*j = ResourcePermission(plain)
+	return nil
+}
+
+type SettingsDeclaration struct {
+	// JSON Schema (draft 2020-12) defining the plugin's settings. Must be type:
+	// object with properties.
+	Schema SettingsDeclarationSchema `json:"schema"`
+}
+
+// JSON Schema (draft 2020-12) defining the plugin's settings. Must be type: object
+// with properties.
+type SettingsDeclarationSchema map[string]interface{}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *SettingsDeclaration) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["schema"]; raw != nil && !ok {
+		return fmt.Errorf("field schema in SettingsDeclaration: required")
+	}
+	type Plain SettingsDeclaration
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = SettingsDeclaration(plain)
 	return nil
 }
 

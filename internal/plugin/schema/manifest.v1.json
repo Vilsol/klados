@@ -127,6 +127,9 @@
           "type": "array",
           "items": { "$ref": "#/$defs/MetricTemplateGroup" },
           "description": "PromQL query templates per GVR, rendered as additional charts in the metrics tab"
+        },
+        "settings": {
+          "$ref": "#/$defs/SettingsDeclaration"
         }
       }
     },
@@ -217,6 +220,17 @@
         "label": { "type": "string" },
         "gvr": { "type": "string", "description": "GVR filter (omit for global slots)" },
         "component": { "type": "string", "description": "Relative path to the Svelte component JS bundle" }
+      }
+    },
+    "SettingsDeclaration": {
+      "type": "object",
+      "required": ["schema"],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "type": "object",
+          "description": "JSON Schema (draft 2020-12) defining the plugin's settings. Must be type: object with properties."
+        }
       }
     }
   }

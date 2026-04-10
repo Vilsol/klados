@@ -587,6 +587,42 @@ func (s *PluginService) GetPluginMetricQueries(gvr string) []plugin.MetricQueryE
 	return s.registry.GetMetricQueries(gvr)
 }
 
+func (s *PluginService) GetPluginSettings(name string) (string, error) {
+	st, ok := s.storages[name]
+	if !ok {
+		return "{}", nil
+	}
+	val, found := st.Get("settings")
+	if !found {
+		return "{}", nil
+	}
+	return val, nil
+}
+
+func (s *PluginService) SetPluginSettings(name string, settingsJSON string) error {
+	st, ok := s.storages[name]
+	if !ok {
+		return fmt.Errorf("plugin %q not found", name)
+	}
+	st.Set("settings", settingsJSON)
+	return nil
+}
+
+func (s *PluginService) GetPluginSettingsSchema(name string) (string, error) {
+	if s.registry == nil {
+		return "", nil
+	}
+	lp := s.registry.GetLoadedPlugin(name)
+	if lp == nil || lp.Manifest == nil || lp.Manifest.Extensions == nil || lp.Manifest.Extensions.Settings == nil {
+		return "", nil
+	}
+	data, err := json.Marshal(lp.Manifest.Extensions.Settings.Schema)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
 // InstallPlugin installs a plugin from an OCI reference (oci://...), a directory path,
 // or an OCI archive (.oci.tar / .oci.tar.gz). After installation, loads the plugin and
 // emits plugins:loaded.

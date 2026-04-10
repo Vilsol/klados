@@ -24,33 +24,71 @@ export interface PluginContext {
  * Only present if permissions.resources declared
  */
 export interface K8SContext {
-  list(gvr: string, ns?: string): Promise<unknown[]>;
-  get(gvr: string, ns: string, name: string): Promise<unknown>;
-  watch(gvr: string, ns: string, callback: (event: unknown) => void): () => void;
+  /**
+   * List resources by GVR and optional namespace
+   */
+  list: {
+    [k: string]: unknown;
+  };
+  /**
+   * Get a single resource by GVR, namespace, and name
+   */
+  get: {
+    [k: string]: unknown;
+  };
+  /**
+   * Subscribe to resource changes, returns unsubscribe function
+   */
+  watch: {
+    [k: string]: unknown;
+  };
   [k: string]: unknown;
 }
 /**
  * Only present if permissions.logs: true
  */
 export interface LogsContext {
-  stream(pod: string, ns: string, container: string, opts?: { follow?: boolean; previous?: boolean; tailLines?: number }): Promise<unknown>;
-  stop(streamID: string): Promise<unknown>;
+  /**
+   * Start a log stream for a container
+   */
+  stream: {
+    [k: string]: unknown;
+  };
   [k: string]: unknown;
 }
 /**
  * Only present if permissions.exec: true
  */
 export interface ExecContext {
-  open(pod: string, ns: string, container: string, shell?: string): Promise<unknown>;
-  close(sessionID: string): Promise<unknown>;
+  /**
+   * Open an exec session for a container
+   */
+  open: {
+    [k: string]: unknown;
+  };
   [k: string]: unknown;
 }
 /**
  * Only present if permissions.storage: true
  */
 export interface StorageContext {
-  get(key: string): Promise<string | null>;
-  set(key: string, value: string): Promise<void>;
-  delete(key: string): Promise<void>;
+  /**
+   * Read a value from plugin-local storage
+   */
+  get: {
+    [k: string]: unknown;
+  };
+  /**
+   * Write a value to plugin-local storage
+   */
+  set: {
+    [k: string]: unknown;
+  };
+  /**
+   * Delete a key from plugin-local storage
+   */
+  delete: {
+    [k: string]: unknown;
+  };
   [k: string]: unknown;
 }

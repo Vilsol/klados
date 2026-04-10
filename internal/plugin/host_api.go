@@ -467,6 +467,27 @@ func (h *hostAPI) dispatch(method string, reqBytes []byte) []byte {
 		}
 		return marshalJSON(map[string]any{"keys": h.storage.List()})
 
+	case "settings.get":
+		if !h.perms.AllowsStorage() {
+			return errorJSON("method not available: settings.get")
+		}
+		val, found := h.storage.Get("settings")
+		if !found {
+			return marshalJSON(map[string]any{"value": "{}", "found": false})
+		}
+		return marshalJSON(map[string]any{"value": val, "found": true})
+
+	case "settings.set":
+		if !h.perms.AllowsStorage() {
+			return errorJSON("method not available: settings.set")
+		}
+		value, _ := req["value"].(string)
+		if value == "" {
+			return errorJSON("missing 'value'")
+		}
+		h.storage.Set("settings", value)
+		return marshalJSON(map[string]any{"ok": true})
+
 	case "register_template":
 		gvr, _ := req["gvr"].(string)
 		name, _ := req["name"].(string)

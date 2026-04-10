@@ -71,6 +71,7 @@ export interface Extensions {
    * PromQL query templates per GVR, rendered as additional charts in the metrics tab
    */
   metrics?: MetricTemplateGroup[];
+  settings?: SettingsDeclaration;
 }
 export interface EnricherConfig {
   /**
@@ -141,4 +142,12 @@ export interface MetricTemplateQuery {
    * Unit label (e.g. req/s, bytes, cores)
    */
   unit: string;
+}
+export interface SettingsDeclaration {
+  /**
+   * JSON Schema (draft 2020-12) defining the plugin's settings. Must be type: object with properties.
+   */
+  schema: {
+    [k: string]: unknown;
+  };
 }

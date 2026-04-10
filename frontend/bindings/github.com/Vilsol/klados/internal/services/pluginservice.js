@@ -138,6 +138,22 @@ export function GetPluginOverviewFields(gvr) {
 }
 
 /**
+ * @param {string} name
+ * @returns {$CancellablePromise<string>}
+ */
+export function GetPluginSettings(name) {
+    return $Call.ByID(2508857967, name);
+}
+
+/**
+ * @param {string} name
+ * @returns {$CancellablePromise<string>}
+ */
+export function GetPluginSettingsSchema(name) {
+    return $Call.ByID(281772880, name);
+}
+
+/**
  * @returns {$CancellablePromise<plugin$0.SidebarEntry[]>}
  */
 export function GetPluginSidebarEntries() {
@@ -245,6 +261,15 @@ export function ReloadPluginManual(name) {
  */
 export function SaveRegistryCredentials(host, username, password) {
     return $Call.ByID(1007465601, host, username, password);
+}
+
+/**
+ * @param {string} name
+ * @param {string} settingsJSON
+ * @returns {$CancellablePromise<void>}
+ */
+export function SetPluginSettings(name, settingsJSON) {
+    return $Call.ByID(2550739915, name, settingsJSON);
 }
 
 /**

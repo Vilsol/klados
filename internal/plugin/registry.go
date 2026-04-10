@@ -565,6 +565,17 @@ func (r *Registry) GetStatusBarWidgets() []StatusBarEntry {
 	return r.statusBarWidgets
 }
 
+func (r *Registry) GetLoadedPlugin(name string) *LoadedPlugin {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, p := range r.plugins {
+		if p.Manifest != nil && p.Manifest.Name == name {
+			return p
+		}
+	}
+	return nil
+}
+
 func (r *Registry) GetMetricQueries(gvr string) []MetricQueryEntry {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
