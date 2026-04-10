@@ -1,0 +1,30 @@
+# name: Basic Deployment
+# description: Deployment with a single container and resource limits
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ""
+  labels:
+    app: ""
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ""
+  template:
+    metadata:
+      labels:
+        app: ""
+    spec:
+      containers:
+        - name: ""
+          image: ""
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

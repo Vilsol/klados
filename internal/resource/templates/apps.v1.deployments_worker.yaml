@@ -1,0 +1,28 @@
+# name: Worker Deployment
+# description: Deployment without exposed ports, for background workers
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ""
+  labels:
+    app: ""
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ""
+  template:
+    metadata:
+      labels:
+        app: ""
+    spec:
+      containers:
+        - name: ""
+          image: ""
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

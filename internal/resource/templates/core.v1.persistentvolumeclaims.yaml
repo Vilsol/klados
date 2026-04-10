@@ -1,0 +1,12 @@
+# name: PersistentVolumeClaim
+# description: Request for storage by a Pod
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ""
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

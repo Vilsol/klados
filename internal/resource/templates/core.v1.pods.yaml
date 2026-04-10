@@ -1,0 +1,14 @@
+# name: Basic Pod
+# description: Single-container Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ""
+spec:
+  containers:
+    - name: ""
+      image: ""
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi

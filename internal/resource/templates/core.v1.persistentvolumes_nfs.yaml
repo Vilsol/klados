@@ -1,0 +1,15 @@
+# name: NFS PersistentVolume
+# description: PersistentVolume backed by an NFS share
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ""
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    server: ""
+    path: /exports

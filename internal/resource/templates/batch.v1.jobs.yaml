@@ -1,0 +1,14 @@
+# name: Job
+# description: Runs a task to completion
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ""
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: ""
+          image: ""
+          command: []

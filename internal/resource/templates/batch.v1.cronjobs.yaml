@@ -1,0 +1,17 @@
+# name: CronJob
+# description: Runs a Job on a schedule
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ""
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: ""
+              image: ""
+              command: []

@@ -1,0 +1,14 @@
+# name: ClusterRoleBinding
+# description: Binds a ClusterRole to subjects cluster-wide
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ""
+subjects:
+  - kind: ServiceAccount
+    name: ""
+    namespace: ""
+roleRef:
+  kind: ClusterRole
+  name: ""
+  apiGroup: rbac.authorization.k8s.io

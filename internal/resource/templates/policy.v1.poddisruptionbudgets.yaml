@@ -1,0 +1,11 @@
+# name: PodDisruptionBudget
+# description: Ensures minimum availability during voluntary disruptions
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ""
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ""

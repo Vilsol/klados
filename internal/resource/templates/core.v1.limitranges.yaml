@@ -1,0 +1,15 @@
+# name: LimitRange
+# description: Default resource limits for containers in a namespace
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ""
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 500m
+        memory: 256Mi
+      defaultRequest:
+        cpu: 100m
+        memory: 128Mi

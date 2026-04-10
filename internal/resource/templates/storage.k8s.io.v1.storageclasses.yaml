@@ -1,0 +1,10 @@
+# name: StorageClass
+# description: Defines storage provisioner parameters
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ""
+provisioner: ""
+parameters: {}
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer

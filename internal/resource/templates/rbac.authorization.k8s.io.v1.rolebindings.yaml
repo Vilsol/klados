@@ -1,0 +1,14 @@
+# name: RoleBinding
+# description: Binds a Role to subjects in a namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ""
+subjects:
+  - kind: ServiceAccount
+    name: ""
+    namespace: ""
+roleRef:
+  kind: Role
+  name: ""
+  apiGroup: rbac.authorization.k8s.io

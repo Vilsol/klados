@@ -1,0 +1,14 @@
+# name: LoadBalancer Service
+# description: External load balancer service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ""
+spec:
+  type: LoadBalancer
+  selector:
+    app: ""
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

@@ -1,0 +1,32 @@
+# name: StatefulSet
+# description: StatefulSet with persistent volume claim template
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ""
+spec:
+  serviceName: ""
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ""
+  template:
+    metadata:
+      labels:
+        app: ""
+    spec:
+      containers:
+        - name: ""
+          image: ""
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi

@@ -49,6 +49,15 @@ func TestTemplateRegistry_Plugin_UnregisterRemovesOnly(t *testing.T) {
 	}
 }
 
+func TestBuiltinTemplates_AllParseable(t *testing.T) {
+	reg := resource.NewTemplateRegistry()
+	err := resource.LoadBuiltinTemplates(reg)
+	testza.AssertNoError(t, err)
+
+	gvrs := reg.GetAllGVRs()
+	testza.AssertTrue(t, len(gvrs) >= 20, "expected at least 20 GVRs from builtin templates")
+}
+
 func TestTemplateRegistry_GetAllGVRs(t *testing.T) {
 	reg := resource.NewTemplateRegistry()
 	reg.Register(resource.Template{GVR: "core.v1.pods", Name: "Pod", Source: "builtin"})
