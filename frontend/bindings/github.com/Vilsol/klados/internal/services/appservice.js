@@ -41,6 +41,13 @@ export function BrowseKubeconfigFile() {
 /**
  * @returns {$CancellablePromise<string>}
  */
+export function BrowseManifestFile() {
+    return $Call.ByID(1736414284);
+}
+
+/**
+ * @returns {$CancellablePromise<string>}
+ */
 export function BrowsePluginFile() {
     return $Call.ByID(3044813074);
 }

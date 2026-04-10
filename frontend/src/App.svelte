@@ -18,6 +18,8 @@
   import StackTrace from 'stacktrace-js'
   import CreateResourceDialog from '$lib/components/CreateResourceDialog.svelte'
   import { createResourceStore } from '$lib/stores/createResource.svelte'
+  import ApplyManifestDialog from '$lib/components/ApplyManifestDialog.svelte'
+  import { applyManifestStore } from '$lib/stores/applyManifest.svelte'
 
   const panelId = new URLSearchParams(window.location.search).get('panel')
   let paletteOpen = $state(false)
@@ -142,6 +144,10 @@
     ctxName={clusterStore.activeContext ?? ''}
     gvr={createResourceStore.gvr}
     onsuccess={createResourceStore.onsuccess}
+  />
+  <ApplyManifestDialog
+    bind:open={applyManifestStore.open}
+    ctxName={clusterStore.activeContext ?? ''}
   />
 {/if}
 <Notification />

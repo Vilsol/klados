@@ -6,6 +6,7 @@
   import { descriptorRegistry } from '$lib/registry/index'
   import { slotRegistry } from '$lib/plugins/slots.svelte.js'
   import { createResourceStore } from '$lib/stores/createResource.svelte'
+  import { applyManifestStore } from '$lib/stores/applyManifest.svelte'
 
   let { open = $bindable(false) }: { open: boolean } = $props()
 
@@ -69,6 +70,17 @@
         action: () => {
           open = false
           createResourceStore.openDialog()
+        },
+      })
+
+      items.push({
+        id: 'apply:manifest',
+        label: 'Apply Manifest',
+        subtitle: 'Apply multi-document YAML',
+        category: 'Actions',
+        action: () => {
+          open = false
+          applyManifestStore.openDialog()
         },
       })
     }

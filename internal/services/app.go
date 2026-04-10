@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/Vilsol/slox"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -114,6 +115,20 @@ func (a *AppService) BrowsePluginFile() (string, error) {
 	return a.app.Dialog.OpenFile().
 		AddFilter("Klados plugin archives", "*.oci.tar.gz").
 		PromptForSingleSelection()
+}
+
+func (a *AppService) BrowseManifestFile() (string, error) {
+	path, err := a.app.Dialog.OpenFile().
+		AddFilter("YAML files", "*.yaml;*.yml").
+		PromptForSingleSelection()
+	if err != nil || path == "" {
+		return "", err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
 
 func (a *AppService) GetStreamingConfig() streaming.StreamingConfig {

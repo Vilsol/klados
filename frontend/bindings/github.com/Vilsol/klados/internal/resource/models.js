@@ -70,6 +70,63 @@ export const AlignType = {
     AlignCenter: "center",
 };
 
+export class ApplyResult {
+    /**
+     * Creates a new ApplyResult instance.
+     * @param {Partial<ApplyResult>} [$$source = {}] - The source object to create the ApplyResult.
+     */
+    constructor($$source = {}) {
+        if (!("gvr" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["gvr"] = "";
+        }
+        if (!("namespace" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["namespace"] = "";
+        }
+        if (!("name" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["name"] = "";
+        }
+        if (!("action" in $$source)) {
+            /**
+             * "created" | "configured" | "unchanged"
+             * @member
+             * @type {string}
+             */
+            this["action"] = "";
+        }
+        if (/** @type {any} */(false)) {
+            /**
+             * @member
+             * @type {string | undefined}
+             */
+            this["error"] = undefined;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ApplyResult instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {ApplyResult}
+     */
+    static createFrom($$source = {}) {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ApplyResult(/** @type {Partial<ApplyResult>} */($$parsedSource));
+    }
+}
+
 export class Column {
     /**
      * Creates a new Column instance.

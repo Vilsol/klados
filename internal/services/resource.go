@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -14,6 +16,7 @@ import (
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	"gopkg.in/yaml.v3"
 
 	"github.com/Vilsol/klados/internal/cluster"
 	"github.com/Vilsol/klados/internal/resource"
@@ -537,6 +540,74 @@ func bareSkeletonTemplate(gvr string) resource.Template {
 		Content: "apiVersion: \"\"\nkind: \"\"\nmetadata:\n  name: \"\"\nspec: {}\n",
 		Source:  "schema",
 	}
+}
+
+func (s *ResourceService) ApplyManifest(contextName, yamlContent string) ([]resource.ApplyResult, error) {
+	discovered, err := s.appService.ClusterManager().DiscoverResources(contextName)
+	if err != nil {
+		return nil, fmt.Errorf("discover resources: %w", err)
+	}
+
+	decoder := yaml.NewDecoder(strings.NewReader(yamlContent))
+	var results []resource.ApplyResult
+
+	for {
+		var raw map[string]any
+		if err := decoder.Decode(&raw); err != nil {
+			if err == io.EOF {
+				break
+			}
+			results = append(results, resource.ApplyResult{Error: fmt.Sprintf("decode YAML: %v", err)})
+			continue
+		}
+		if len(raw) == 0 {
+			continue
+		}
+
+		apiVersion, _, _ := unstructured.NestedString(raw, "apiVersion")
+		kind, _, _ := unstructured.NestedString(raw, "kind")
+		if apiVersion == "" || kind == "" {
+			results = append(results, resource.ApplyResult{Error: "missing apiVersion or kind"})
+			continue
+		}
+
+		gvr, resolveErr := resolveGVR(discovered, apiVersion, kind)
+		if resolveErr != nil {
+			results = append(results, resource.ApplyResult{Error: resolveErr.Error()})
+			continue
+		}
+
+		obj := &unstructured.Unstructured{Object: raw}
+		result, applyErr := s.engine.Apply(s.ctx, contextName, gvr, obj)
+		if applyErr != nil {
+			results = append(results, resource.ApplyResult{GVR: gvr, Error: applyErr.Error()})
+			continue
+		}
+		results = append(results, *result)
+	}
+
+	return results, nil
+}
+
+func resolveGVR(resources []cluster.APIResource, apiVersion, kind string) (string, error) {
+	var group, version string
+	if idx := strings.LastIndex(apiVersion, "/"); idx != -1 {
+		group = apiVersion[:idx]
+		version = apiVersion[idx+1:]
+	} else {
+		version = apiVersion
+	}
+	groupKey := group
+	if groupKey == "" {
+		groupKey = "core"
+	}
+	prefix := fmt.Sprintf("%s.%s.", groupKey, version)
+	for _, r := range resources {
+		if r.Kind == kind && strings.HasPrefix(r.GVR, prefix) {
+			return r.GVR, nil
+		}
+	}
+	return "", fmt.Errorf("no resource found for kind %q (apiVersion: %q)", kind, apiVersion)
 }
 
 func nestedString(obj map[string]any, path ...string) (string, bool, error) {

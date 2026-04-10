@@ -22,6 +22,17 @@ import * as $models from "./models.js";
 
 /**
  * @param {string} contextName
+ * @param {string} yamlContent
+ * @returns {$CancellablePromise<resource$0.ApplyResult[]>}
+ */
+export function ApplyManifest(contextName, yamlContent) {
+    return $Call.ByID(1808732929, contextName, yamlContent).then(/** @type {($result: any) => any} */(($result) => {
+        return $$createType1($result);
+    }));
+}
+
+/**
+ * @param {string} contextName
  * @param {string} gvr
  * @param {string} $namespace
  * @param {{ [_ in string]?: any }} obj
@@ -29,7 +40,7 @@ import * as $models from "./models.js";
  */
 export function CreateResource(contextName, gvr, $namespace, obj) {
     return $Call.ByID(1901610632, contextName, gvr, $namespace, obj).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType0($result);
+        return $$createType2($result);
     }));
 }
 
@@ -69,7 +80,7 @@ export function DeleteResource(contextName, gvr, $namespace, name) {
  */
 export function Engine() {
     return $Call.ByID(2725305666).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType2($result);
+        return $$createType4($result);
     }));
 }
 
@@ -78,7 +89,7 @@ export function Engine() {
  */
 export function EnricherRegistry() {
     return $Call.ByID(2852732061).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType4($result);
+        return $$createType6($result);
     }));
 }
 
@@ -110,7 +121,7 @@ export function ForceDeleteResource(contextName, gvr, $namespace, name) {
  */
 export function GetAllTemplateGVRs(contextName) {
     return $Call.ByID(1012417887, contextName).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType5($result);
+        return $$createType7($result);
     }));
 }
 
@@ -119,7 +130,7 @@ export function GetAllTemplateGVRs(contextName) {
  */
 export function GetDescriptors() {
     return $Call.ByID(2292983530).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType8($result);
+        return $$createType10($result);
     }));
 }
 
@@ -131,7 +142,7 @@ export function GetDescriptors() {
  */
 export function GetEvents(contextName, $namespace, uid) {
     return $Call.ByID(3708386421, contextName, $namespace, uid).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType9($result);
+        return $$createType11($result);
     }));
 }
 
@@ -144,7 +155,7 @@ export function GetEvents(contextName, $namespace, uid) {
  */
 export function GetResource(contextName, gvr, $namespace, name) {
     return $Call.ByID(135959152, contextName, gvr, $namespace, name).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType0($result);
+        return $$createType2($result);
     }));
 }
 
@@ -157,7 +168,7 @@ export function GetResource(contextName, gvr, $namespace, name) {
  */
 export function GetRolloutHistory(contextName, gvr, $namespace, name) {
     return $Call.ByID(2359955171, contextName, gvr, $namespace, name).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType11($result);
+        return $$createType13($result);
     }));
 }
 
@@ -168,7 +179,7 @@ export function GetRolloutHistory(contextName, gvr, $namespace, name) {
  */
 export function GetTemplates(contextName, gvr) {
     return $Call.ByID(1548246975, contextName, gvr).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType13($result);
+        return $$createType15($result);
     }));
 }
 
@@ -178,7 +189,7 @@ export function GetTemplates(contextName, gvr) {
  */
 export function ListAPIResources(contextName) {
     return $Call.ByID(1259308621, contextName).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType15($result);
+        return $$createType17($result);
     }));
 }
 
@@ -190,7 +201,7 @@ export function ListAPIResources(contextName) {
  */
 export function ListResources(contextName, gvr, $namespace) {
     return $Call.ByID(3351008733, contextName, gvr, $namespace).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType9($result);
+        return $$createType11($result);
     }));
 }
 
@@ -209,7 +220,7 @@ export function PauseRollout(contextName, $namespace, name) {
  */
 export function Registry() {
     return $Call.ByID(3098448631).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType17($result);
+        return $$createType19($result);
     }));
 }
 
@@ -317,7 +328,7 @@ export function TriggerCronJob(contextName, $namespace, name) {
  */
 export function UpdateResource(contextName, gvr, $namespace, obj) {
     return $Call.ByID(2032718897, contextName, gvr, $namespace, obj).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType0($result);
+        return $$createType2($result);
     }));
 }
 
@@ -326,28 +337,30 @@ export function UpdateResource(contextName, gvr, $namespace, obj) {
  */
 export function WatchMgr() {
     return $Call.ByID(1932566071).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType19($result);
+        return $$createType21($result);
     }));
 }
 
 // Private type creation functions
-const $$createType0 = $Create.Map($Create.Any, $Create.Any);
-const $$createType1 = resource$0.ResourceEngine.createFrom;
-const $$createType2 = $Create.Nullable($$createType1);
-const $$createType3 = resource$0.EnricherRegistry.createFrom;
+const $$createType0 = resource$0.ApplyResult.createFrom;
+const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = $Create.Map($Create.Any, $Create.Any);
+const $$createType3 = resource$0.ResourceEngine.createFrom;
 const $$createType4 = $Create.Nullable($$createType3);
-const $$createType5 = $Create.Array($Create.Any);
-const $$createType6 = resource$0.Descriptor.createFrom;
-const $$createType7 = $Create.Nullable($$createType6);
-const $$createType8 = $Create.Array($$createType7);
-const $$createType9 = $Create.Array($$createType0);
-const $$createType10 = $models.RolloutRevision.createFrom;
-const $$createType11 = $Create.Array($$createType10);
-const $$createType12 = resource$0.Template.createFrom;
+const $$createType5 = resource$0.EnricherRegistry.createFrom;
+const $$createType6 = $Create.Nullable($$createType5);
+const $$createType7 = $Create.Array($Create.Any);
+const $$createType8 = resource$0.Descriptor.createFrom;
+const $$createType9 = $Create.Nullable($$createType8);
+const $$createType10 = $Create.Array($$createType9);
+const $$createType11 = $Create.Array($$createType2);
+const $$createType12 = $models.RolloutRevision.createFrom;
 const $$createType13 = $Create.Array($$createType12);
-const $$createType14 = cluster$0.APIResource.createFrom;
+const $$createType14 = resource$0.Template.createFrom;
 const $$createType15 = $Create.Array($$createType14);
-const $$createType16 = resource$0.Registry.createFrom;
-const $$createType17 = $Create.Nullable($$createType16);
-const $$createType18 = watcher$0.WatchManager.createFrom;
+const $$createType16 = cluster$0.APIResource.createFrom;
+const $$createType17 = $Create.Array($$createType16);
+const $$createType18 = resource$0.Registry.createFrom;
 const $$createType19 = $Create.Nullable($$createType18);
+const $$createType20 = watcher$0.WatchManager.createFrom;
+const $$createType21 = $Create.Nullable($$createType20);

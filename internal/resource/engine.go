@@ -160,6 +160,51 @@ func (e *ResourceEngine) ForceDelete(ctx context.Context, contextName, gvr, name
 	})
 }
 
+type ApplyResult struct {
+	GVR       string `json:"gvr"`
+	Namespace string `json:"namespace"`
+	Name      string `json:"name"`
+	Action    string `json:"action"` // "created" | "configured" | "unchanged"
+	Error     string `json:"error,omitempty"`
+}
+
+func boolPtr(b bool) *bool { return &b }
+
+func (e *ResourceEngine) Apply(ctx context.Context, contextName, gvr string, obj *unstructured.Unstructured) (*ApplyResult, error) {
+	client, err := e.client(ctx, contextName, gvr, obj.GetNamespace())
+	if err != nil {
+		return nil, err
+	}
+
+	name := obj.GetName()
+	result := &ApplyResult{GVR: gvr, Namespace: obj.GetNamespace(), Name: name}
+
+	_, getErr := client.Get(ctx, name, metav1.GetOptions{})
+	preExists := getErr == nil
+
+	data, err := obj.MarshalJSON()
+	if err != nil {
+		result.Error = fmt.Sprintf("marshal: %v", err)
+		return result, nil
+	}
+
+	_, patchErr := client.Patch(ctx, name, types.ApplyPatchType, data, metav1.PatchOptions{
+		FieldManager: "klados",
+		Force:        boolPtr(true),
+	})
+	if patchErr != nil {
+		result.Error = patchErr.Error()
+		return result, nil
+	}
+
+	if preExists {
+		result.Action = "configured"
+	} else {
+		result.Action = "created"
+	}
+	return result, nil
+}
+
 func (e *ResourceEngine) Create(ctx context.Context, contextName, gvr, namespace string, obj map[string]any) (map[string]any, error) {
 	client, err := e.client(ctx, contextName, gvr, namespace)
 	if err != nil {

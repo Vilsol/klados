@@ -5,6 +5,7 @@
 export {
     Action,
     AlignType,
+    ApplyResult,
     Column,
     Descriptor,
     EnricherRegistry,
