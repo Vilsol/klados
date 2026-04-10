@@ -16,6 +16,8 @@
   import type { TabState } from '../bindings/github.com/Vilsol/klados/internal/session/models.js'
   import PanelWindow from '$lib/components/PanelWindow.svelte'
   import StackTrace from 'stacktrace-js'
+  import CreateResourceDialog from '$lib/components/CreateResourceDialog.svelte'
+  import { createResourceStore } from '$lib/stores/createResource.svelte'
 
   const panelId = new URLSearchParams(window.location.search).get('panel')
   let paletteOpen = $state(false)
@@ -135,5 +137,11 @@
     <Router {routes} />
   </Layout>
   <CommandPalette bind:open={paletteOpen} />
+  <CreateResourceDialog
+    bind:open={createResourceStore.open}
+    ctxName={clusterStore.activeContext ?? ''}
+    gvr={createResourceStore.gvr}
+    onsuccess={createResourceStore.onsuccess}
+  />
 {/if}
 <Notification />

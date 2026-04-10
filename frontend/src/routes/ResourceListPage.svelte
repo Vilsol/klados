@@ -4,10 +4,10 @@
   import ResourceList from '$lib/components/ResourceList.svelte'
   import ResourceDetail from '$lib/components/ResourceDetail.svelte'
   import { DetailDrawer } from '@klados/ui'
-  import CreateResourceDialog from '$lib/components/CreateResourceDialog.svelte'
   import * as ResourceService from '../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
   import * as MetricsService from '../../bindings/github.com/Vilsol/klados/internal/services/metricsservice.js'
   import { createResourceStore } from '$lib/stores/resource.svelte'
+  import { createResourceStore as globalCreateStore } from '$lib/stores/createResource.svelte'
   import { descriptorRegistry } from '$lib/registry/index'
   import { registryLoaded } from '$lib/registry/loaded.svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
@@ -65,7 +65,6 @@
   // Close drawer when GVR changes
   $effect(() => { gvr; selectedItem = null; selectedGVR = gvr })
 
-  let createOpen = $state(false)
   let selectedItem = $state<Record<string, any> | null>(null)
   const selectedName = $derived<string | null>(
     selectedItem ? `${selectedItem.metadata?.name ?? ''}/${selectedItem.metadata?.namespace ?? ''}` : null
@@ -152,7 +151,7 @@
     {/if}
     <div class="flex-1"></div>
     <button
-      onclick={() => createOpen = true}
+      onclick={() => globalCreateStore.openDialog({ gvr, onsuccess: refresh })}
       class="flex items-center gap-1 text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
       title="Create resource"
     >
@@ -212,11 +211,3 @@
     {/if}
   </div>
 </div>
-
-<CreateResourceDialog
-  bind:open={createOpen}
-  {ctxName}
-  {gvr}
-  defaultNamespace={selectedNamespaces[0] ?? 'default'}
-  onsuccess={refresh}
-/>

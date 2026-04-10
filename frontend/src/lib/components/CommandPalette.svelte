@@ -5,6 +5,7 @@
   import { clusterStore } from '$lib/stores/cluster.svelte'
   import { descriptorRegistry } from '$lib/registry/index'
   import { slotRegistry } from '$lib/plugins/slots.svelte.js'
+  import { createResourceStore } from '$lib/stores/createResource.svelte'
 
   let { open = $bindable(false) }: { open: boolean } = $props()
 
@@ -57,6 +58,17 @@
         action: () => {
           push(`/c/${encodeURIComponent(ctx)}/events`)
           open = false
+        },
+      })
+
+      items.push({
+        id: 'create:resource',
+        label: 'Create Resource',
+        subtitle: 'Open template picker',
+        category: 'Actions',
+        action: () => {
+          open = false
+          createResourceStore.openDialog()
         },
       })
     }
