@@ -18,18 +18,47 @@
   let selectedIndex = $state(0)
   let showAutocomplete = $state(false)
 
+  // inputText is the visible text in the <input> — only the trailing (incomplete) token
+  let inputText = $state('')
+
   let terms = $derived.by(() => {
     return parseSearch(value)
   })
 
   // Chips are completed terms (all except the trailing incomplete token)
   let chips = $derived.by(() => {
-    const raw = value
-    if (!raw.trim()) return []
-    // If input ends with a space, all tokens are complete
-    if (raw.endsWith(' ')) return terms
-    // Otherwise, last token is still being typed — exclude it from chips
+    if (!value.trim()) return []
+    if (value.endsWith(' ')) return terms
     return terms.slice(0, -1)
+  })
+
+  // Rebuild value from chips + trailing input text
+  function rebuildValue() {
+    const chipParts = chips.map((t) => serializeTerm(t))
+    const parts = chipParts.length > 0 ? [...chipParts, inputText] : [inputText]
+    value = parts.join(' ')
+    // Ensure trailing space after chips if there are chips and no trailing text
+    if (chips.length > 0 && !inputText) {
+      value = chipParts.join(' ') + ' '
+    }
+  }
+
+  // When value is set externally (e.g., saved filter applied), extract trailing text
+  let lastExternalValue = ''
+  $effect(() => {
+    if (value !== lastExternalValue) {
+      lastExternalValue = value
+      // Extract trailing incomplete token
+      const raw = value
+      if (!raw.trim()) {
+        inputText = ''
+      } else if (raw.endsWith(' ')) {
+        inputText = ''
+      } else {
+        const lastSpace = raw.lastIndexOf(' ')
+        inputText = raw.substring(lastSpace + 1)
+      }
+    }
   })
 
   $effect(() => {
@@ -38,13 +67,14 @@
 
   function updateAutocomplete() {
     if (!inputEl) return
-    const cursor = inputEl.selectionStart ?? value.length
-    suggestions = getSuggestions(value, cursor, items)
+    suggestions = getSuggestions(value, value.length, items)
     selectedIndex = 0
     showAutocomplete = suggestions.length > 0
   }
 
   function handleInput() {
+    rebuildValue()
+    lastExternalValue = value
     updateAutocomplete()
   }
 
@@ -57,42 +87,44 @@
   }
 
   function applySuggestion(suggestion: Suggestion) {
-    const cursor = inputEl?.selectionStart ?? value.length
-    const before = value.substring(0, cursor)
-    const after = value.substring(cursor)
-    const lastSpace = before.lastIndexOf(' ')
-    const tokenStart = before.substring(lastSpace + 1)
-
-    // Strip negation prefix to find the qualifier part
-    const stripped = tokenStart.startsWith('-') ? tokenStart.substring(1) : tokenStart
-    const negPrefix = tokenStart.startsWith('-') ? '-' : ''
+    const token = inputText
+    const stripped = token.startsWith('-') ? token.substring(1) : token
+    const negPrefix = token.startsWith('-') ? '-' : ''
     const colonIdx = stripped.indexOf(':')
 
     let replacement: string
 
     if (colonIdx === -1) {
-      // Suggesting a qualifier — replace the partial text with the qualifier
       replacement = negPrefix + suggestion.value
     } else {
-      // Suggesting a key or value after qualifier
       const qualifier = stripped.substring(0, colonIdx + 1)
       const afterColon = stripped.substring(colonIdx + 1)
       const eqIdx = afterColon.indexOf('=')
+      // namespace: and name: take plain values, not key=value
+      const isPlainValue = qualifier === 'namespace:' || qualifier === 'ns:'
+        || qualifier === 'name:' || qualifier === 'n:'
 
-      if (eqIdx === -1) {
-        // Suggesting a key — append = to invite value completion
+      if (eqIdx === -1 && isPlainValue) {
+        replacement = negPrefix + qualifier + suggestion.value + ' '
+      } else if (eqIdx === -1) {
         replacement = negPrefix + qualifier + suggestion.value + '='
       } else {
-        // Suggesting a value — complete the value and add space
         const key = afterColon.substring(0, eqIdx)
         replacement = negPrefix + qualifier + key + '=' + suggestion.value + ' '
       }
     }
 
-    value = before.substring(0, lastSpace + 1) + replacement + after
+    inputText = replacement.endsWith(' ') ? '' : replacement
+    // Rebuild with the completed token
+    const chipParts = chips.map((t) => serializeTerm(t))
+    if (replacement.endsWith(' ')) {
+      value = [...chipParts, replacement.trimEnd()].join(' ') + ' '
+    } else {
+      value = [...chipParts, replacement].join(' ')
+    }
+    lastExternalValue = value
     showAutocomplete = false
 
-    // Re-focus and move cursor to end of replacement
     requestAnimationFrame(() => {
       inputEl?.focus()
       updateAutocomplete()
@@ -122,21 +154,26 @@
         return
       }
     }
+    // Backspace into chips when input is empty
+    if (e.key === 'Backspace' && inputText === '' && chips.length > 0) {
+      e.preventDefault()
+      removeChip(chips.length - 1)
+    }
   }
 
   function removeChip(index: number) {
-    const allTerms = [...terms]
-    allTerms.splice(index, 1)
-    // Rebuild input from remaining terms + trailing text
-    const parts = allTerms.map((t) => {
-      const neg = t.negated ? '-' : ''
-      if (t.type === 'text' || t.type === 'phrase') {
-        return t.type === 'phrase' ? `${neg}"${t.value}"` : `${neg}${t.value}`
-      }
-      return `${neg}${t.type}:${t.value}`
-    })
-    value = parts.join(' ') + (parts.length > 0 ? ' ' : '')
+    const remaining = chips.filter((_, i) => i !== index)
+    const parts = remaining.map((t) => serializeTerm(t))
+    value = parts.length > 0 ? parts.join(' ') + ' ' + inputText : inputText
+    lastExternalValue = value
     requestAnimationFrame(() => inputEl?.focus())
+  }
+
+  function serializeTerm(t: SearchTerm): string {
+    const neg = t.negated ? '-' : ''
+    if (t.type === 'text') return `${neg}${t.value}`
+    if (t.type === 'phrase') return `${neg}"${t.value}"`
+    return `${neg}${t.type}:${t.value}`
   }
 
   function chipColor(type: string): string {
@@ -173,7 +210,7 @@
     {/each}
     <input
       bind:this={inputEl}
-      bind:value={value}
+      bind:value={inputText}
       oninput={handleInput}
       onfocus={handleFocus}
       onblur={handleBlur}

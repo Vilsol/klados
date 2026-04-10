@@ -1,0 +1,50 @@
+import { describe, it, expect, vi } from 'vitest'
+import { render, fireEvent } from '@testing-library/svelte'
+import { tick } from 'svelte'
+import SmartSearch from '$lib/components/SmartSearch.svelte'
+
+const items = [
+  { metadata: { name: 'nginx-proxy', namespace: 'default', labels: { app: 'web' }, annotations: {} } },
+  { metadata: { name: 'redis-master', namespace: 'kube-system', labels: { app: 'cache' }, annotations: {} } },
+]
+
+describe('SmartSearch', () => {
+  it('renders the search input', () => {
+    const { container } = render(SmartSearch, { props: { items } })
+    const input = container.querySelector('input')
+    expect(input).toBeTruthy()
+  })
+
+  it('calls ontermschange when input changes', async () => {
+    const ontermschange = vi.fn()
+    const { container } = render(SmartSearch, { props: { items, ontermschange } })
+    const input = container.querySelector('input')!
+
+    input.value = 'nginx'
+    await fireEvent.input(input)
+    await tick()
+
+    expect(ontermschange).toHaveBeenCalled()
+    const lastCall = ontermschange.mock.calls[ontermschange.mock.calls.length - 1]
+    expect(lastCall[0]).toEqual([{ type: 'text', value: 'nginx', negated: false }])
+  })
+
+  it('shows autocomplete when typing a qualifier prefix', async () => {
+    const { container } = render(SmartSearch, { props: { items } })
+    const input = container.querySelector('input')!
+
+    await fireEvent.focus(input)
+    input.value = 'lab'
+    await fireEvent.input(input)
+    await tick()
+
+    const popup = container.querySelector('[role="listbox"]')
+    expect(popup).toBeTruthy()
+  })
+
+  it('shows placeholder when input is empty', () => {
+    const { container } = render(SmartSearch, { props: { items } })
+    const input = container.querySelector('input')!
+    expect(input.getAttribute('placeholder')).toContain('Filter resources')
+  })
+})

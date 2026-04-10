@@ -1,7 +1,7 @@
 <script lang="ts">
   import { preferencesStore, type SavedFilter } from '$lib/stores/preferences.svelte'
   import { savedFilterToQuery, queryToSavedFilter } from '$lib/search/serialize'
-  import { Bookmark } from 'lucide-svelte'
+  import { Bookmark, X } from 'lucide-svelte'
   import * as ConfigService from '../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js'
 
   let {
@@ -20,6 +20,7 @@
   let showSaveForm = $state(false)
   let saveName = $state('')
   let saveScope = $state<'cluster' | 'global'>('cluster')
+  let confirmOverwrite = $state(false)
 
   let savedFilters = $derived(preferencesStore.getSavedFilters(gvr))
 
@@ -39,9 +40,19 @@
     saveScope = 'cluster'
   }
 
-  async function saveFilter() {
+  function isDuplicate(): boolean {
+    return savedFilters.some((f) => f.name === saveName.trim())
+  }
+
+  async function saveFilter(force = false) {
     if (!saveName.trim()) return
 
+    if (!force && isDuplicate()) {
+      confirmOverwrite = true
+      return
+    }
+
+    confirmOverwrite = false
     const filterData = queryToSavedFilter(currentQuery)
     const newFilter: SavedFilter = { name: saveName.trim(), ...filterData }
 
@@ -61,6 +72,23 @@
 
     showSaveForm = false
     dropdownOpen = false
+  }
+
+  async function deleteFilter(filter: SavedFilter) {
+    const name = filter.name
+    // Remove from both global and cluster scopes (we don't know which one it's from)
+    const globalFilters = await ConfigService.GetSavedFilters(gvr)
+    const globalUpdated = (globalFilters ?? []).filter((f: any) => f.name !== name)
+    if (globalUpdated.length !== (globalFilters ?? []).length) {
+      await ConfigService.SetSavedFilters(gvr, globalUpdated)
+    }
+
+    const clusterPrefs = await ConfigService.GetClusterPrefs(contextName)
+    const clusterFilters = (clusterPrefs as any)?.savedFilters?.[gvr] ?? []
+    const clusterUpdated = clusterFilters.filter((f: any) => f.name !== name)
+    if (clusterUpdated.length !== clusterFilters.length) {
+      await ConfigService.SetClusterSavedFilters(contextName, gvr, clusterUpdated)
+    }
   }
 
   function filterPreview(filter: SavedFilter): string {
@@ -96,13 +124,22 @@
         {/if}
 
         {#each savedFilters as filter}
-          <button
-            class="w-full text-left px-3 py-1.5 hover:bg-surface-hover"
-            onclick={() => applyFilter(filter)}
-          >
-            <div class="text-sm text-fg font-medium">{filter.name}</div>
-            <div class="text-xs text-muted font-mono truncate">{filterPreview(filter)}</div>
-          </button>
+          <div class="flex items-center hover:bg-surface-hover group">
+            <button
+              class="flex-1 text-left px-3 py-1.5"
+              onclick={() => applyFilter(filter)}
+            >
+              <div class="text-sm text-fg font-medium">{filter.name}</div>
+              <div class="text-xs text-muted font-mono truncate">{filterPreview(filter)}</div>
+            </button>
+            <button
+              class="p-1 mr-2 rounded text-muted hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Delete filter"
+              onclick={(e) => { e.stopPropagation(); deleteFilter(filter) }}
+            >
+              <X size={14} />
+            </button>
+          </div>
         {/each}
 
         <div class="border-t border-border mt-1 pt-1">
@@ -136,17 +173,33 @@
             </label>
           </div>
 
-          <div class="flex justify-end gap-2">
-            <button
-              class="px-2 py-1 text-sm rounded text-muted hover:text-fg"
-              onclick={() => (showSaveForm = false)}
-            >Cancel</button>
-            <button
-              class="px-2 py-1 text-sm rounded bg-accent text-white hover:opacity-90 disabled:opacity-50"
-              disabled={!saveName.trim()}
-              onclick={saveFilter}
-            >Save</button>
-          </div>
+          {#if confirmOverwrite}
+            <div class="text-xs text-destructive mb-2">
+              A filter named "{saveName.trim()}" already exists. Overwrite it?
+            </div>
+            <div class="flex justify-end gap-2">
+              <button
+                class="px-2 py-1 text-sm rounded text-muted hover:text-fg"
+                onclick={() => { confirmOverwrite = false }}
+              >Cancel</button>
+              <button
+                class="px-2 py-1 text-sm rounded bg-destructive text-white hover:opacity-90"
+                onclick={() => saveFilter(true)}
+              >Overwrite</button>
+            </div>
+          {:else}
+            <div class="flex justify-end gap-2">
+              <button
+                class="px-2 py-1 text-sm rounded text-muted hover:text-fg"
+                onclick={() => (showSaveForm = false)}
+              >Cancel</button>
+              <button
+                class="px-2 py-1 text-sm rounded bg-accent text-white hover:opacity-90 disabled:opacity-50"
+                disabled={!saveName.trim()}
+                onclick={() => saveFilter()}
+              >Save</button>
+            </div>
+          {/if}
         </div>
       {/if}
     </div>
