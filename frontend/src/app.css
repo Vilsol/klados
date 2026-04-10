@@ -50,3 +50,11 @@ body {
   color: var(--color-fg);
   font-family: Inter, system-ui, -apple-system, sans-serif;
 }
+
+@keyframes slide-up {
+  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+.animate-slide-up {
+  animation: slide-up 0.15s ease-out;
+}

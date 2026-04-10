@@ -9,8 +9,13 @@
   import BottomPanel from './BottomPanel.svelte'
   import BottomPanelResizeHandle from './BottomPanelResizeHandle.svelte'
   import { bottomPanelStore } from '$lib/stores/bottom-panel.svelte'
+  import BulkActionBar from './BulkActionBar.svelte'
+  import { selectionStore } from '$lib/stores/selection.svelte'
+  import { clusterStore } from '$lib/stores/cluster.svelte'
 
   let { children }: { children: Snippet } = $props()
+
+  const activeCtx = $derived(clusterStore.activeContext ?? '')
 
   const basePluginURL = $derived(
     streamingStore.config
@@ -50,4 +55,5 @@
       {/each}
     </div>
   {/if}
+  <BulkActionBar contextName={activeCtx} gvr={selectionStore.selectedGVR} />
 </div>
