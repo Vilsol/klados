@@ -355,10 +355,6 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` "Storage" view — PVCs, PVs, storage classes together
 - [x] `MVP` "Config" view — configmaps, secrets together
 
-### Resource Comparison
-- [ ] `v2` Compare two resources side-by-side (diff view)
-- [ ] `v2` Compare same resource across namespaces or clusters
-
 ### Bulk Operations
 - [x] `v2` Multi-select resources
 - [x] `v2` Bulk delete
@@ -387,7 +383,6 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 
 ### Status & Feedback
 - [x] `MVP` Global notification system (toast/snackbar)
-- [ ] `v2` Operation progress indicators
 - [x] `MVP` Error display with actionable details
 - [x] `MVP` Confirmation dialogs for destructive actions
 
@@ -439,7 +434,6 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 
 ### Preferences
 - [x] `v2` Per-cluster settings
-- [ ] `v2` Per-namespace defaults
 - [x] `v2` UI preferences (theme, layout, column widths)
 - [x] `v2` Keybinding customization
 - [x] `v2` Startup behavior (last cluster, specific cluster, chooser)
@@ -474,7 +468,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 
 ### Platform
 - [x] `MVP` Linux (primary)
-- [ ] `v2` macOS support
+- [x] `v2` macOS support
 - [ ] `v2` Windows support
 - [ ] `Future` System tray with cluster status
 - [ ] `Future` Native OS notifications for watch alerts (optional)

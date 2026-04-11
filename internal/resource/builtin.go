@@ -27,6 +27,11 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Pod IP", Expr: "status.podIP", RenderType: RenderText},
 			{Label: "Ready", Expr: "status.readyDisplay", RenderType: RenderText},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+			{Label: "Service Account", Expr: "spec.serviceAccountName", RenderType: RenderText},
+			{Label: "QoS Class", Expr: "status.qosClass", RenderType: RenderBadge},
+			{Label: "Priority", Expr: "spec.priority", RenderType: RenderText},
+			{Label: "Restart Policy", Expr: "spec.restartPolicy", RenderType: RenderBadge},
+			{Label: "DNS Policy", Expr: "spec.dnsPolicy", RenderType: RenderText},
 		},
 		DetailPanels: []string{"overview", "containers", "logs", "terminal", "labels", "events", "metrics", "yaml"},
 		Actions: []Action{
@@ -52,6 +57,8 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Available", Expr: "status.availableReplicas", RenderType: RenderText},
 			{Label: "Strategy", Expr: "spec.strategy.type", RenderType: RenderBadge},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+			{Label: "Service Account", Expr: "spec.template.spec.serviceAccountName", RenderType: RenderText},
+			{Label: "Revision", Expr: "metadata.annotations['deployment.kubernetes.io/revision']", RenderType: RenderText},
 		},
 		DetailPanels: []string{"overview", "aggregate-logs", "labels", "events", "metrics", "yaml"},
 		Actions: []Action{
@@ -79,6 +86,9 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Ready", Expr: "status.readyDisplay", RenderType: RenderText},
 			{Label: "Replicas", Expr: "status.replicas", RenderType: RenderText},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+			{Label: "Update Strategy", Expr: "spec.updateStrategy.type", RenderType: RenderBadge},
+			{Label: "Service Account", Expr: "spec.template.spec.serviceAccountName", RenderType: RenderText},
+			{Label: "Service Name", Expr: "spec.serviceName", RenderType: RenderText},
 		},
 		DetailPanels: []string{"overview", "aggregate-logs", "labels", "events", "metrics", "yaml"},
 		Actions: []Action{
@@ -105,6 +115,8 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Desired", Expr: "status.desiredNumberScheduled", RenderType: RenderText},
 			{Label: "Available", Expr: "status.numberAvailable", RenderType: RenderText},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
+			{Label: "Update Strategy", Expr: "spec.updateStrategy.type", RenderType: RenderBadge},
+			{Label: "Service Account", Expr: "spec.template.spec.serviceAccountName", RenderType: RenderText},
 		},
 		DetailPanels: []string{"overview", "aggregate-logs", "labels", "events", "metrics", "yaml"},
 		Actions: []Action{
