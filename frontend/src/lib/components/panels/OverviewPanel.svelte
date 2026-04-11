@@ -90,6 +90,26 @@
   }
 
   const controllerRef = $derived(getControllerRef(obj))
+
+  const tolerations = $derived<any[]>(
+    obj.spec?.tolerations ?? obj.spec?.template?.spec?.tolerations ?? []
+  )
+  let tolerationsExpanded = $state(true)
+  let tolerationsEl: HTMLElement | undefined = $state()
+
+  function formatToleration(t: any): string {
+    const key = t.key || '*'
+    const op = t.operator === 'Exists' ? 'Exists' : `=${t.value ?? ''}`
+    const effect = t.effect || 'All'
+    const seconds = t.tolerationSeconds != null ? ` (${t.tolerationSeconds}s)` : ''
+    return `${key} ${op} — ${effect}${seconds}`
+  }
+
+  function scrollToTolerations() {
+    tolerationsExpanded = true
+    tolerationsEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }
+
   const labels = $derived(Object.entries(obj.metadata?.labels ?? {}))
   const annotations = $derived(Object.entries(obj.metadata?.annotations ?? {}))
 
@@ -164,6 +184,15 @@
           {/if}
         </div>
       {/if}
+      {#if tolerations.length > 0}
+        <div class="min-w-0">
+          <div class="text-xs text-muted mb-0.5">Tolerations</div>
+          <button
+            onclick={scrollToTolerations}
+            class="text-xs font-mono text-accent hover:underline"
+          >{tolerations.length}</button>
+        </div>
+      {/if}
     </div>
     {#if basePluginURL}
       {#each slotRegistry.getOverviewFields(gvr) as field (field.id)}
@@ -175,6 +204,24 @@
       {/each}
     {/if}
   </section>
+
+  {#if tolerations.length > 0}
+    <section bind:this={tolerationsEl} class="bg-surface border border-border rounded-lg p-4">
+      <button
+        onclick={() => tolerationsExpanded = !tolerationsExpanded}
+        class="flex items-center gap-1 w-full text-left"
+      >
+        <SectionHeader class="">{tolerationsExpanded ? '▾' : '▸'} Tolerations ({tolerations.length})</SectionHeader>
+      </button>
+      {#if tolerationsExpanded}
+        <div class="flex flex-col gap-1 mt-3">
+          {#each tolerations as t}
+            <CopyableValue value={formatToleration(t)} class="text-xs font-mono" />
+          {/each}
+        </div>
+      {/if}
+    </section>
+  {/if}
 
   <!-- Labels & Annotations card -->
   {#if hasLabelsPanel}
