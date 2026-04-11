@@ -5,7 +5,7 @@
   import { getControllerRef, type ControllerRef } from '$lib/utils/relationships'
   import { clusterStore } from '$lib/stores/cluster.svelte'
   import { toggleSet } from '$lib/utils/collections'
-  import { SectionHeader, KeyValueBadge, EmptyState, StatusBadge, KeyValuePairEditor } from '@klados/ui'
+  import { SectionHeader, KeyValueBadge, EmptyState, StatusBadge, KeyValuePairEditor, CopyableValue } from '@klados/ui'
   import { slotRegistry } from '$lib/plugins/slots.svelte.js'
   import { loadPluginComponent } from '$lib/plugins/loader.js'
   import { streamingStore } from '$lib/stores/streaming.svelte.js'
@@ -39,6 +39,12 @@
       ? `http://127.0.0.1:${streamingStore.config.port}/${streamingStore.config.token}/plugins`
       : null
   )
+
+  function getRawValue(expr: string): string {
+    const raw = evalExpr(expr, obj)
+    if (raw === null || raw === undefined) return ''
+    return String(raw)
+  }
 
   function renderValue(expr: string, renderType: string): string {
     const raw = evalExpr(expr, obj)
@@ -127,11 +133,21 @@
         <div class="min-w-0">
           <div class="text-xs text-muted mb-0.5">{field.label}</div>
           {#if field.renderType === 'badge'}
-            <span class="text-xs font-mono bg-bg border border-border rounded px-2 py-0.5 inline-block">
-              {renderValue(field.expr, field.renderType)}
-            </span>
+            <CopyableValue
+              value={renderValue(field.expr, field.renderType)}
+              rawValue={getRawValue(field.expr)}
+              class="text-xs font-mono"
+            >
+              <span class="bg-bg border border-border rounded px-2 py-0.5 inline-block">
+                {renderValue(field.expr, field.renderType)}
+              </span>
+            </CopyableValue>
           {:else}
-            <div class="text-xs font-mono truncate">{renderValue(field.expr, field.renderType)}</div>
+            <CopyableValue
+              value={renderValue(field.expr, field.renderType)}
+              rawValue={field.renderType === 'age' ? getRawValue(field.expr) : undefined}
+              class="text-xs font-mono"
+            />
           {/if}
         </div>
       {/each}
@@ -222,7 +238,7 @@
   {#if hasContainersPanel && conditions.length > 0}
     <section class="bg-surface border border-border rounded-lg p-4">
       <SectionHeader class="mb-3">Conditions</SectionHeader>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
         {#each conditions as cond}
           <div class="flex items-center gap-2 px-3 py-2 rounded-md bg-bg border border-border" title={cond.message ?? ''}>
             <span class="w-2 h-2 rounded-full shrink-0
