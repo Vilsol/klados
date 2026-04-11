@@ -274,8 +274,21 @@
     return parts.join(' ')
   })
 
+  function snapAllColumnsToPixels() {
+    const headerCells = scrollContainer?.querySelectorAll<HTMLElement>('[data-header-col]')
+    if (!headerCells) return
+    for (const cell of headerCells) {
+      const name = cell.dataset.headerCol!
+      const col = columnStore.visibleColumns.find(c => c.name === name)
+      if (col && !col.width) {
+        columnStore.resizeColumn(name, cell.getBoundingClientRect().width)
+      }
+    }
+  }
+
   function startResize(e: MouseEvent, col: ColumnDef) {
     e.preventDefault()
+    snapAllColumnsToPixels()
     const cell = (e.currentTarget as HTMLElement).parentElement
     const measuredWidth = cell ? cell.getBoundingClientRect().width : (col.width ?? 100)
     resizing = { name: col.name, startX: e.clientX, startWidth: measuredWidth }
@@ -397,7 +410,7 @@
           </div>
         {/if}
         {#each columnStore.visibleColumns as col, i}
-          <div class="relative">
+          <div class="relative" data-header-col={col.name}>
             <button
               onclick={() => toggleSort(col.name)}
               class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {columnStore.compact ? 'py-1' : 'py-2'}
@@ -439,7 +452,7 @@
             {@const isSelected = selectedName === `${item.metadata?.name ?? ''}/${item.metadata?.namespace ?? ''}`}
             <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
             <div
-              class="absolute top-0 left-0 right-0 flex items-center px-2 transition-colors group
+              class="absolute top-0 left-0 min-w-full flex items-center px-2 transition-colors group
                 {isSelected ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-surface-hover border-l-2 border-transparent'}
                 {onselect ? 'cursor-pointer' : ''}"
               style="transform: translateY({row.start}px); height: {rowHeight}px;"
@@ -450,7 +463,7 @@
               oncontextmenu={(e) => { e.preventDefault(); e.stopPropagation(); ctxMenu = { x: e.clientX, y: e.clientY, item } }}
             >
               <div
-                class="grid flex-1 min-w-0"
+                class="grid flex-1"
                 style="grid-template-columns: {gridTemplateCols}"
               >
                 {#if canMutate}
@@ -482,7 +495,7 @@
                   {@const value = renderCell(col, item)}
                   <div
                     class="px-1 truncate text-sm {alignClass(col)}
-                      {i === 0 ? 'sticky left-0 z-10 bg-bg border-r border-border' : ''}
+                      {i === 0 ? `sticky left-0 z-10 border-r border-border ${isSelected ? 'bg-accent/10' : 'bg-bg group-hover:bg-surface-hover'}` : ''}
                       {col.name === 'Namespace' ? 'cursor-pointer hover:text-accent' : ''}"
                     data-col={col.name}
                     onclick={col.name === 'Namespace' ? (e) => { e.stopPropagation(); clusterStore.setNamespaces(contextName, [String(value)]) } : undefined}
