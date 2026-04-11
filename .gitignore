@@ -29,6 +29,9 @@ examples/plugin-node-annotator/ui/*.js
 examples/plugin-node-annotator/ui/*.js.map
 examples/plugin-node-annotator/dist/
 
+# Superpowers runtime/session state
+.superpowers/
+
 # Debug/scratch files
 frontend/scroll-debug.log
 terminal.md
