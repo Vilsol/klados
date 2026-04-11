@@ -124,6 +124,7 @@ describe('ResourceList', () => {
     const first = headerButtons[0] as HTMLElement
     expect(first.className).toContain('sticky')
     expect(first.className).toContain('left-0')
+    expect(first.className).not.toContain('shadow')
 
     // Second header button should NOT have sticky
     const second = headerButtons[1] as HTMLElement

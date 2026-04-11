@@ -235,15 +235,17 @@
     confirmOpen = true
   }
 
-  const gridTemplateCols = $derived(
-    (canMutate ? '36px ' : '')
-    + columnStore.visibleColumns
-      .map((c) => c.width ? `${c.width}px` : 'minmax(20px, 1fr)')
-      .join(' ')
-    + (pluginColumns.length ? ' ' + pluginColumns.map(() => '1fr').join(' ') : '')
-    + (sparklineColumns.length ? ' ' + sparklineColumns.map(() => '80px').join(' ') : '')
-    + ' 36px'
-  )
+  const gridTemplateCols = $derived.by(() => {
+    const parts: string[] = []
+    if (canMutate) parts.push('36px')
+    for (const c of columnStore.visibleColumns) {
+      parts.push(c.width ? `${c.width}px` : 'minmax(20px, 1fr)')
+    }
+    for (const _ of pluginColumns) parts.push('1fr')
+    for (const _ of sparklineColumns) parts.push('80px')
+    parts.push('36px')
+    return parts.join(' ')
+  })
 
   function startResize(e: MouseEvent, col: ColumnDef) {
     e.preventDefault()
@@ -369,7 +371,7 @@
           <button
             onclick={() => toggleSort(col.name)}
             class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {columnStore.compact ? 'py-1' : 'py-2'}
-              {i === 0 ? 'sticky left-0 z-10 bg-bg shadow-[2px_0_4px_rgba(0,0,0,0.08)] dark:shadow-[2px_0_4px_rgba(0,0,0,0.3)]' : ''}"
+              {i === 0 ? 'sticky left-0 z-10 bg-bg border-r border-border' : ''}"
           >
             {col.name}
             {#if columnStore.sortState?.column === col.name}
@@ -452,7 +454,7 @@
                   {@const value = renderCell(col, item)}
                   <div
                     class="px-1 truncate text-sm {alignClass(col)}
-                      {i === 0 ? 'sticky left-0 z-10 bg-bg shadow-[2px_0_4px_rgba(0,0,0,0.08)] dark:shadow-[2px_0_4px_rgba(0,0,0,0.3)]' : ''}
+                      {i === 0 ? 'sticky left-0 z-10 bg-bg border-r border-border' : ''}
                       {col.name === 'Namespace' ? 'cursor-pointer hover:text-accent' : ''}"
                     data-col={col.name}
                     onclick={col.name === 'Namespace' ? (e) => { e.stopPropagation(); clusterStore.setNamespaces(contextName, [String(value)]) } : undefined}
@@ -523,7 +525,7 @@
                         {/if}
                       </button>
                     {/each}
-                  {:else}
+                  {:else if canMutate}
                     <button
                       onclick={(e) => { e.stopPropagation(); requestDelete(item) }}
                       class="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-destructive transition-all"

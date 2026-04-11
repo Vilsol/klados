@@ -1,0 +1,131 @@
+<h2>ResourceList Improvements — Issues & Proposed Fixes</h2>
+<p class="subtitle">7 issues total: 3 reported + 4 discovered. Review proposed approach for each.</p>
+
+<div class="section">
+  <h3>1. Sticky Column Styling</h3>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">Current (ugly shadow)</div>
+      <div class="mockup-body" style="padding:0;overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <tr style="background:#1a1a2e;border-bottom:1px solid #333;">
+            <td style="padding:6px 8px;position:relative;background:#1a1a2e;box-shadow:2px 0 4px rgba(0,0,0,0.3);width:120px;">
+              <span style="color:#e0e0e0;">nginx-abc12</span>
+              <div style="position:absolute;right:-2px;top:3px;bottom:3px;width:4px;background:rgba(0,0,0,0.3);filter:blur(2px);"></div>
+            </td>
+            <td style="padding:6px 8px;color:#888;">default</td>
+            <td style="padding:6px 8px;color:#888;">Running</td>
+          </tr>
+          <tr style="background:#1a1a2e;border-bottom:1px solid #333;">
+            <td style="padding:6px 8px;position:relative;background:#1a1a2e;box-shadow:2px 0 4px rgba(0,0,0,0.3);">
+              <span style="color:#e0e0e0;">redis-def34</span>
+              <div style="position:absolute;right:-2px;top:3px;bottom:3px;width:4px;background:rgba(0,0,0,0.3);filter:blur(2px);"></div>
+            </td>
+            <td style="padding:6px 8px;color:#888;">kube-system</td>
+            <td style="padding:6px 8px;color:#888;">Running</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">Proposed (clean border)</div>
+      <div class="mockup-body" style="padding:0;overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <tr style="background:#1a1a2e;border-bottom:1px solid #333;">
+            <td style="padding:6px 8px;border-right:1px solid #444;width:120px;">
+              <span style="color:#e0e0e0;">nginx-abc12</span>
+            </td>
+            <td style="padding:6px 8px;color:#888;">default</td>
+            <td style="padding:6px 8px;color:#888;">Running</td>
+          </tr>
+          <tr style="background:#1a1a2e;border-bottom:1px solid #333;">
+            <td style="padding:6px 8px;border-right:1px solid #444;">
+              <span style="color:#e0e0e0;">redis-def34</span>
+            </td>
+            <td style="padding:6px 8px;color:#888;">kube-system</td>
+            <td style="padding:6px 8px;color:#888;">Running</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:12px;color:#aaa;font-size:13px;"><strong>Fix:</strong> Replace <code>bg-bg shadow-[...]</code> with <code>bg-bg border-r border-border</code>. Background inherits row height from the grid row, no more visible gap.</p>
+</div>
+
+<div class="section">
+  <h3>2. Column Resize Jump</h3>
+  <div class="mockup">
+    <div class="mockup-header">The problem & fix</div>
+    <div class="mockup-body" style="font-size:13px;">
+      <div style="display:flex;gap:24px;">
+        <div style="flex:1;">
+          <p style="color:#ff6b6b;font-weight:600;margin-bottom:8px;">Current (jumps)</p>
+          <div style="font-family:monospace;font-size:12px;color:#aaa;line-height:1.8;">
+            startWidth = col.width ?? 100<br>
+            &nbsp;&nbsp;↑ column has no width set<br>
+            &nbsp;&nbsp;↑ actual rendered = 240px<br>
+            &nbsp;&nbsp;↑ snaps to 100 + delta → JUMP
+          </div>
+        </div>
+        <div style="flex:1;">
+          <p style="color:#69db7c;font-weight:600;margin-bottom:8px;">Fixed (smooth)</p>
+          <div style="font-family:monospace;font-size:12px;color:#aaa;line-height:1.8;">
+            el = header cell DOM element<br>
+            startWidth = el.getBoundingClientRect().width<br>
+            &nbsp;&nbsp;↑ always real rendered width<br>
+            &nbsp;&nbsp;↑ delta applies from truth → SMOOTH
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:12px;color:#aaa;font-size:13px;"><strong>Fix:</strong> On <code>mousedown</code>, read <code>getBoundingClientRect().width</code> from the header cell. Use that as baseline instead of <code>col.width ?? 100</code>.</p>
+</div>
+
+<div class="section">
+  <h3>3. Number Sorting</h3>
+  <div class="mockup">
+    <div class="mockup-header">String sort vs numeric sort</div>
+    <div class="mockup-body" style="font-size:13px;">
+      <div style="display:flex;gap:24px;">
+        <div style="flex:1;">
+          <p style="color:#ff6b6b;font-weight:600;margin-bottom:8px;">String sort (current)</p>
+          <div style="font-family:monospace;font-size:12px;color:#aaa;line-height:1.6;">
+            1<br>10<br>11<br>2<br>20<br>3<br>9
+          </div>
+        </div>
+        <div style="flex:1;">
+          <p style="color:#69db7c;font-weight:600;margin-bottom:8px;">Numeric sort (proposed)</p>
+          <div style="font-family:monospace;font-size:12px;color:#aaa;line-height:1.6;">
+            1<br>2<br>3<br>9<br>10<br>11<br>20
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:12px;color:#aaa;font-size:13px;"><strong>Fix:</strong> Try <code>parseFloat()</code> on both values. If both parse as numbers, compare numerically. For <code>age</code> renderType, compare raw ISO timestamps. Fall back to <code>localeCompare</code>.</p>
+</div>
+
+<div class="section">
+  <h3>4. Horizontal Scroll</h3>
+  <p style="color:#aaa;font-size:13px;"><strong>Problem:</strong> Wide tables get clipped — no way to see columns past the viewport edge.<br>
+  <strong>Fix:</strong> Add <code>overflow-x: auto</code> to the scroll container. The grid's <code>min-width</code> is set by the column pixel widths, so it naturally overflows and becomes scrollable.</p>
+</div>
+
+<div class="section">
+  <h3>5. Context Menu Overflow</h3>
+  <p style="color:#aaa;font-size:13px;"><strong>Problem:</strong> Right-click near screen edge → menu renders off-screen.<br>
+  <strong>Fix:</strong> After positioning, clamp <code>left</code> and <code>top</code> to keep the menu within the viewport. Measure menu dimensions with <code>getBoundingClientRect()</code> after render.</p>
+</div>
+
+<div class="section">
+  <h3>6. gridTemplateCols Complexity</h3>
+  <p style="color:#aaa;font-size:13px;"><strong>Problem:</strong> String concatenation building the grid template is fragile and hard to read.<br>
+  <strong>Fix:</strong> Build as an array of column width strings, then <code>.join(' ')</code>. Each column type (checkbox, data, plugin, sparkline, actions) pushes its entries independently.</p>
+</div>
+
+<div class="section">
+  <h3>7. Delete Button Without canMutate Guard</h3>
+  <p style="color:#aaa;font-size:13px;"><strong>Problem:</strong> The fallback delete trash icon shows even when the cluster connection is read-only.<br>
+  <strong>Fix:</strong> Wrap the fallback delete button in <code>{#if canMutate}</code>, matching the checkbox column guard.</p>
+</div>
