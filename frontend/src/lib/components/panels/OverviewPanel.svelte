@@ -4,7 +4,7 @@
   import { formatAge } from '$lib/utils/age'
   import { getControllerRef, type ControllerRef } from '$lib/utils/relationships'
   import { clusterStore } from '$lib/stores/cluster.svelte'
-  import { toggleSet } from '$lib/utils/collections'
+
   import { SectionHeader, KeyValueBadge, EmptyState, StatusBadge, KeyValuePairEditor, CopyableValue } from '@klados/ui'
   import { slotRegistry } from '$lib/plugins/slots.svelte.js'
   import { loadPluginComponent } from '$lib/plugins/loader.js'
@@ -137,8 +137,18 @@
     return 'Unknown'
   }
 
-  let expandedEnv = $state<Set<string>>(new Set())
-  let expandedMounts = $state<Set<string>>(new Set())
+  let sectionOverrides = $state<Record<string, boolean>>({})
+
+  function isSectionOpen(cname: string, section: string): boolean {
+    const key = `${cname}:${section}`
+    if (key in sectionOverrides) return sectionOverrides[key]
+    return section === 'resources' || section === 'ports'
+  }
+
+  function toggleSection(cname: string, section: string) {
+    const key = `${cname}:${section}`
+    sectionOverrides = { ...sectionOverrides, [key]: !isSectionOpen(cname, section) }
+  }
 
 
   let showInitContainers = $state(false)
@@ -311,7 +321,8 @@
         {#each containers as c}
           {@const status = containerStatus(c.name)}
           <div class="bg-bg border border-border rounded-lg p-3">
-            <div class="flex items-center justify-between mb-2">
+            <!-- Header: always visible -->
+            <div class="flex items-center justify-between mb-1">
               <span class="text-sm font-medium">{c.name}</span>
               <div class="flex items-center gap-1.5">
                 {#if status?.restartCount > 0}
@@ -322,91 +333,124 @@
                 <StatusBadge status={!!status?.ready} mode="pill">{stateLabel(status)}</StatusBadge>
               </div>
             </div>
-            <p class="text-xs font-mono text-muted break-all mb-2">{c.image}</p>
+            <p class="text-xs font-mono text-muted break-all mb-3">{c.image}</p>
 
-            {#if c.resources?.requests || c.resources?.limits}
-              <div class="flex flex-wrap gap-2 mb-2">
-                {#if c.resources?.requests?.cpu || c.resources?.limits?.cpu}
-                  <div class="flex items-center gap-1.5 text-xs bg-surface border border-border rounded px-2 py-1">
-                    <span class="text-muted">CPU</span>
-                    <span class="font-mono">{c.resources?.requests?.cpu ?? '—'}</span>
-                    <span class="text-muted">/</span>
-                    <span class="font-mono">{c.resources?.limits?.cpu ?? '—'}</span>
-                  </div>
-                {/if}
-                {#if c.resources?.requests?.memory || c.resources?.limits?.memory}
-                  <div class="flex items-center gap-1.5 text-xs bg-surface border border-border rounded px-2 py-1">
-                    <span class="text-muted">Mem</span>
-                    <span class="font-mono">{c.resources?.requests?.memory ?? '—'}</span>
-                    <span class="text-muted">/</span>
-                    <span class="font-mono">{c.resources?.limits?.memory ?? '—'}</span>
-                  </div>
-                {/if}
-                {#if c.resources?.requests?.['ephemeral-storage'] || c.resources?.limits?.['ephemeral-storage']}
-                  <div class="flex items-center gap-1.5 text-xs bg-surface border border-border rounded px-2 py-1">
-                    <span class="text-muted">Disk</span>
-                    <span class="font-mono">{c.resources?.requests?.['ephemeral-storage'] ?? '—'}</span>
-                    <span class="text-muted">/</span>
-                    <span class="font-mono">{c.resources?.limits?.['ephemeral-storage'] ?? '—'}</span>
-                  </div>
-                {/if}
-              </div>
-              <div class="text-[10px] text-muted mb-2">req / limit</div>
-            {/if}
-
-            {#if c.ports?.length}
-              <div class="flex flex-wrap gap-1 mt-1">
-                {#each c.ports as p}
-                  <PortButton port={p.containerPort} protocol={p.protocol ?? 'TCP'} onclick={() => pfPort = p.containerPort} />
-                {/each}
-              </div>
-            {/if}
-
-            {#if c.env?.length}
-              <button
-                onclick={() => expandedEnv = toggleSet(expandedEnv, c.name)}
-                class="text-xs text-accent hover:underline mt-1"
-              >
-                {expandedEnv.has(c.name) ? '▾' : '▸'} {c.env.length} env var{c.env.length !== 1 ? 's' : ''}
-              </button>
-              {#if expandedEnv.has(c.name)}
-                <div class="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 pl-3">
-                  {#each c.env as e}
-                    <span class="text-xs font-mono text-accent">{e.name}</span>
-                    <span class="text-xs font-mono text-muted truncate">
-                      {e.value ?? (e.valueFrom ? '(from secret/configmap)' : '—')}
-                    </span>
-                  {/each}
-                </div>
-              {/if}
-            {/if}
-
-            {#if c.volumeMounts?.length}
-              <button
-                onclick={() => expandedMounts = toggleSet(expandedMounts, c.name)}
-                class="text-xs text-accent hover:underline mt-1"
-              >
-                {expandedMounts.has(c.name) ? '▾' : '▸'} {c.volumeMounts.length} mount{c.volumeMounts.length !== 1 ? 's' : ''}
-              </button>
-              {#if expandedMounts.has(c.name)}
-                <div class="mt-1.5 flex flex-col gap-1 pl-3">
-                  {#each c.volumeMounts as m}
-                    <div class="flex items-center gap-2 text-xs">
-                      <span class="font-mono text-accent">{m.mountPath}</span>
-                      {#if m.name}
-                        <span class="text-muted">← {m.name}</span>
-                      {/if}
-                      {#if m.subPath}
-                        <span class="font-mono text-muted">/{m.subPath}</span>
-                      {/if}
-                      {#if m.readOnly}
-                        <span class="px-1.5 py-0.5 rounded bg-surface border border-border text-muted text-[10px]">RO</span>
-                      {/if}
+            <!-- Accordion sections -->
+            <div class="flex flex-col gap-0.5">
+              <!-- Resources -->
+              {#if c.resources?.requests || c.resources?.limits}
+                <div>
+                  <button
+                    onclick={() => toggleSection(c.name, 'resources')}
+                    class="flex items-center gap-1 w-full text-left py-1.5 text-xs font-semibold text-muted uppercase tracking-wide hover:text-fg transition-colors"
+                  >
+                    {isSectionOpen(c.name, 'resources') ? '▾' : '▸'} Resources
+                  </button>
+                  {#if isSectionOpen(c.name, 'resources')}
+                    <div class="pl-4 pb-2">
+                      <div class="flex flex-wrap gap-2">
+                        {#if c.resources?.requests?.cpu || c.resources?.limits?.cpu}
+                          <div class="flex items-center gap-1.5 text-xs bg-surface border border-border rounded px-2 py-1">
+                            <span class="text-muted">CPU</span>
+                            <span class="font-mono">{c.resources?.requests?.cpu ?? '—'}</span>
+                            <span class="text-muted">/</span>
+                            <span class="font-mono">{c.resources?.limits?.cpu ?? '—'}</span>
+                          </div>
+                        {/if}
+                        {#if c.resources?.requests?.memory || c.resources?.limits?.memory}
+                          <div class="flex items-center gap-1.5 text-xs bg-surface border border-border rounded px-2 py-1">
+                            <span class="text-muted">Mem</span>
+                            <span class="font-mono">{c.resources?.requests?.memory ?? '—'}</span>
+                            <span class="text-muted">/</span>
+                            <span class="font-mono">{c.resources?.limits?.memory ?? '—'}</span>
+                          </div>
+                        {/if}
+                        {#if c.resources?.requests?.['ephemeral-storage'] || c.resources?.limits?.['ephemeral-storage']}
+                          <div class="flex items-center gap-1.5 text-xs bg-surface border border-border rounded px-2 py-1">
+                            <span class="text-muted">Disk</span>
+                            <span class="font-mono">{c.resources?.requests?.['ephemeral-storage'] ?? '—'}</span>
+                            <span class="text-muted">/</span>
+                            <span class="font-mono">{c.resources?.limits?.['ephemeral-storage'] ?? '—'}</span>
+                          </div>
+                        {/if}
+                      </div>
+                      <div class="text-[10px] text-muted mt-1">req / limit</div>
                     </div>
-                  {/each}
+                  {/if}
                 </div>
               {/if}
-            {/if}
+
+              <!-- Ports -->
+              {#if c.ports?.length}
+                <div>
+                  <button
+                    onclick={() => toggleSection(c.name, 'ports')}
+                    class="flex items-center gap-1 w-full text-left py-1.5 text-xs font-semibold text-muted uppercase tracking-wide hover:text-fg transition-colors"
+                  >
+                    {isSectionOpen(c.name, 'ports') ? '▾' : '▸'} Ports ({c.ports.length})
+                  </button>
+                  {#if isSectionOpen(c.name, 'ports')}
+                    <div class="pl-4 pb-2 flex flex-wrap gap-1">
+                      {#each c.ports as p}
+                        <PortButton port={p.containerPort} protocol={p.protocol ?? 'TCP'} onclick={() => pfPort = p.containerPort} />
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+              {/if}
+
+              <!-- Environment -->
+              {#if c.env?.length}
+                <div>
+                  <button
+                    onclick={() => toggleSection(c.name, 'env')}
+                    class="flex items-center gap-1 w-full text-left py-1.5 text-xs font-semibold text-muted uppercase tracking-wide hover:text-fg transition-colors"
+                  >
+                    {isSectionOpen(c.name, 'env') ? '▾' : '▸'} Environment ({c.env.length})
+                  </button>
+                  {#if isSectionOpen(c.name, 'env')}
+                    <div class="pl-4 pb-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
+                      {#each c.env as e}
+                        <span class="text-xs font-mono text-accent">{e.name}</span>
+                        <span class="text-xs font-mono text-muted truncate">
+                          {e.value ?? (e.valueFrom ? '(from secret/configmap)' : '—')}
+                        </span>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+              {/if}
+
+              <!-- Mounts -->
+              {#if c.volumeMounts?.length}
+                <div>
+                  <button
+                    onclick={() => toggleSection(c.name, 'mounts')}
+                    class="flex items-center gap-1 w-full text-left py-1.5 text-xs font-semibold text-muted uppercase tracking-wide hover:text-fg transition-colors"
+                  >
+                    {isSectionOpen(c.name, 'mounts') ? '▾' : '▸'} Mounts ({c.volumeMounts.length})
+                  </button>
+                  {#if isSectionOpen(c.name, 'mounts')}
+                    <div class="pl-4 pb-2 flex flex-col gap-1">
+                      {#each c.volumeMounts as m}
+                        <div class="flex items-center gap-2 text-xs">
+                          <span class="font-mono text-accent">{m.mountPath}</span>
+                          {#if m.name}
+                            <span class="text-muted">← {m.name}</span>
+                          {/if}
+                          {#if m.subPath}
+                            <span class="font-mono text-muted">/{m.subPath}</span>
+                          {/if}
+                          {#if m.readOnly}
+                            <span class="px-1.5 py-0.5 rounded bg-surface border border-border text-muted text-[10px]">RO</span>
+                          {/if}
+                        </div>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+              {/if}
+            </div>
           </div>
         {/each}
       </div>
