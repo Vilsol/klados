@@ -260,14 +260,12 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Terminal tabs
 - [x] `MVP` Copy/paste support
 - [x] `MVP` Terminal resize handling
-- [ ] `v2` Command history within session
 
 ### Events
 - [x] `MVP` Cluster-wide event stream
 - [x] `MVP` Namespace-scoped events
 - [x] `MVP` Resource-specific events (on detail pages)
 - [x] `MVP` Event filtering (type, reason, source)
-- [ ] `v2` Event timeline visualization
 - [x] `MVP` Warning event highlighting
 
 ### Resource Metrics

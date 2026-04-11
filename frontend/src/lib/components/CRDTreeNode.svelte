@@ -8,9 +8,10 @@
     expanded: Set<string>
     onToggle: (fullSuffix: string) => void
     ctxName: string
+    activePath?: string
   }
 
-  const { node, expanded, onToggle, ctxName }: Props = $props()
+  const { node, expanded, onToggle, ctxName, activePath = '' }: Props = $props()
 </script>
 
 <div>
@@ -28,12 +29,12 @@
   {#if expanded.has(node.fullSuffix)}
     <div class="ml-4">
       {#each node.children as child}
-        <CRDTreeNode node={child} {expanded} {onToggle} {ctxName} />
+        <CRDTreeNode node={child} {expanded} {onToggle} {ctxName} {activePath} />
       {/each}
       {#each node.directGvrs as { gvr, kind }}
         <a
           href="#/c/{ctxName}/{gvr}"
-          class="block px-3 py-1 text-sm hover:bg-surface-hover transition-colors rounded-sm"
+          class="block px-3 py-1 text-sm transition-colors rounded-sm {activePath === `/c/${ctxName}/${gvr}` ? 'bg-surface-hover text-accent font-medium' : 'hover:bg-surface-hover'}"
         >
           {kind}
         </a>

@@ -22,6 +22,7 @@
   import { filterItems } from '$lib/search/filter'
   import type { SearchTerm } from '$lib/search/parser'
   import { exportItems } from '$lib/utils/export'
+  import { perfMark } from '$lib/utils/perf'
 
   function itemKey(obj: Record<string, any>): string {
     const ns = obj.metadata?.namespace ?? ''
@@ -31,6 +32,7 @@
 
   let now = $state(Date.now())
   onMount(() => {
+    perfMark('resource-page', 'ResourceList mounted')
     const id = setInterval(() => { now = Date.now() }, 1_000)
     return () => clearInterval(id)
   })
@@ -150,23 +152,23 @@
       const { column, direction } = columnStore.sortState
       const col = columnStore.visibleColumns.find((c) => c.name === column)
       if (col?.expr) {
-        result = [...result].sort((a, b) => {
-          const rawA = evalExpr(col.expr, a)
-          const rawB = evalExpr(col.expr, b)
-          const av = String(rawA ?? '')
-          const bv = String(rawB ?? '')
+        // Pre-compute sort keys to avoid repeated evalExpr in comparator
+        const keyed = result.map((item) => ({ item, key: String(evalExpr(col.expr, item) ?? '') }))
+        const isAge = col.renderType === 'age'
+        keyed.sort((a, b) => {
           let cmp: number
-          if (col.renderType === 'age') {
-            cmp = av.localeCompare(bv)
+          if (isAge) {
+            cmp = a.key.localeCompare(b.key)
           } else {
-            const an = parseFloat(av)
-            const bn = parseFloat(bv)
+            const an = parseFloat(a.key)
+            const bn = parseFloat(b.key)
             cmp = Number.isFinite(an) && Number.isFinite(bn)
               ? an - bn
-              : av.localeCompare(bv)
+              : a.key.localeCompare(b.key)
           }
           return direction === 'asc' ? cmp : -cmp
         })
+        result = keyed.map((k) => k.item)
       }
     }
     return result

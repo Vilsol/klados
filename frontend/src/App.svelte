@@ -99,6 +99,21 @@
 
       handler = (e: KeyboardEvent) => shortcutStore.dispatch(e)
       window.addEventListener('keydown', handler)
+
+      // WebKitGTK doesn't wire Ctrl+Z/Y to undo/redo for native inputs
+      window.addEventListener('keydown', (e: KeyboardEvent) => {
+        const el = document.activeElement
+        if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return
+        if (e.ctrlKey && !e.altKey && !e.metaKey) {
+          if (e.key === 'z' && !e.shiftKey) {
+            e.preventDefault()
+            document.execCommand('undo')
+          } else if (e.key === 'z' && e.shiftKey || e.key === 'y') {
+            e.preventDefault()
+            document.execCommand('redo')
+          }
+        }
+      })
     })()
 
     return () => {

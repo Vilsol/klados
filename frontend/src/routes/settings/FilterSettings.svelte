@@ -183,42 +183,46 @@
       <h3 class="text-base font-medium text-fg">{editingIndex >= 0 ? 'Edit' : 'Add'} Filter</h3>
 
       <div>
-        <label class="block text-sm font-medium text-fg mb-1">Name</label>
-        <input
-          type="text"
-          bind:value={editName}
-          class="w-full px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
-        />
+        <label class="block text-sm font-medium text-fg mb-1">Name
+          <input
+            type="text"
+            bind:value={editName}
+            class="w-full px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
+          />
+        </label>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-fg mb-1">Labels</label>
-        <input
-          type="text"
-          bind:value={editLabels}
-          placeholder="key=value, key2=value2"
-          class="w-full px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
-        />
+        <label class="block text-sm font-medium text-fg mb-1">Labels
+          <input
+            type="text"
+            bind:value={editLabels}
+            placeholder="key=value, key2=value2"
+            class="w-full px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
+          />
+        </label>
         <p class="text-xs text-muted-foreground mt-1">Comma-separated key=value pairs</p>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-fg mb-1">Annotations</label>
-        <input
-          type="text"
-          bind:value={editAnnotations}
-          placeholder="key=value, key2=value2"
-          class="w-full px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
-        />
+        <label class="block text-sm font-medium text-fg mb-1">Annotations
+          <input
+            type="text"
+            bind:value={editAnnotations}
+            placeholder="key=value, key2=value2"
+            class="w-full px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
+          />
+        </label>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-fg mb-1">Search Text</label>
-        <input
-          type="text"
-          bind:value={editSearch}
-          class="w-full px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
-        />
+        <label class="block text-sm font-medium text-fg mb-1">Search Text
+          <input
+            type="text"
+            bind:value={editSearch}
+            class="w-full px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
+          />
+        </label>
       </div>
 
       <div class="flex justify-end gap-2 pt-2">

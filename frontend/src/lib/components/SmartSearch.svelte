@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { X } from 'lucide-svelte'
   import { parseSearch, type SearchTerm } from '$lib/search/parser'
   import { getSuggestions, type Suggestion } from '$lib/search/autocomplete'
   import SmartSearchAutocomplete from './SmartSearchAutocomplete.svelte'
@@ -48,16 +49,7 @@
   $effect(() => {
     if (value !== lastExternalValue) {
       lastExternalValue = value
-      // Extract trailing incomplete token
-      const raw = value
-      if (!raw.trim()) {
-        inputText = ''
-      } else if (raw.endsWith(' ')) {
-        inputText = ''
-      } else {
-        const lastSpace = raw.lastIndexOf(' ')
-        inputText = raw.substring(lastSpace + 1)
-      }
+      syncInputText()
     }
   })
 
@@ -74,8 +66,21 @@
 
   function handleInput() {
     rebuildValue()
+    syncInputText()
     lastExternalValue = value
     updateAutocomplete()
+  }
+
+  function syncInputText() {
+    const raw = value
+    if (!raw.trim()) {
+      inputText = ''
+    } else if (raw.endsWith(' ')) {
+      inputText = ''
+    } else {
+      const lastSpace = raw.lastIndexOf(' ')
+      inputText = raw.substring(lastSpace + 1)
+    }
   }
 
   function handleFocus() {
@@ -176,6 +181,14 @@
     return `${neg}${t.type}:${t.value}`
   }
 
+  function clearAll() {
+    value = ''
+    inputText = ''
+    lastExternalValue = ''
+    showAutocomplete = false
+    requestAnimationFrame(() => inputEl?.focus())
+  }
+
   function chipColor(type: string): string {
     switch (type) {
       case 'label': return 'bg-blue-500/15 text-blue-400 border-blue-500/30'
@@ -218,6 +231,16 @@
       class="flex-1 min-w-24 bg-transparent outline-none text-fg placeholder:text-muted"
       placeholder={chips.length === 0 ? 'Filter resources... (label:key=value, name:..., ns:...)' : ''}
     />
+    {#if value.trim()}
+      <button
+        class="shrink-0 p-0.5 rounded text-muted hover:text-fg hover:bg-surface-hover transition-colors"
+        onclick={clearAll}
+        tabindex={-1}
+        title="Clear filter"
+      >
+        <X class="w-3.5 h-3.5" />
+      </button>
+    {/if}
   </div>
 
   <SmartSearchAutocomplete

@@ -5,7 +5,7 @@
   import { AnsiUp } from 'ansi_up'
   import stripAnsi from 'strip-ansi'
 
-  let { lines, eofReached = false, eofHistory = false, historyLoading = false, showTimestamps = false, onLoadHistory, filename = 'logs' }: {
+  let { lines, eofReached = false, eofHistory = false, historyLoading = false, showTimestamps = false, onLoadHistory, filename = 'logs', fontSize = 13 }: {
     lines: string[]
     eofReached?: boolean
     eofHistory?: boolean
@@ -13,6 +13,7 @@
     showTimestamps?: boolean
     onLoadHistory?: () => void
     filename?: string
+    fontSize?: number
   } = $props()
 
   const TS_RE = /^(\d{4}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d{2}:\d{2})) /
@@ -174,11 +175,13 @@
       : []
   )
 
+  const rowHeight = $derived(Math.round(fontSize * 1.5))
+
   // Stable virtualizer store — created once, updated via setOptions
   const virtualizerStore = createVirtualizer<HTMLDivElement, HTMLDivElement>({
     count: 0,
     getScrollElement: () => scrollEl ?? null,
-    estimateSize: () => 20,
+    estimateSize: () => rowHeight,
     overscan: 15,
   })
 
@@ -186,11 +189,11 @@
   let virt: SvelteVirtualizer<HTMLDivElement, HTMLDivElement>
   virtualizerStore.subscribe(v => { virt = v })
 
-  function updateVirtOptions(count: number) {
+  function updateVirtOptions(count: number, rh: number) {
     virt?.setOptions({
       count,
       getScrollElement: () => scrollEl ?? null,
-      estimateSize: () => 20,
+      estimateSize: () => rh,
       overscan: 15,
       measureElement: wrap
         ? (el: Element) => el.getBoundingClientRect().height
@@ -198,11 +201,12 @@
     })
   }
 
-  // Keep virtualizer in sync with count + wrap mode
+  // Keep virtualizer in sync with count + wrap mode + font size
   $effect(() => {
     const count = processedLines.length
     const _wrap = wrap
-    untrack(() => updateVirtOptions(count))
+    const rh = rowHeight
+    untrack(() => updateVirtOptions(count, rh))
   })
 
   // Svelte action: triggers measureElement on each row (needed for variable-height wrap mode)
@@ -228,7 +232,7 @@
     // Synchronously update virtualizer count and restore scroll position before
     // the browser paints — eliminates the flash from layout/paint at wrong offset
     programmaticScroll = true
-    updateVirtOptions(processedLines.length)
+    updateVirtOptions(processedLines.length, rowHeight)
     virt?.scrollToIndex(firstVisibleIndex + batch.length, { align: 'start' })
   }
 
@@ -376,7 +380,8 @@
     onscroll={onScroll}
     onwheel={onWheel}
     oncopy={onCopy}
-    class="flex-1 overflow-y-auto overflow-x-auto bg-[#1a1a1a] font-mono text-[13px] relative"
+    class="flex-1 overflow-y-auto overflow-x-auto bg-[#1a1a1a] font-mono relative"
+    style:font-size="{fontSize}px"
     class:overflow-x-hidden={wrap}
   >
     <div class="flex items-center gap-2 px-3 py-1.5 text-xs text-muted border-b border-border">
@@ -403,7 +408,8 @@
           style:left="0"
           style:width="100%"
           style:transform="translateY({row.start}px)"
-          class="log-row px-3 py-0 leading-5 {highlight ? levelClass(processedLines[row.index].plain) : ''} {matchIndices.includes(row.index) ? 'search-match' : ''}"
+          class="log-row px-3 py-0 {highlight ? levelClass(processedLines[row.index].plain) : ''} {matchIndices.includes(row.index) ? 'search-match' : ''}"
+          style:line-height="{rowHeight}px"
           class:whitespace-pre={!wrap}
           class:whitespace-pre-wrap={wrap}
           class:break-all={wrap}
@@ -451,8 +457,6 @@
   :global(.ansi-magenta-bg) { background: #c678dd; }
   :global(.ansi-cyan-bg)    { background: #56b6c2; }
   :global(.ansi-white-bg)   { background: #abb2bf; }
-
-  .log-row { font-size: var(--log-font-size, 13px); }
 
   .log-error { color: #ef4444; }
   .log-warn  { color: #f59e0b; }

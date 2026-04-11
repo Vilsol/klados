@@ -1,5 +1,6 @@
 import { Events } from '@wailsio/runtime'
 import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
+import { perfMark, perfEnd } from '../utils/perf'
 
 interface WatchEvent {
   type: 'ADDED' | 'MODIFIED' | 'DELETED'
@@ -33,27 +34,49 @@ class ResourceStore {
     this.loading = true
     this.error = null
 
+    perfMark('resource-page', 'store.start() called — subscribing to events')
+
     // Events.On returns an unsubscribe fn; callback receives WailsEvent { name, data }
     this.unsub = Events.On(this.eventName, (wailsEvent: any) => {
       this.handleEvent(wailsEvent.data as WatchEvent)
     })
 
     try {
+      perfMark('resource-page', 'ListResources RPC start')
       const list = await ResourceService.ListResources(contextName, gvr, namespace)
       if (gen !== this.generation) return  // superseded by a newer start/stop
+      perfMark('resource-page', `ListResources RPC done — ${list?.length ?? 0} items`)
 
       const map = new Map<string, Record<string, any>>()
       for (const obj of list ?? []) {
         map.set(resourceKey(obj), obj)
       }
       this.items = Array.from(map.values())
+      this.loading = false
+      const count = this.items.length
+      perfMark('resource-page', `loading = false (data ready, ${count} items)`)
 
-      await ResourceService.StartWatch(contextName, gvr, namespace)
+      if (count > 0) {
+        requestAnimationFrame(() => {
+          if (gen !== this.generation) return
+          requestAnimationFrame(() => {
+            if (gen !== this.generation) return
+            perfEnd('resource-page', `interactive — ${count} items painted`)
+          })
+        })
+      } else {
+        perfEnd('resource-page', 'interactive — empty list painted')
+      }
+
+      // Start watch in background — event listener is already subscribed
+      perfMark('resource-page', 'StartWatch RPC start (background)')
+      ResourceService.StartWatch(contextName, gvr, namespace)
+        .then(() => { perfMark('resource-page', 'StartWatch RPC done') })
+        .catch(() => {})
     } catch (e: any) {
       if (gen !== this.generation) return
       this.error = e?.message ?? String(e)
-    } finally {
-      if (gen === this.generation) this.loading = false
+      this.loading = false
     }
   }
 

@@ -22,16 +22,17 @@
   let readyFlag = $state(false)
   let termRef: Terminal | null = null
   let fitAddonRef: FitAddon | null = null
+  let sendResizeRef: (() => void) | null = null
 
-  // Isolated font size effect — only tracks fontSize and readyFlag, not WS state
   $effect(() => {
     const size = fontSize
     if (!readyFlag) return
     const t = untrack(() => termRef)
     const fa = untrack(() => fitAddonRef)
+    const notify = untrack(() => sendResizeRef)
     if (!t || !fa) return
     t.options.fontSize = size
-    requestAnimationFrame(() => fa.fit())
+    requestAnimationFrame(() => { fa.fit(); notify?.() })
   })
 
   function buildURL() {
@@ -80,6 +81,7 @@
       }
     }
 
+    sendResizeRef = sendResize
     ws.onopen = () => sendResize()
 
     ws.onmessage = (e) => {
@@ -116,6 +118,7 @@
       readyFlag = false
       termRef = null
       fitAddonRef = null
+      sendResizeRef = null
       ro.disconnect()
       ws.close()
       term.dispose()

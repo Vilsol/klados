@@ -18,13 +18,19 @@
   import { notificationStore } from '$lib/stores/notification.svelte'
   import type { ControllerRef } from '$lib/utils/relationships'
   import { selectionStore } from '$lib/stores/selection.svelte'
+  import { perfStart, perfMark } from '$lib/utils/perf'
 
   let { params = {} }: { params?: Record<string, string> } = $props()
 
   const ctxName = $derived(params.ctx ?? '')
   const gvr = $derived(params.gvr ?? '')
   const selectedNamespaces = $derived(clusterStore.getSelectedNamespaces(ctxName))
-  const descriptor = $derived(registryLoaded() ? descriptorRegistry.get(gvr) : null)
+  const descriptor = $derived.by(() => {
+    if (!registryLoaded()) return null
+    const d = descriptorRegistry.get(gvr)
+    if (d) perfMark('resource-page', 'descriptor resolved')
+    return d
+  })
   let selectedGVR = $state('')
   const selectedDescriptor = $derived(selectedGVR && registryLoaded() ? descriptorRegistry.get(selectedGVR) : descriptor)
   const rawWatchNamespace = $derived(selectedNamespaces.length === 1 ? selectedNamespaces[0] : '')
@@ -34,7 +40,13 @@
   $effect(() => { if (ctxName) clusterStore.setActiveContext(ctxName) })
 
   // Initialize column store whenever GVR changes
-  $effect(() => { if (gvr) columnStore.loadForGVR(gvr) })
+  $effect(() => {
+    if (gvr) {
+      perfStart('resource-page')
+      perfMark('resource-page', `navigated to ${gvr}`)
+      columnStore.loadForGVR(gvr)
+    }
+  })
 
   // Set GVR on selection store (auto-clears on GVR change)
   $effect(() => {

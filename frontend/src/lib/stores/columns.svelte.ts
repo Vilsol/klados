@@ -1,3 +1,4 @@
+import { perfMark } from '../utils/perf'
 import * as ConfigService from '../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js'
 import { GVRColumnPrefs, ColumnSettings, SortPrefs } from '../../../bindings/github.com/Vilsol/klados/internal/config/models.js'
 import { descriptorRegistry } from '../registry/index.js'
@@ -19,12 +20,14 @@ class ColumnStore {
     }
     this.#gvr = gvr
 
+    perfMark('resource-page', 'columnStore.loadForGVR — fetching prefs')
     const [prefs, compact] = await Promise.all([
       ConfigService.GetColumnPrefs(gvr),
       ConfigService.GetCompactRows(),
     ])
     this.compact = compact
     this.#applyPrefs(prefs)
+    perfMark('resource-page', 'columnStore.loadForGVR — done')
   }
 
   #applyPrefs(prefs: GVRColumnPrefs | null): void {

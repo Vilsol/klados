@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/svelte'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { render, screen, waitFor, cleanup } from '@testing-library/svelte'
 import { tick } from 'svelte'
 
 vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js', () => ({
@@ -17,6 +17,16 @@ vi.mock('$lib/stores/notification.svelte', () => ({
 import CreateResourceDialog from '$lib/components/CreateResourceDialog.svelte'
 
 describe('CreateResourceDialog', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.runAllTimers()
+    cleanup()
+    vi.useRealTimers()
+  })
+
   it('renders Resource Type and Template labels when open', async () => {
     render(CreateResourceDialog, { props: { open: true, ctxName: 'test-ctx' } })
     await tick()

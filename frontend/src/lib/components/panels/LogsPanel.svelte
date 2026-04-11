@@ -216,9 +216,9 @@
     </div>
 
     <!-- Log viewer -->
-    <div class="flex-1 overflow-hidden" style="--log-font-size: {sessionStore.terminalFontSize}px">
+    <div class="flex-1 overflow-hidden">
       {#if streamID}
-        <LogViewer bind:this={logViewer} {streamID} streamingConfig={streamingStore.config} {showTimestamps} {filename} {scrollToTopOnLoad} />
+        <LogViewer bind:this={logViewer} {streamID} streamingConfig={streamingStore.config} {showTimestamps} {filename} {scrollToTopOnLoad} fontSize={sessionStore.terminalFontSize} />
       {:else}
         <div class="flex items-center justify-center h-full text-sm text-muted">Loading…</div>
       {/if}

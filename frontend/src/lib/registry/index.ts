@@ -1,7 +1,9 @@
 import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
 import * as PluginService from '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
-import { evaluate } from 'cel-js'
+import { evaluate, parse } from 'cel-js'
+import type { CstNode } from '@chevrotain/types'
 import { setRegistryLoaded } from './loaded.svelte'
+import { perfStart, perfMark, perfEnd } from '../utils/perf'
 
 export type RenderType = 'text' | 'badge' | 'age' | 'progress' | 'controlledBy'
 
@@ -52,7 +54,9 @@ class DescriptorRegistry {
   private availableGVRs = new Set<string>()
 
   async load() {
+    perfStart('registry-load')
     try {
+      perfMark('registry-load', 'GetDescriptors RPC start')
       const defs = await ResourceService.GetDescriptors()
       this.builtins.clear()
       for (const d of defs ?? []) {
@@ -88,12 +92,16 @@ class DescriptorRegistry {
           })),
         })
       }
+      perfMark('registry-load', `GetDescriptors done — ${this.builtins.size} builtins`)
       this.descriptors = new Map(this.builtins)
+      perfMark('registry-load', 'mergePluginDescriptors start')
       await this.mergePluginDescriptors()
+      perfMark('registry-load', 'mergePluginDescriptors done')
     } catch (e) {
       console.error('Failed to load descriptors:', e)
     } finally {
       setRegistryLoaded()
+      perfEnd('registry-load', 'registry loaded')
     }
   }
 
@@ -247,7 +255,36 @@ class DescriptorRegistry {
 
 export const descriptorRegistry = new DescriptorRegistry()
 
+// Simple dot-path: letters, digits, underscores, separated by dots — no brackets, operators, or calls
+const simplePath = /^[a-zA-Z_]\w*(\.[a-zA-Z_]\w*)*$/
+
+// Cache: expr → split path segments (for simple paths) or parsed CST (for CEL)
+const exprCache = new Map<string, string[] | CstNode>()
+
+function resolveExpr(expr: string): string[] | CstNode {
+  let cached = exprCache.get(expr)
+  if (cached) return cached
+  if (simplePath.test(expr)) {
+    cached = expr.split('.')
+  } else {
+    const result = parse(expr)
+    cached = result.isSuccess ? result.cst : expr.split('.')
+  }
+  exprCache.set(expr, cached)
+  return cached
+}
+
 export function evalExpr(expr: string, obj: Record<string, any>): any {
+  const resolved = resolveExpr(expr)
+  if (Array.isArray(resolved)) {
+    let cur: any = obj
+    for (const p of resolved) {
+      if (cur == null) return ''
+      cur = cur[p]
+    }
+    return cur ?? ''
+  }
+  // Pre-parsed CEL CST
   const ctx = {
     metadata: obj.metadata ?? {},
     spec: obj.spec ?? {},
@@ -255,20 +292,8 @@ export function evalExpr(expr: string, obj: Record<string, any>): any {
     type: obj.type ?? '',
   }
   try {
-    const result = evaluate(expr, ctx)
-    return result ?? ''
+    return evaluate(resolved, ctx) ?? ''
   } catch {
-    // fall back to simple path access
-    return getPath(obj, expr)
+    return ''
   }
-}
-
-function getPath(obj: any, path: string): any {
-  const parts = path.split('.')
-  let cur = obj
-  for (const p of parts) {
-    if (cur == null) return ''
-    cur = cur[p]
-  }
-  return cur ?? ''
 }

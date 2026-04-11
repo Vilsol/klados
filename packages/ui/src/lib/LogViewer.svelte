@@ -4,12 +4,13 @@
 
   interface StreamingConfig { port: number; token: string }
 
-  let { streamID, streamingConfig, showTimestamps = false, filename = 'logs', scrollToTopOnLoad = false }: {
+  let { streamID, streamingConfig, showTimestamps = false, filename = 'logs', scrollToTopOnLoad = false, fontSize = 13 }: {
     streamID: string
     streamingConfig: StreamingConfig
     showTimestamps?: boolean
     filename?: string
     scrollToTopOnLoad?: boolean
+    fontSize?: number
   } = $props()
 
   let lines: string[] = $state([])
@@ -123,6 +124,7 @@
     {historyLoading}
     {showTimestamps}
     {filename}
+    {fontSize}
     onLoadHistory={() => loadHistory()}
   />
 {/if}

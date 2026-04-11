@@ -3,7 +3,7 @@
   import { sessionStore } from '$lib/stores/session.svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
   import { Events } from '@wailsio/runtime'
-  import { push } from 'svelte-spa-router'
+  import { push, router } from 'svelte-spa-router'
   import { onDestroy } from 'svelte'
   import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
   import * as PortForwardService from '../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js'
@@ -231,6 +231,10 @@
     }
   }
 
+  const activePath = $derived(router.location)
+  function isActive(path: string) { return activePath === path }
+  function isGVRActive(gvr: string) { return ctx ? activePath === `/c/${ctx}/${gvr}` : false }
+
   function navigate(gvr: string) {
     if (!ctx) return
     push(`/c/${ctx}/${gvr}`)
@@ -258,7 +262,7 @@
       {#if ctx}
         <button
           onclick={() => push(`/c/${ctx}`)}
-          class="w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 rounded-none hover:bg-surface-hover transition-colors border-b border-border mb-1 text-fg"
+          class="w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 rounded-none hover:bg-surface-hover transition-colors border-b border-border mb-1 {isActive(`/c/${ctx}`) ? 'bg-surface-hover text-accent font-medium' : 'text-fg'}"
         >
           Overview
         </button>
@@ -283,7 +287,7 @@
                   onclick={() => { if (!unavailable) navigate(gvr) }}
                   disabled={!!unavailable}
                   title={unavailable ? `API group not available on this cluster` : undefined}
-                  class="w-full text-left px-3 py-1 text-sm transition-colors rounded-sm {unavailable ? 'opacity-40 cursor-not-allowed text-muted' : 'hover:bg-surface-hover'}"
+                  class="w-full text-left px-3 py-1 text-sm transition-colors rounded-sm {unavailable ? 'opacity-40 cursor-not-allowed text-muted' : isGVRActive(gvr) ? 'bg-surface-hover text-accent font-medium' : 'hover:bg-surface-hover'}"
                 >
                   {kindByGvr[gvr] ?? gvr.split('.').at(-1)}
                 </button>
@@ -308,7 +312,7 @@
           {#if expandedGroups['Custom Resources']}
             <div class="ml-4">
               {#each crdTree as node}
-                <CRDTreeNode {node} expanded={expandedNodes} onToggle={toggleExpand} ctxName={ctx ?? ''} />
+                <CRDTreeNode {node} expanded={expandedNodes} onToggle={toggleExpand} ctxName={ctx ?? ''} {activePath} />
               {/each}
             </div>
           {/if}
@@ -333,7 +337,7 @@
                 {#each pluginEntries.filter((e) => e.category === category) as entry}
                   <button
                     onclick={() => navigate(entry.gvr)}
-                    class="w-full text-left px-3 py-1 text-sm hover:bg-surface-hover transition-colors rounded-sm"
+                    class="w-full text-left px-3 py-1 text-sm transition-colors rounded-sm {isGVRActive(entry.gvr) ? 'bg-surface-hover text-accent font-medium' : 'hover:bg-surface-hover'}"
                   >
                     {entry.label}
                   </button>
@@ -348,7 +352,7 @@
         <div class="border-t border-border mt-1 pt-1">
           <button
             onclick={() => push(`/c/${ctx}/events`)}
-            class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface-hover transition-colors"
+            class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium hover:bg-surface-hover transition-colors {isActive(`/c/${ctx}/events`) ? 'bg-surface-hover text-accent' : 'text-muted'}"
           >
             Event Stream
           </button>
@@ -360,14 +364,14 @@
     <div class="border-t border-border">
       <button
         onclick={() => push('/plugins')}
-        class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface-hover transition-colors"
+        class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium hover:bg-surface-hover transition-colors {isActive('/plugins') ? 'bg-surface-hover text-accent' : 'text-muted'}"
       >
         <Puzzle size={12} />
         Plugins
       </button>
       <button
         onclick={() => push('/settings')}
-        class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface-hover transition-colors"
+        class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium hover:bg-surface-hover transition-colors {activePath.startsWith('/settings') ? 'bg-surface-hover text-accent' : 'text-muted'}"
       >
         <Settings size={12} />
         Settings

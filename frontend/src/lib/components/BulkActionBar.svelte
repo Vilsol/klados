@@ -31,7 +31,7 @@
 </script>
 
 {#if selectionStore.count > 0}
-  <div class="animate-slide-up fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 shadow-lg">
+  <div class="animate-slide-up fixed bottom-6 left-1/2 z-30 flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 shadow-lg">
     <span class="text-sm font-medium text-fg whitespace-nowrap">
       {selectionStore.count} selected{#if selectionStore.notVisibleCount > 0}
         <span class="text-muted-foreground"> ({selectionStore.notVisibleCount} not visible)</span>

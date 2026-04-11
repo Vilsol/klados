@@ -94,20 +94,22 @@
   <h2 class="text-base font-medium text-fg mb-4">Cluster: {ctxName}</h2>
 
   <div>
-    <label class="block text-sm font-medium text-fg mb-1">Display Name</label>
-    <input
-      type="text"
-      value={displayName}
-      oninput={(e) => setDisplayName((e.target as HTMLInputElement).value)}
-      placeholder={ctxName}
-      class="w-full px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
-    />
+    <label class="block text-sm font-medium text-fg mb-1">Display Name
+      <input
+        type="text"
+        value={displayName}
+        oninput={(e) => setDisplayName((e.target as HTMLInputElement).value)}
+        placeholder={ctxName}
+        class="w-full px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
+      />
+    </label>
   </div>
 
   <div>
-    <label class="block text-sm font-medium text-fg mb-1">Accent Color</label>
+    <label for="accent-color" class="block text-sm font-medium text-fg mb-1">Accent Color</label>
     <div class="flex items-center gap-3">
       <input
+        id="accent-color"
         type="color"
         value={accentColor || '#6366f1'}
         oninput={(e) => setAccent((e.target as HTMLInputElement).value)}
@@ -122,7 +124,7 @@
   </div>
 
   <div>
-    <label class="block text-sm font-medium text-fg mb-2">Read-Only</label>
+    <span class="block text-sm font-medium text-fg mb-2">Read-Only</span>
     <div class="space-y-2">
       <label class="flex items-center gap-2 cursor-pointer">
         <input
@@ -150,7 +152,7 @@
   </div>
 
   <div>
-    <label class="block text-sm font-medium text-fg mb-2">Compact Rows</label>
+    <span class="block text-sm font-medium text-fg mb-2">Compact Rows</span>
     <div class="space-y-2">
       <label class="flex items-center gap-2 cursor-pointer">
         <input
@@ -178,7 +180,7 @@
   </div>
 
   <div>
-    <label class="block text-sm font-medium text-fg mb-2">Favorite Namespaces</label>
+    <span class="block text-sm font-medium text-fg mb-2">Favorite Namespaces</span>
     <div class="flex gap-2 mb-2">
       <input
         type="text"

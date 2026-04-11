@@ -39,6 +39,22 @@
     }
   })
 
+  // Close all sessions when the target pod changes
+  $effect(() => {
+    const _ctx = ctxName
+    const _ns = namespace
+    const _name = name
+    return () => {
+      for (const s of sessions) {
+        ExecService.CloseExecSession(s.id)
+      }
+      sessions = []
+      activeIdx = 0
+      error = null
+      selectedContainer = ''
+    }
+  })
+
   const containerOptions = $derived(
     containers.map((c) => ({
       value: c.name,

@@ -45,6 +45,7 @@ vi.mock('@klados/ui', () => ({
   StatusBadge: vi.fn(),
   KeyValuePairEditor: vi.fn(),
   DataTable: vi.fn(),
+  CopyableValue: vi.fn(),
 }))
 
 import ResourceDetail from '$lib/components/ResourceDetail.svelte'

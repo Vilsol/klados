@@ -21,9 +21,25 @@ vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/portforwar
   StopForward: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('../../../bindings/github.com/Vilsol/klados/internal/config/models.js', () => ({
-  SavedPortForward: vi.fn().mockImplementation((obj: any) => obj),
-}))
+vi.mock('../../../bindings/github.com/Vilsol/klados/internal/config/models.js', () => {
+  const makeModel = () => vi.fn().mockImplementation((obj: any) => obj)
+  const makeModelWithCreateFrom = () => {
+    const M = vi.fn().mockImplementation((obj: any) => obj) as any
+    M.createFrom = vi.fn().mockImplementation((obj: any) => obj)
+    return M
+  }
+  return {
+    SavedPortForward: makeModel(),
+    ClusterPrefs: makeModelWithCreateFrom(),
+    GVRColumnPrefs: makeModelWithCreateFrom(),
+    Config: makeModelWithCreateFrom(),
+    ResolvedPrefs: makeModelWithCreateFrom(),
+    SavedFilter: makeModelWithCreateFrom(),
+    ColumnSettings: makeModel(),
+    MetricsConfig: makeModel(),
+    SortPrefs: makeModel(),
+  }
+})
 
 const { mockVisibleColumns, mockSortState } = vi.hoisted(() => ({
   mockVisibleColumns: { value: [] as ColumnDef[] },
