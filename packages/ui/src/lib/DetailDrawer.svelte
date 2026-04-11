@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte'
   import type { Snippet } from 'svelte'
   import { X } from 'lucide-svelte'
+  import CopyableValue from './CopyableValue.svelte'
 
   let {
     item,
@@ -108,7 +109,7 @@
 
   <!-- Drawer header -->
   <div class="flex items-center gap-2 px-4 py-2.5 border-b border-border shrink-0">
-    <span class="text-sm font-semibold truncate flex-1">{name}</span>
+    <CopyableValue value={name} class="text-sm font-semibold truncate flex-1" />
     {#if namespace}
       <span class="text-xs text-muted border border-border rounded px-1.5 py-0.5 shrink-0">{namespace}</span>
     {/if}

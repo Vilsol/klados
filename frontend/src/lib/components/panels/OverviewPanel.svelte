@@ -295,7 +295,7 @@
   {#if hasContainersPanel && conditions.length > 0}
     <section class="bg-surface border border-border rounded-lg p-4">
       <SectionHeader class="mb-3">Conditions</SectionHeader>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {#each conditions as cond}
           <div class="flex items-center gap-2 px-3 py-2 rounded-md bg-bg border border-border" title={cond.message ?? ''}>
             <span class="w-2 h-2 rounded-full shrink-0
@@ -323,7 +323,7 @@
           <div class="bg-bg border border-border rounded-lg p-3">
             <!-- Header: always visible -->
             <div class="flex items-center justify-between mb-1">
-              <span class="text-sm font-medium">{c.name}</span>
+              <CopyableValue value={c.name} class="text-sm font-medium" />
               <div class="flex items-center gap-1.5">
                 {#if status?.restartCount > 0}
                   <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-600 dark:text-yellow-400">
@@ -333,7 +333,7 @@
                 <StatusBadge status={!!status?.ready} mode="pill">{stateLabel(status)}</StatusBadge>
               </div>
             </div>
-            <p class="text-xs font-mono text-muted break-all mb-3">{c.image}</p>
+            <CopyableValue value={c.image} class="text-xs font-mono text-muted break-all mb-3" />
 
             <!-- Accordion sections -->
             <div class="flex flex-col gap-0.5">
@@ -411,10 +411,11 @@
                   {#if isSectionOpen(c.name, 'env')}
                     <div class="pl-4 pb-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
                       {#each c.env as e}
-                        <span class="text-xs font-mono text-accent">{e.name}</span>
-                        <span class="text-xs font-mono text-muted truncate">
-                          {e.value ?? (e.valueFrom ? '(from secret/configmap)' : '—')}
-                        </span>
+                        <CopyableValue value={e.name} class="text-xs font-mono text-accent" />
+                        <CopyableValue
+                          value={e.value ?? (e.valueFrom ? '(from secret/configmap)' : '—')}
+                          class="text-xs font-mono text-muted"
+                        />
                       {/each}
                     </div>
                   {/if}
@@ -472,7 +473,7 @@
             {@const status = initContainerStatus(c.name)}
             <div class="bg-bg border border-border rounded-lg p-3">
               <div class="flex items-center justify-between">
-                <span class="text-sm font-medium">{c.name}</span>
+                <CopyableValue value={c.name} class="text-sm font-medium" />
                 <span class="text-xs px-2 py-0.5 rounded-full bg-surface-hover text-muted">{stateLabel(status)}</span>
               </div>
               <p class="text-xs font-mono text-muted truncate mt-1">{c.image}</p>
