@@ -76,6 +76,7 @@
   let deleteTarget = $state<{ namespace: string; name: string } | null>(null)
   let confirmOpen = $state(false)
   let ctxMenu = $state<{ x: number; y: number; item: Record<string, any> } | null>(null)
+  let ctxMenuEl = $state<HTMLDivElement | null>(null)
   let columnMenuOpen = $state(false)
   let exportMenuOpen = $state(false)
   let resizing = $state<{ name: string; startX: number; startWidth: number } | null>(null)
@@ -101,6 +102,20 @@
     const close = () => { ctxMenu = null }
     window.addEventListener('click', close, { once: true })
     return () => window.removeEventListener('click', close)
+  })
+
+  $effect(() => {
+    if (!ctxMenu || !ctxMenuEl) return
+    const rect = ctxMenuEl.getBoundingClientRect()
+    const maxX = window.innerWidth - rect.width - 8
+    const maxY = window.innerHeight - rect.height - 8
+    if (ctxMenu.x > maxX || ctxMenu.y > maxY) {
+      ctxMenu = {
+        ...ctxMenu,
+        x: Math.max(0, Math.min(ctxMenu.x, maxX)),
+        y: Math.max(0, Math.min(ctxMenu.y, maxY)),
+      }
+    }
   })
 
   $effect(() => {
@@ -136,9 +151,21 @@
       const col = columnStore.visibleColumns.find((c) => c.name === column)
       if (col?.expr) {
         result = [...result].sort((a, b) => {
-          const av = String(evalExpr(col.expr, a) ?? '')
-          const bv = String(evalExpr(col.expr, b) ?? '')
-          return direction === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+          const rawA = evalExpr(col.expr, a)
+          const rawB = evalExpr(col.expr, b)
+          const av = String(rawA ?? '')
+          const bv = String(rawB ?? '')
+          let cmp: number
+          if (col.renderType === 'age') {
+            cmp = av.localeCompare(bv)
+          } else {
+            const an = parseFloat(av)
+            const bn = parseFloat(bv)
+            cmp = Number.isFinite(an) && Number.isFinite(bn)
+              ? an - bn
+              : av.localeCompare(bv)
+          }
+          return direction === 'asc' ? cmp : -cmp
         })
       }
     }
@@ -249,7 +276,9 @@
 
   function startResize(e: MouseEvent, col: ColumnDef) {
     e.preventDefault()
-    resizing = { name: col.name, startX: e.clientX, startWidth: col.width ?? 100 }
+    const cell = (e.currentTarget as HTMLElement).parentElement
+    const measuredWidth = cell ? cell.getBoundingClientRect().width : (col.width ?? 100)
+    resizing = { name: col.name, startX: e.clientX, startWidth: measuredWidth }
     window.addEventListener('mousemove', onResizeMove)
     window.addEventListener('mouseup', onResizeUp, { once: true })
   }
@@ -341,65 +370,64 @@
   {#if error}
     <div class="p-4 text-sm text-destructive">{error}</div>
   {:else}
-    <div class="grid text-xs font-semibold uppercase tracking-wider text-muted border-b border-border shrink-0 px-2"
-      style="grid-template-columns: {gridTemplateCols}"
-    >
-      {#if canMutate}
-        <div class="flex items-center justify-center {columnStore.compact ? 'py-1' : 'py-2'}">
-          <button
-            onclick={() => {
-              if (allVisibleSelected) {
-                selectionStore.deselectAll()
-              } else {
-                selectionStore.selectAll(filteredKeys, filteredItemsByKey)
-              }
-            }}
-            class="w-4 h-4 rounded border border-border flex items-center justify-center hover:border-accent transition-colors
-              {allVisibleSelected || someVisibleSelected ? 'bg-accent border-accent' : ''}"
-            aria-label={allVisibleSelected ? 'Deselect all' : 'Select all'}
-          >
-            {#if allVisibleSelected}
-              <Check size={10} class="text-accent-fg" />
-            {:else if someVisibleSelected}
-              <Minus size={10} class="text-accent-fg" />
+    <div bind:this={scrollContainer} class="flex-1 overflow-auto">
+      <div class="grid text-xs font-semibold uppercase tracking-wider text-muted border-b border-border sticky top-0 z-20 bg-bg px-2"
+        style="grid-template-columns: {gridTemplateCols}"
+      >
+        {#if canMutate}
+          <div class="flex items-center justify-center {columnStore.compact ? 'py-1' : 'py-2'}">
+            <button
+              onclick={() => {
+                if (allVisibleSelected) {
+                  selectionStore.deselectAll()
+                } else {
+                  selectionStore.selectAll(filteredKeys, filteredItemsByKey)
+                }
+              }}
+              class="w-4 h-4 rounded border border-border flex items-center justify-center hover:border-accent transition-colors
+                {allVisibleSelected || someVisibleSelected ? 'bg-accent border-accent' : ''}"
+              aria-label={allVisibleSelected ? 'Deselect all' : 'Select all'}
+            >
+              {#if allVisibleSelected}
+                <Check size={10} class="text-accent-fg" />
+              {:else if someVisibleSelected}
+                <Minus size={10} class="text-accent-fg" />
+              {/if}
+            </button>
+          </div>
+        {/if}
+        {#each columnStore.visibleColumns as col, i}
+          <div class="relative">
+            <button
+              onclick={() => toggleSort(col.name)}
+              class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {columnStore.compact ? 'py-1' : 'py-2'}
+                {i === 0 ? 'sticky left-0 z-10 bg-bg border-r border-border' : ''}"
+            >
+              {col.name}
+              {#if columnStore.sortState?.column === col.name}
+                {#if columnStore.sortState.direction === 'asc'}<ArrowUp size={10} />{:else}<ArrowDown size={10} />{/if}
+              {:else}
+                <ArrowUpDown size={10} class="opacity-30" />
+              {/if}
+            </button>
+            {#if i < columnStore.visibleColumns.length - 1}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div
+                class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-border/50 hover:bg-accent/70 z-20"
+                onmousedown={(e) => startResize(e, col)}
+                ondblclick={() => autoFit(col.name)}
+              ></div>
             {/if}
-          </button>
-        </div>
-      {/if}
-      {#each columnStore.visibleColumns as col, i}
-        <div class="relative">
-          <button
-            onclick={() => toggleSort(col.name)}
-            class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {columnStore.compact ? 'py-1' : 'py-2'}
-              {i === 0 ? 'sticky left-0 z-10 bg-bg border-r border-border' : ''}"
-          >
-            {col.name}
-            {#if columnStore.sortState?.column === col.name}
-              {#if columnStore.sortState.direction === 'asc'}<ArrowUp size={10} />{:else}<ArrowDown size={10} />{/if}
-            {:else}
-              <ArrowUpDown size={10} class="opacity-30" />
-            {/if}
-          </button>
-          {#if i < columnStore.visibleColumns.length - 1}
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div
-              class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-border/50 hover:bg-accent/70 z-20"
-              onmousedown={(e) => startResize(e, col)}
-              ondblclick={() => autoFit(col.name)}
-            ></div>
-          {/if}
-        </div>
-      {/each}
-      {#each pluginColumns as pcol (pcol.id)}
-        <div class="py-2 px-1">{pcol.label}</div>
-      {/each}
-      {#each sparklineColumns as scol}
-        <div class="py-2 px-1">{scol}</div>
-      {/each}
-      <div></div>
-    </div>
-
-    <div bind:this={scrollContainer} class="flex-1 overflow-y-auto">
+          </div>
+        {/each}
+        {#each pluginColumns as pcol (pcol.id)}
+          <div class="py-2 px-1">{pcol.label}</div>
+        {/each}
+        {#each sparklineColumns as scol}
+          <div class="py-2 px-1">{scol}</div>
+        {/each}
+        <div></div>
+      </div>
       {#if loading}
         <div class="flex items-center justify-center py-12 text-sm text-muted">Loading...</div>
       {:else if filtered.length === 0}
@@ -548,6 +576,7 @@
 {#if ctxMenu}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
+    bind:this={ctxMenuEl}
     class="fixed z-50 bg-surface border border-border rounded shadow-lg py-1 min-w-36"
     style="left:{ctxMenu.x}px; top:{ctxMenu.y}px"
     onclick={(e) => e.stopPropagation()}
@@ -563,12 +592,14 @@
         {/await}
       {/if}
     {/each}
-    <button
-      class="w-full text-left px-3 py-1.5 text-sm text-destructive hover:bg-surface-hover"
-      onclick={() => { requestDelete(ctxMenu!.item); ctxMenu = null }}
-    >
-      Delete
-    </button>
+    {#if canMutate}
+      <button
+        class="w-full text-left px-3 py-1.5 text-sm text-destructive hover:bg-surface-hover"
+        onclick={() => { requestDelete(ctxMenu!.item); ctxMenu = null }}
+      >
+        Delete
+      </button>
+    {/if}
   </div>
 {/if}
 

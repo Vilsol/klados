@@ -171,4 +171,24 @@ describe('ResourceList', () => {
       expect(span.hasAttribute('title')).toBe(true)
     }
   })
+
+  it('sorts numeric values numerically', async () => {
+    const restartsCol: ColumnDef = { name: 'Restarts', expr: 'status.restartCount', renderType: 'text', width: 80 }
+    mockVisibleColumns.value = [textCol, restartsCol]
+    mockSortState.value = { column: 'Restarts', direction: 'asc' }
+
+    const items = [
+      { metadata: { name: 'pod-a' }, spec: {}, status: { restartCount: 10 } },
+      { metadata: { name: 'pod-b' }, spec: {}, status: { restartCount: 2 } },
+      { metadata: { name: 'pod-c' }, spec: {}, status: { restartCount: 1 } },
+    ]
+
+    const { container } = render(ResourceList, {
+      props: { items, contextName: 'test-ctx', gvr: 'core.v1.pods' },
+    })
+
+    const nameCells = container.querySelectorAll('[data-col="Name"] span')
+    const names = Array.from(nameCells).map((el) => el.textContent)
+    expect(names).toEqual(['pod-c', 'pod-b', 'pod-a'])
+  })
 })
