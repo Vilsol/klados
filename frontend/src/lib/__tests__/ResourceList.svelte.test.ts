@@ -110,7 +110,7 @@ describe('ResourceList', () => {
     mockCompact.value = false
   })
 
-  it('sticky first column has correct classes', () => {
+  it('first column has no sticky or shadow classes', () => {
     const { container } = render(ResourceList, {
       props: {
         items: [],
@@ -119,16 +119,10 @@ describe('ResourceList', () => {
       },
     })
 
-    // First header cell button should have sticky classes
     const headerButtons = container.querySelectorAll('.grid button')
     const first = headerButtons[0] as HTMLElement
-    expect(first.className).toContain('sticky')
-    expect(first.className).toContain('left-0')
+    expect(first.className).not.toContain('sticky')
     expect(first.className).not.toContain('shadow')
-
-    // Second header button should NOT have sticky
-    const second = headerButtons[1] as HTMLElement
-    expect(second.className).not.toContain('sticky')
   })
 
   it('cell alignment matches render type', () => {

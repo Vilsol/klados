@@ -413,8 +413,7 @@
           <div class="relative" data-header-col={col.name}>
             <button
               onclick={() => toggleSort(col.name)}
-              class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {columnStore.compact ? 'py-1' : 'py-2'}
-                {i === 0 ? 'sticky left-0 z-10 bg-bg border-r border-border' : ''}"
+              class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {columnStore.compact ? 'py-1' : 'py-2'}"
             >
               {col.name}
               {#if columnStore.sortState?.column === col.name}
@@ -495,7 +494,6 @@
                   {@const value = renderCell(col, item)}
                   <div
                     class="px-1 truncate text-sm {alignClass(col)}
-                      {i === 0 ? `sticky left-0 z-10 border-r border-border ${isSelected ? 'bg-accent/10' : 'bg-bg group-hover:bg-surface-hover'}` : ''}
                       {col.name === 'Namespace' ? 'cursor-pointer hover:text-accent' : ''}"
                     data-col={col.name}
                     onclick={col.name === 'Namespace' ? (e) => { e.stopPropagation(); clusterStore.setNamespaces(contextName, [String(value)]) } : undefined}
