@@ -1,44 +1,44 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { Events } from '@wailsio/runtime'
-  import { ArrowDownToLine } from 'lucide-svelte'
-  import LogsPanel from './panels/LogsPanel.svelte'
-  import TerminalPanel from './panels/TerminalPanel.svelte'
-  import AggregateLogsPanel from './panels/AggregateLogsPanel.svelte'
-  import { YAMLEditor } from '@klados/ui'
-  import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import * as SchemaService from '../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js'
-  import { notificationStore } from '$lib/stores/notification.svelte.js'
-  import { unwrapError } from '$lib/utils/async.js'
-  import type { PanelKind } from '$lib/stores/bottom-panel.svelte'
+  import {onMount} from "svelte";
+  import {Events} from "@wailsio/runtime";
+  import {ArrowDownToLine} from "lucide-svelte";
+  import LogsPanel from "./panels/LogsPanel.svelte";
+  import TerminalPanel from "./panels/TerminalPanel.svelte";
+  import AggregateLogsPanel from "./panels/AggregateLogsPanel.svelte";
+  import {YAMLEditor} from "@klados/ui";
+  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import * as SchemaService from "../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js";
+  import {notificationStore} from "$lib/stores/notification.svelte.js";
+  import {unwrapError} from "$lib/utils/async.js";
+  import type {PanelKind} from "$lib/stores/bottom-panel.svelte";
 
-  let { panelId }: { panelId: string } = $props()
+  let {panelId}: {panelId: string} = $props();
 
   interface PanelData {
-    kind: PanelKind
-    resourceKind: string
-    resourceName: string
-    ctxName: string
-    gvr: string
-    namespace: string
-    name: string
-    obj: Record<string, any>
+    kind: PanelKind;
+    resourceKind: string;
+    resourceName: string;
+    ctxName: string;
+    gvr: string;
+    namespace: string;
+    name: string;
+    obj: Record<string, any>;
   }
 
-  let panelData = $state<PanelData | null>(null)
+  let panelData = $state<PanelData | null>(null);
 
   onMount(() => {
-    const unsub = Events.On(`panel:init:${panelId}`, (event: { data: PanelData }) => {
-      panelData = event.data
-    })
+    const unsub = Events.On(`panel:init:${panelId}`, (event: {data: PanelData}) => {
+      panelData = event.data;
+    });
 
-    Events.Emit('panel:ready', panelId)
+    Events.Emit("panel:ready", panelId);
 
-    return () => unsub()
-  })
+    return () => unsub();
+  });
 
   function popIn() {
-    Events.Emit('panel:pop-in', panelId)
+    Events.Emit("panel:pop-in", panelId);
   }
 </script>
 

@@ -1,31 +1,31 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { push } from 'svelte-spa-router'
-  import * as PluginService from '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
-  import { getLogger } from '$lib/logger'
+  import {onMount} from "svelte";
+  import {push} from "svelte-spa-router";
+  import * as PluginService from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
+  import {getLogger} from "$lib/logger";
 
-  const log = getLogger('settings')
+  const log = getLogger("settings");
 
   interface PluginEntry {
-    name: string
-    displayName: string
-    hasSettings: boolean
+    name: string;
+    displayName: string;
+    hasSettings: boolean;
   }
 
-  let plugins = $state<PluginEntry[]>([])
-  let loading = $state<boolean>(true)
+  let plugins = $state<PluginEntry[]>([]);
+  let loading = $state<boolean>(true);
 
   onMount(() => {
-    ;(async () => {
+    (async () => {
       try {
-        const list = await PluginService.ListPlugins()
-        const entries: PluginEntry[] = []
+        const list = await PluginService.ListPlugins();
+        const entries: PluginEntry[] = [];
         for (const p of list ?? []) {
-          const pi = p as any
-          let hasSettings = false
+          const pi = p as any;
+          let hasSettings = false;
           try {
-            const schema = await PluginService.GetPluginSettingsSchema(pi.name)
-            hasSettings = !!schema && schema !== '' && schema !== '{}'
+            const schema = await PluginService.GetPluginSettingsSchema(pi.name);
+            hasSettings = !!schema && schema !== "" && schema !== "{}";
           } catch {
             // no settings schema
           }
@@ -33,18 +33,18 @@
             name: pi.name,
             displayName: pi.displayName || pi.name,
             hasSettings,
-          })
+          });
         }
-        plugins = entries
+        plugins = entries;
       } catch (e) {
-        log.error('Failed to load plugins', { error: String(e) })
+        log.error("Failed to load plugins", {error: String(e)});
       } finally {
-        loading = false
+        loading = false;
       }
-    })()
-  })
+    })();
+  });
 
-  let pluginsWithSettings = $derived(plugins.filter((p) => p.hasSettings))
+  let pluginsWithSettings = $derived(plugins.filter((p) => p.hasSettings));
 </script>
 
 <div class="max-w-2xl space-y-6">

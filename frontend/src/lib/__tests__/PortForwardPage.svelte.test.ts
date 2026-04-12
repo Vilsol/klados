@@ -1,17 +1,26 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/svelte'
-import type { ColumnDef } from '$lib/registry/index'
+import {describe, it, expect, vi, beforeEach} from "vitest";
+import {render, screen, fireEvent, waitFor} from "@testing-library/svelte";
+import type {ColumnDef} from "$lib/registry/index";
 
-const { mockListSaved, mockListForwards, mockSetEnabled, mockRemove, mockSavePortForward, mockStartForward } = vi.hoisted(() => ({
+const {mockListSaved, mockListForwards, mockSetEnabled, mockRemove, mockSavePortForward, mockStartForward} = vi.hoisted(() => ({
   mockListSaved: vi.fn().mockResolvedValue([]),
   mockListForwards: vi.fn().mockResolvedValue([]),
   mockSetEnabled: vi.fn().mockResolvedValue(undefined),
   mockRemove: vi.fn().mockResolvedValue(undefined),
   mockSavePortForward: vi.fn().mockResolvedValue(undefined),
-  mockStartForward: vi.fn().mockResolvedValue({ id: 'new-id', status: 'reconnecting', localPort: 8080, remotePort: 80, namespace: 'default', targetKind: 'pod', targetName: 'my-pod', targetGVR: '' }),
-}))
+  mockStartForward: vi.fn().mockResolvedValue({
+    id: "new-id",
+    status: "reconnecting",
+    localPort: 8080,
+    remotePort: 80,
+    namespace: "default",
+    targetKind: "pod",
+    targetName: "my-pod",
+    targetGVR: "",
+  }),
+}));
 
-vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js', () => ({
+vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js", () => ({
   ListSavedPortForwards: mockListSaved,
   ListForwards: mockListForwards,
   SetPortForwardEnabled: mockSetEnabled,
@@ -19,15 +28,15 @@ vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/portforwar
   SavePortForward: mockSavePortForward,
   StartForward: mockStartForward,
   StopForward: vi.fn().mockResolvedValue(undefined),
-}))
+}));
 
-vi.mock('../../../bindings/github.com/Vilsol/klados/internal/config/models.js', () => {
-  const makeModel = () => vi.fn().mockImplementation((obj: any) => obj)
+vi.mock("../../../bindings/github.com/Vilsol/klados/internal/config/models.js", () => {
+  const makeModel = () => vi.fn().mockImplementation((obj: any) => obj);
   const makeModelWithCreateFrom = () => {
-    const M = vi.fn().mockImplementation((obj: any) => obj) as any
-    M.createFrom = vi.fn().mockImplementation((obj: any) => obj)
-    return M
-  }
+    const M = vi.fn().mockImplementation((obj: any) => obj) as any;
+    M.createFrom = vi.fn().mockImplementation((obj: any) => obj);
+    return M;
+  };
   return {
     SavedPortForward: makeModel(),
     ClusterPrefs: makeModelWithCreateFrom(),
@@ -38,27 +47,33 @@ vi.mock('../../../bindings/github.com/Vilsol/klados/internal/config/models.js', 
     ColumnSettings: makeModel(),
     MetricsConfig: makeModel(),
     SortPrefs: makeModel(),
-  }
-})
+  };
+});
 
-const { mockVisibleColumns, mockSortState } = vi.hoisted(() => ({
-  mockVisibleColumns: { value: [] as ColumnDef[] },
-  mockSortState: { value: null as null | { column: string; direction: 'asc' | 'desc' } },
-}))
+const {mockVisibleColumns, mockSortState} = vi.hoisted(() => ({
+  mockVisibleColumns: {value: [] as ColumnDef[]},
+  mockSortState: {value: null as null | {column: string; direction: "asc" | "desc"}},
+}));
 
-vi.mock('$lib/stores/columns.svelte', () => ({
+vi.mock("$lib/stores/columns.svelte", () => ({
   columnStore: {
-    get visibleColumns() { return mockVisibleColumns.value },
-    get sortState() { return mockSortState.value },
-    get compact() { return false },
+    get visibleColumns() {
+      return mockVisibleColumns.value;
+    },
+    get sortState() {
+      return mockSortState.value;
+    },
+    get compact() {
+      return false;
+    },
     loadForGVR: vi.fn().mockResolvedValue(undefined),
     resizeColumn: vi.fn(),
     autoFitColumn: vi.fn(),
     setSort: vi.fn(),
   },
-}))
+}));
 
-vi.mock('$lib/registry/index', () => ({
+vi.mock("$lib/registry/index", () => ({
   descriptorRegistry: {
     registerVirtual: vi.fn(),
     get: vi.fn().mockReturnValue({
@@ -68,22 +83,22 @@ vi.mock('$lib/registry/index', () => ({
       actions: [],
     }),
   },
-  evalExpr: vi.fn((expr: string, item: any) => item[expr] ?? ''),
-  defaultAlign: vi.fn().mockReturnValue('left'),
-}))
+  evalExpr: vi.fn((expr: string, item: any) => item[expr] ?? ""),
+  defaultAlign: vi.fn().mockReturnValue("left"),
+}));
 
-vi.mock('$lib/stores/cluster.svelte', () => ({
+vi.mock("$lib/stores/cluster.svelte", () => ({
   clusterStore: {
     setActiveContext: vi.fn(),
     getSelectedNamespaces: vi.fn().mockReturnValue([]),
     canMutate: vi.fn().mockReturnValue(false),
   },
-}))
+}));
 
-vi.mock('$lib/stores/selection.svelte', () => ({
+vi.mock("$lib/stores/selection.svelte", () => ({
   selectionStore: {
     selectedKeys: new Set(),
-    selectedGVR: '',
+    selectedGVR: "",
     count: 0,
     notVisibleCount: 0,
     isSelected: vi.fn().mockReturnValue(false),
@@ -95,127 +110,126 @@ vi.mock('$lib/stores/selection.svelte', () => ({
     setGVR: vi.fn(),
     items: vi.fn().mockReturnValue([]),
   },
-}))
+}));
 
-vi.mock('$lib/stores/notification.svelte', () => ({
+vi.mock("$lib/stores/notification.svelte", () => ({
   notificationStore: {
     push: vi.fn(),
     error: vi.fn(),
   },
-}))
+}));
 
-vi.mock('$lib/plugins/slots.svelte.js', () => ({
+vi.mock("$lib/plugins/slots.svelte.js", () => ({
   slotRegistry: {
     getListColumns: vi.fn().mockReturnValue([]),
     getContextMenuItems: vi.fn().mockReturnValue([]),
   },
-}))
+}));
 
-vi.mock('$lib/stores/streaming.svelte.js', () => ({
-  streamingStore: { config: null },
-}))
+vi.mock("$lib/stores/streaming.svelte.js", () => ({
+  streamingStore: {config: null},
+}));
 
-vi.mock('$lib/plugins/loader.js', () => ({
+vi.mock("$lib/plugins/loader.js", () => ({
   loadPluginComponent: vi.fn().mockResolvedValue(null),
-}))
+}));
 
-vi.mock('@klados/ui', () => ({
+vi.mock("@klados/ui", () => ({
   ConfirmDialog: vi.fn(),
   Combobox: vi.fn(),
-}))
+}));
 
-vi.mock('@tanstack/svelte-virtual', () => ({
-  createVirtualizer: ({ count }: { count: number }) => ({
+vi.mock("@tanstack/svelte-virtual", () => ({
+  createVirtualizer: ({count}: {count: number}) => ({
     subscribe: (fn: (v: any) => void) => {
       fn({
         getTotalSize: () => count * 36,
-        getVirtualItems: () =>
-          Array.from({ length: count }, (_, i) => ({ index: i, start: i * 36, size: 36 })),
-      })
-      return () => {}
+        getVirtualItems: () => Array.from({length: count}, (_, i) => ({index: i, start: i * 36, size: 36})),
+      });
+      return () => {};
     },
   }),
-}))
+}));
 
-import PortForwardPage from '../../routes/portforwards/PortForwardPage.svelte'
+import PortForwardPage from "../../routes/portforwards/PortForwardPage.svelte";
 
 const savedFwd = {
-  id: 'fwd-1',
-  resource: 'pods/my-pod',
-  namespace: 'default',
-  targetKind: 'pod',
-  targetName: 'my-pod',
-  targetGVR: '',
+  id: "fwd-1",
+  resource: "pods/my-pod",
+  namespace: "default",
+  targetKind: "pod",
+  targetName: "my-pod",
+  targetGVR: "",
   localPort: 8080,
   remotePort: 80,
   enabled: true,
-}
+};
 
-describe('PortForwardPage', () => {
+describe("PortForwardPage", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.clearAllMocks();
     mockVisibleColumns.value = [
-      { name: 'Resource', expr: 'resource', renderType: 'text' },
-      { name: 'Local Port', expr: 'localPort', renderType: 'text' },
-      { name: 'Status', expr: 'status', renderType: 'badge' },
-      { name: 'Enabled', expr: 'enabled', renderType: 'text' },
-    ]
-    mockSortState.value = null
-    mockListForwards.mockResolvedValue([])
-  })
+      {name: "Resource", expr: "resource", renderType: "text"},
+      {name: "Local Port", expr: "localPort", renderType: "text"},
+      {name: "Status", expr: "status", renderType: "badge"},
+      {name: "Enabled", expr: "enabled", renderType: "text"},
+    ];
+    mockSortState.value = null;
+    mockListForwards.mockResolvedValue([]);
+  });
 
-  it('renders saved forwards in ResourceList', async () => {
-    mockListSaved.mockResolvedValue([savedFwd])
+  it("renders saved forwards in ResourceList", async () => {
+    mockListSaved.mockResolvedValue([savedFwd]);
 
-    render(PortForwardPage, { props: { params: { ctx: 'test-ctx' } } })
+    render(PortForwardPage, {props: {params: {ctx: "test-ctx"}}});
 
     await waitFor(() => {
-      expect(mockListSaved).toHaveBeenCalledWith('test-ctx')
-    })
-  })
+      expect(mockListSaved).toHaveBeenCalledWith("test-ctx");
+    });
+  });
 
-  it('renders New Port Forward button', () => {
-    render(PortForwardPage, { props: { params: { ctx: 'test-ctx' } } })
-    expect(screen.getByText('New Port Forward')).toBeTruthy()
-  })
+  it("renders New Port Forward button", () => {
+    render(PortForwardPage, {props: {params: {ctx: "test-ctx"}}});
+    expect(screen.getByText("New Port Forward")).toBeTruthy();
+  });
 
-  it('Enable/Disable action calls SetPortForwardEnabled', async () => {
-    mockListSaved.mockResolvedValue([savedFwd])
+  it("Enable/Disable action calls SetPortForwardEnabled", async () => {
+    mockListSaved.mockResolvedValue([savedFwd]);
 
-    render(PortForwardPage, { props: { params: { ctx: 'test-ctx' } } })
+    render(PortForwardPage, {props: {params: {ctx: "test-ctx"}}});
 
-    await waitFor(() => expect(mockListSaved).toHaveBeenCalled())
+    await waitFor(() => expect(mockListSaved).toHaveBeenCalled());
 
     // Trigger disable action directly via row actions
-    const page = (await import('../../routes/portforwards/PortForwardPage.svelte')).default
-    expect(page).toBeDefined()
+    const page = (await import("../../routes/portforwards/PortForwardPage.svelte")).default;
+    expect(page).toBeDefined();
 
-    await mockSetEnabled('test-ctx', 'fwd-1', false)
-    expect(mockSetEnabled).toHaveBeenCalledWith('test-ctx', 'fwd-1', false)
-  })
+    await mockSetEnabled("test-ctx", "fwd-1", false);
+    expect(mockSetEnabled).toHaveBeenCalledWith("test-ctx", "fwd-1", false);
+  });
 
-  it('Remove action calls RemoveSavedPortForward', async () => {
-    mockListSaved.mockResolvedValue([savedFwd])
+  it("Remove action calls RemoveSavedPortForward", async () => {
+    mockListSaved.mockResolvedValue([savedFwd]);
 
-    render(PortForwardPage, { props: { params: { ctx: 'test-ctx' } } })
+    render(PortForwardPage, {props: {params: {ctx: "test-ctx"}}});
 
-    await waitFor(() => expect(mockListSaved).toHaveBeenCalled())
+    await waitFor(() => expect(mockListSaved).toHaveBeenCalled());
 
-    await mockRemove('test-ctx', 'fwd-1')
-    expect(mockRemove).toHaveBeenCalledWith('test-ctx', 'fwd-1')
-  })
+    await mockRemove("test-ctx", "fwd-1");
+    expect(mockRemove).toHaveBeenCalledWith("test-ctx", "fwd-1");
+  });
 
-  it('New Port Forward button opens dialog', async () => {
-    render(PortForwardPage, { props: { params: { ctx: 'test-ctx' } } })
+  it("New Port Forward button opens dialog", async () => {
+    render(PortForwardPage, {props: {params: {ctx: "test-ctx"}}});
 
-    const btn = screen.getByText('New Port Forward')
-    await fireEvent.click(btn)
+    const btn = screen.getByText("New Port Forward");
+    await fireEvent.click(btn);
 
     // Dialog renders a form or cancel button
     await waitFor(() => {
       // Dialog opened — PortForwardDialog renders with cancel button
-      const cancelBtns = screen.queryAllByText('Cancel')
-      expect(cancelBtns.length).toBeGreaterThan(0)
-    })
-  })
-})
+      const cancelBtns = screen.queryAllByText("Cancel");
+      expect(cancelBtns.length).toBeGreaterThan(0);
+    });
+  });
+});

@@ -1,17 +1,17 @@
 <script lang="ts">
-  import { SectionHeader, KeyValueBadge, StatusBadge, DataTable } from '@klados/ui'
+  import {SectionHeader, KeyValueBadge, StatusBadge, DataTable} from "@klados/ui";
 
-  let { obj }: { obj: Record<string, any> } = $props()
+  let {obj}: {obj: Record<string, any>} = $props();
 
-  const strategy = $derived(obj.spec?.strategy ?? {})
-  const selector = $derived(obj.spec?.selector?.matchLabels ?? {})
-  const conditions = $derived<any[]>(obj.status?.conditions ?? [])
+  const strategy = $derived(obj.spec?.strategy ?? {});
+  const selector = $derived(obj.spec?.selector?.matchLabels ?? {});
+  const conditions = $derived<any[]>(obj.status?.conditions ?? []);
   const replicas = $derived({
     desired: obj.spec?.replicas ?? 0,
     ready: obj.status?.readyReplicas ?? 0,
     available: obj.status?.availableReplicas ?? 0,
     updated: obj.status?.updatedReplicas ?? 0,
-  })
+  });
 </script>
 
 <div class="flex flex-col gap-6 p-4 overflow-auto">
@@ -60,15 +60,10 @@
   {#if conditions.length > 0}
     <section>
       <SectionHeader>Conditions</SectionHeader>
-      <DataTable
-        columns={[{ label: 'Type' }, { label: 'Status' }, { label: 'Reason' }, { label: 'Message' }]}
-        items={conditions}
-      >
+      <DataTable columns={[{ label: 'Type' }, { label: 'Status' }, { label: 'Reason' }, { label: 'Message' }]} items={conditions}>
         {#snippet row(cond)}
           <td class="px-2 py-1.5 font-mono">{cond.type}</td>
-          <td class="px-2 py-1.5">
-            <StatusBadge status={cond.status}>{cond.status}</StatusBadge>
-          </td>
+          <td class="px-2 py-1.5"><StatusBadge status={cond.status}>{cond.status}</StatusBadge></td>
           <td class="px-2 py-1.5 text-muted">{cond.reason ?? '—'}</td>
           <td class="px-2 py-1.5 text-muted max-w-xs truncate">{cond.message ?? '—'}</td>
         {/snippet}

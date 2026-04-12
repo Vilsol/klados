@@ -1,17 +1,17 @@
 <script lang="ts">
-  import { push } from 'svelte-spa-router'
-  import { SectionHeader, EmptyState } from '@klados/ui'
+  import {push} from "svelte-spa-router";
+  import {SectionHeader, EmptyState} from "@klados/ui";
 
-  let { obj, ctxName }: { obj: Record<string, any>; ctxName: string } = $props()
+  let {obj, ctxName}: {obj: Record<string, any>; ctxName: string} = $props();
 
-  const roleRef = $derived(obj.roleRef ?? {})
-  const subjects = $derived<any[]>(obj.subjects ?? [])
+  const roleRef = $derived(obj.roleRef ?? {});
+  const subjects = $derived<any[]>(obj.subjects ?? []);
 
   function roleRefURL(): string {
-    if (roleRef.kind === 'ClusterRole') {
-      return `/c/${ctxName}/rbac.authorization.k8s.io.v1.clusterroles/_/${roleRef.name}`
+    if (roleRef.kind === "ClusterRole") {
+      return `/c/${ctxName}/rbac.authorization.k8s.io.v1.clusterroles/_/${roleRef.name}`;
     }
-    return `/c/${ctxName}/rbac.authorization.k8s.io.v1.roles/${obj.metadata?.namespace}/${roleRef.name}`
+    return `/c/${ctxName}/rbac.authorization.k8s.io.v1.roles/${obj.metadata?.namespace}/${roleRef.name}`;
   }
 </script>
 
@@ -19,15 +19,8 @@
   <section>
     <SectionHeader>Role Reference</SectionHeader>
     <div class="flex items-center gap-2">
-      <span class="px-1.5 py-0.5 rounded text-xs font-medium bg-surface border border-border text-muted">
-        {roleRef.kind ?? ''}
-      </span>
-      <button
-        onclick={() => push(roleRefURL())}
-        class="text-xs text-accent hover:underline font-medium"
-      >
-        {roleRef.name ?? ''}
-      </button>
+      <span class="px-1.5 py-0.5 rounded text-xs font-medium bg-surface border border-border text-muted"> {roleRef.kind ?? ''} </span>
+      <button onclick={() => push(roleRefURL())} class="text-xs text-accent hover:underline font-medium">{roleRef.name ?? ''}</button>
     </div>
   </section>
 

@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { Dialog } from 'bits-ui'
-  import * as ResourceService from '../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import * as DrainService from '../../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js'
-  import { ConfirmDialog, Tooltip } from '@klados/ui'
-  import { withBusy } from '$lib/utils/async'
-  import { push } from 'svelte-spa-router'
-  import type { ActionDef } from '$lib/registry/index'
-  import { evalExpr } from '$lib/registry/index'
-  import { clusterStore } from '$lib/stores/cluster.svelte'
+  import {Dialog} from "bits-ui";
+  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import * as DrainService from "../../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js";
+  import {ConfirmDialog, Tooltip} from "@klados/ui";
+  import {withBusy} from "$lib/utils/async";
+  import {push} from "svelte-spa-router";
+  import type {ActionDef} from "$lib/registry/index";
+  import {evalExpr} from "$lib/registry/index";
+  import {clusterStore} from "$lib/stores/cluster.svelte";
 
   let {
     obj,
@@ -18,157 +18,207 @@
     actions,
     onrefresh,
   }: {
-    obj: Record<string, any>
-    ctxName: string
-    gvr: string
-    namespace: string
-    name: string
-    actions: ActionDef[]
-    onrefresh: () => void
-  } = $props()
+    obj: Record<string, any>;
+    ctxName: string;
+    gvr: string;
+    namespace: string;
+    name: string;
+    actions: ActionDef[];
+    onrefresh: () => void;
+  } = $props();
 
-  let deleteOpen = $state(false)
-  let forceDeleteOpen = $state(false)
-  let scaleOpen = $state(false)
-  let restartOpen = $state(false)
-  let rollbackOpen = $state(false)
-  let scaleReplicas = $state<number>(1)
-  $effect(() => { scaleReplicas = obj.spec?.replicas ?? 1 })
-  let busy = $state(false)
+  let deleteOpen = $state(false);
+  let forceDeleteOpen = $state(false);
+  let scaleOpen = $state(false);
+  let restartOpen = $state(false);
+  let rollbackOpen = $state(false);
+  let scaleReplicas = $state<number>(1);
+  $effect(() => {
+    scaleReplicas = obj.spec?.replicas ?? 1;
+  });
+  let busy = $state(false);
 
-  let expandOpen = $state(false)
-  let expandSize = $state('')
-  let expandCurrentSize = $state('')
-  let expandAllowed = $state<boolean | null>(null)
-  let expandError = $state<string | null>(null)
-  let expandChecking = $state(false)
+  let expandOpen = $state(false);
+  let expandSize = $state("");
+  let expandCurrentSize = $state("");
+  let expandAllowed = $state<boolean | null>(null);
+  let expandError = $state<string | null>(null);
+  let expandChecking = $state(false);
 
   function isDisabled(action: ActionDef): boolean {
-    if (!clusterStore.canMutate()) return true
-    if (!action.disabledWhen) return false
+    if (!clusterStore.canMutate()) return true;
+    if (!action.disabledWhen) return false;
     try {
-      return !!evalExpr(action.disabledWhen, obj)
+      return !!evalExpr(action.disabledWhen, obj);
     } catch {
-      return false
+      return false;
     }
   }
 
   function disabledReason(action: ActionDef): string | undefined {
-    if (!clusterStore.canMutate()) return 'Read-only mode'
-    if (action.disabledWhen && isDisabled(action)) return action.disabledReason
-    return undefined
+    if (!clusterStore.canMutate()) return "Read-only mode";
+    if (action.disabledWhen && isDisabled(action)) return action.disabledReason;
+    return undefined;
   }
 
-  const setBusy = (v: boolean) => { busy = v }
+  const setBusy = (v: boolean) => {
+    busy = v;
+  };
 
-  const doDelete = () => withBusy(setBusy,
-    () => ResourceService.DeleteResource(ctxName, gvr, namespace, name),
-    `Deleted ${name}`, 'Delete failed', () => push(`/c/${ctxName}/${gvr}`))
+  const doDelete = () =>
+    withBusy(
+      setBusy,
+      () => ResourceService.DeleteResource(ctxName, gvr, namespace, name),
+      `Deleted ${name}`,
+      "Delete failed",
+      () => push(`/c/${ctxName}/${gvr}`),
+    );
 
-  const doForceDelete = () => withBusy(setBusy,
-    () => ResourceService.ForceDeleteResource(ctxName, gvr, namespace, name),
-    `Force deleted ${name}`, 'Force delete failed', () => push(`/c/${ctxName}/${gvr}`))
+  const doForceDelete = () =>
+    withBusy(
+      setBusy,
+      () => ResourceService.ForceDeleteResource(ctxName, gvr, namespace, name),
+      `Force deleted ${name}`,
+      "Force delete failed",
+      () => push(`/c/${ctxName}/${gvr}`),
+    );
 
-  const doScale = () => withBusy(setBusy,
-    () => ResourceService.ScaleResource(ctxName, gvr, namespace, name, scaleReplicas),
-    `Scaled ${name} to ${scaleReplicas}`, 'Scale failed', () => { scaleOpen = false; onrefresh() })
+  const doScale = () =>
+    withBusy(
+      setBusy,
+      () => ResourceService.ScaleResource(ctxName, gvr, namespace, name, scaleReplicas),
+      `Scaled ${name} to ${scaleReplicas}`,
+      "Scale failed",
+      () => {
+        scaleOpen = false;
+        onrefresh();
+      },
+    );
 
-  const doRestart = () => withBusy(setBusy,
-    () => ResourceService.RestartResource(ctxName, gvr, namespace, name),
-    `Restarted ${name}`, 'Restart failed', onrefresh)
+  const doRestart = () =>
+    withBusy(
+      setBusy,
+      () => ResourceService.RestartResource(ctxName, gvr, namespace, name),
+      `Restarted ${name}`,
+      "Restart failed",
+      onrefresh,
+    );
 
-  const doPause = () => withBusy(setBusy,
-    () => ResourceService.PauseRollout(ctxName, namespace, name),
-    `Paused ${name}`, 'Pause failed', onrefresh)
+  const doPause = () =>
+    withBusy(setBusy, () => ResourceService.PauseRollout(ctxName, namespace, name), `Paused ${name}`, "Pause failed", onrefresh);
 
-  const doResume = () => withBusy(setBusy,
-    () => ResourceService.ResumeRollout(ctxName, namespace, name),
-    `Resumed ${name}`, 'Resume failed', onrefresh)
+  const doResume = () =>
+    withBusy(setBusy, () => ResourceService.ResumeRollout(ctxName, namespace, name), `Resumed ${name}`, "Resume failed", onrefresh);
 
-  const doCordon = () => withBusy(setBusy,
-    () => DrainService.CordonNode(ctxName, name),
-    `Cordoned ${name}`, 'Cordon failed', onrefresh)
+  const doCordon = () => withBusy(setBusy, () => DrainService.CordonNode(ctxName, name), `Cordoned ${name}`, "Cordon failed", onrefresh);
 
-  const doUncordon = () => withBusy(setBusy,
-    () => DrainService.UncordonNode(ctxName, name),
-    `Uncordoned ${name}`, 'Uncordon failed', onrefresh)
+  const doUncordon = () =>
+    withBusy(setBusy, () => DrainService.UncordonNode(ctxName, name), `Uncordoned ${name}`, "Uncordon failed", onrefresh);
 
-  const doDrain = () => withBusy(setBusy,
-    () => DrainService.StartDrain(ctxName, name),
-    `Drain started for ${name}`, 'Drain failed')
+  const doDrain = () => withBusy(setBusy, () => DrainService.StartDrain(ctxName, name), `Drain started for ${name}`, "Drain failed");
 
-  const doDeleteJobCascade = () => withBusy(setBusy,
-    () => ResourceService.DeleteJobCascade(ctxName, namespace, name),
-    `Deleted ${name} (cascade)`, 'Delete failed', () => push(`/c/${ctxName}/${gvr}`))
+  const doDeleteJobCascade = () =>
+    withBusy(
+      setBusy,
+      () => ResourceService.DeleteJobCascade(ctxName, namespace, name),
+      `Deleted ${name} (cascade)`,
+      "Delete failed",
+      () => push(`/c/${ctxName}/${gvr}`),
+    );
 
-  const doDeleteJobOrphan = () => withBusy(setBusy,
-    () => ResourceService.DeleteJobOrphan(ctxName, namespace, name),
-    `Deleted ${name} (orphan)`, 'Delete failed', () => push(`/c/${ctxName}/${gvr}`))
+  const doDeleteJobOrphan = () =>
+    withBusy(
+      setBusy,
+      () => ResourceService.DeleteJobOrphan(ctxName, namespace, name),
+      `Deleted ${name} (orphan)`,
+      "Delete failed",
+      () => push(`/c/${ctxName}/${gvr}`),
+    );
 
-  const doTriggerCronJob = () => withBusy(setBusy,
-    () => ResourceService.TriggerCronJob(ctxName, namespace, name),
-    `Triggered ${name}`, 'Trigger failed')
+  const doTriggerCronJob = () =>
+    withBusy(setBusy, () => ResourceService.TriggerCronJob(ctxName, namespace, name), `Triggered ${name}`, "Trigger failed");
 
-  const doSuspendCronJob = () => withBusy(setBusy,
-    () => ResourceService.SuspendCronJob(ctxName, namespace, name),
-    `Suspended ${name}`, 'Suspend failed', onrefresh)
+  const doSuspendCronJob = () =>
+    withBusy(setBusy, () => ResourceService.SuspendCronJob(ctxName, namespace, name), `Suspended ${name}`, "Suspend failed", onrefresh);
 
-  const doResumeCronJob = () => withBusy(setBusy,
-    () => ResourceService.ResumeCronJob(ctxName, namespace, name),
-    `Resumed ${name}`, 'Resume failed', onrefresh)
+  const doResumeCronJob = () =>
+    withBusy(setBusy, () => ResourceService.ResumeCronJob(ctxName, namespace, name), `Resumed ${name}`, "Resume failed", onrefresh);
 
   async function openExpand() {
-    expandOpen = true
-    expandAllowed = null
-    expandError = null
-    expandChecking = true
-    expandSize = ''
+    expandOpen = true;
+    expandAllowed = null;
+    expandError = null;
+    expandChecking = true;
+    expandSize = "";
     try {
-      const scName: string | undefined = obj.spec?.storageClassName
+      const scName: string | undefined = obj.spec?.storageClassName;
       if (!scName) {
-        expandAllowed = true
-        expandCurrentSize = obj.status?.capacity?.storage ?? obj.spec?.resources?.requests?.storage ?? ''
-        return
+        expandAllowed = true;
+        expandCurrentSize = obj.status?.capacity?.storage ?? obj.spec?.resources?.requests?.storage ?? "";
+        return;
       }
-      const sc = await ResourceService.GetResource(ctxName, 'storage.k8s.io.v1.storageclasses', '', scName)
-      expandAllowed = sc?.spec?.allowVolumeExpansion !== false
+      const sc = await ResourceService.GetResource(ctxName, "storage.k8s.io.v1.storageclasses", "", scName);
+      expandAllowed = sc?.spec?.allowVolumeExpansion !== false;
       if (!expandAllowed) {
-        expandError = 'This StorageClass does not allow volume expansion'
+        expandError = "This StorageClass does not allow volume expansion";
       }
-      expandCurrentSize = obj.status?.capacity?.storage ?? obj.spec?.resources?.requests?.storage ?? ''
+      expandCurrentSize = obj.status?.capacity?.storage ?? obj.spec?.resources?.requests?.storage ?? "";
     } catch {
-      expandAllowed = true
-      expandCurrentSize = obj.status?.capacity?.storage ?? obj.spec?.resources?.requests?.storage ?? ''
+      expandAllowed = true;
+      expandCurrentSize = obj.status?.capacity?.storage ?? obj.spec?.resources?.requests?.storage ?? "";
     } finally {
-      expandChecking = false
+      expandChecking = false;
     }
   }
 
-  const doExpand = () => withBusy(setBusy,
-    () => ResourceService.ExpandPVC(ctxName, namespace, name, expandSize),
-    `Expanded ${name} to ${expandSize}`, 'Expand failed', () => { expandOpen = false; onrefresh() })
+  const doExpand = () =>
+    withBusy(
+      setBusy,
+      () => ResourceService.ExpandPVC(ctxName, namespace, name, expandSize),
+      `Expanded ${name} to ${expandSize}`,
+      "Expand failed",
+      () => {
+        expandOpen = false;
+        onrefresh();
+      },
+    );
 
-  const destructiveActions = new Set(['delete', 'force-delete', 'delete-cascade', 'delete-orphan'])
+  const destructiveActions = new Set(["delete", "force-delete", "delete-cascade", "delete-orphan"]);
 
   function getHandler(actionName: string): (() => void) | null {
     switch (actionName) {
-      case 'scale': return () => (scaleOpen = true)
-      case 'restart': return () => (restartOpen = true)
-      case 'delete': return () => (deleteOpen = true)
-      case 'force-delete': return () => (forceDeleteOpen = true)
-      case 'rollback': return () => (rollbackOpen = true)
-      case 'pause': return doPause
-      case 'resume': return gvr === 'batch.v1.cronjobs' ? doResumeCronJob : doResume
-      case 'cordon': return doCordon
-      case 'uncordon': return doUncordon
-      case 'drain': return doDrain
-      case 'delete-cascade': return doDeleteJobCascade
-      case 'delete-orphan': return doDeleteJobOrphan
-      case 'trigger': return doTriggerCronJob
-      case 'suspend': return doSuspendCronJob
-      case 'expand': return openExpand
+      case "scale":
+        return () => (scaleOpen = true);
+      case "restart":
+        return () => (restartOpen = true);
+      case "delete":
+        return () => (deleteOpen = true);
+      case "force-delete":
+        return () => (forceDeleteOpen = true);
+      case "rollback":
+        return () => (rollbackOpen = true);
+      case "pause":
+        return doPause;
+      case "resume":
+        return gvr === "batch.v1.cronjobs" ? doResumeCronJob : doResume;
+      case "cordon":
+        return doCordon;
+      case "uncordon":
+        return doUncordon;
+      case "drain":
+        return doDrain;
+      case "delete-cascade":
+        return doDeleteJobCascade;
+      case "delete-orphan":
+        return doDeleteJobOrphan;
+      case "trigger":
+        return doTriggerCronJob;
+      case "suspend":
+        return doSuspendCronJob;
+      case "expand":
+        return openExpand;
     }
-    return null
+    return null;
   }
 </script>
 
@@ -184,17 +234,21 @@
             <button
               {...props}
               onclick={handler}
-              disabled={disabled}
+              {disabled}
               class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >{action.label}</button>
+            >
+              {action.label}
+            </button>
           {/snippet}
         </Tooltip>
       {:else}
         <button
           onclick={handler}
-          disabled={disabled}
+          {disabled}
           class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >{action.label}</button>
+        >
+          {action.label}
+        </button>
       {/if}
     {/if}
   {/each}
@@ -213,31 +267,39 @@
               <button
                 {...props}
                 onclick={handler}
-                disabled={disabled}
+                {disabled}
                 class="text-xs px-2.5 py-1 rounded bg-destructive text-destructive-fg hover:opacity-90 transition-opacity disabled:opacity-50"
-              >{action.label}</button>
+              >
+                {action.label}
+              </button>
             {:else}
               <button
                 {...props}
                 onclick={handler}
-                disabled={disabled}
+                {disabled}
                 class="text-xs px-2.5 py-1 rounded border border-destructive text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
-              >{action.label}</button>
+              >
+                {action.label}
+              </button>
             {/if}
           {/snippet}
         </Tooltip>
       {:else if action.name === 'delete'}
         <button
           onclick={handler}
-          disabled={disabled}
+          {disabled}
           class="text-xs px-2.5 py-1 rounded bg-destructive text-destructive-fg hover:opacity-90 transition-opacity disabled:opacity-50"
-        >{action.label}</button>
+        >
+          {action.label}
+        </button>
       {:else}
         <button
           onclick={handler}
-          disabled={disabled}
+          {disabled}
           class="text-xs px-2.5 py-1 rounded border border-destructive text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
-        >{action.label}</button>
+        >
+          {action.label}
+        </button>
       {/if}
     {/if}
   {/each}
@@ -292,16 +354,18 @@
         min="0"
         bind:value={scaleReplicas}
         class="w-full text-sm bg-bg border border-border rounded px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent"
-      />
+      >
       <div class="flex justify-end gap-2 mt-4">
-        <Dialog.Close
-          class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors"
-        >Cancel</Dialog.Close>
+        <Dialog.Close class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors"
+          >Cancel</Dialog.Close
+        >
         <button
           onclick={doScale}
           disabled={busy}
           class="px-3 py-1.5 text-sm rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"
-        >{busy ? 'Scaling…' : 'Scale'}</button>
+        >
+          {busy ? 'Scaling…' : 'Scale'}
+        </button>
       </div>
     </Dialog.Content>
   </Dialog.Portal>
@@ -330,18 +394,20 @@
           placeholder="e.g. 20Gi"
           bind:value={expandSize}
           class="w-full text-sm bg-bg border border-border rounded px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent"
-        />
+        >
       {/if}
       <div class="flex justify-end gap-2 mt-4">
-        <Dialog.Close
-          class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors"
-        >Cancel</Dialog.Close>
+        <Dialog.Close class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors"
+          >Cancel</Dialog.Close
+        >
         {#if !expandChecking && !expandError}
           <button
             onclick={doExpand}
             disabled={busy || !expandSize}
             class="px-3 py-1.5 text-sm rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"
-          >{busy ? 'Expanding…' : 'Expand'}</button>
+          >
+            {busy ? 'Expanding…' : 'Expand'}
+          </button>
         {/if}
       </div>
     </Dialog.Content>

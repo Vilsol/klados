@@ -1,157 +1,152 @@
 <script lang="ts">
-  import { evalExpr } from '$lib/registry/index'
-  import type { DescriptorDef } from '$lib/registry/index'
-  import { formatAge } from '$lib/utils/age'
-  import { getControllerRef, type ControllerRef } from '$lib/utils/relationships'
-  import { clusterStore } from '$lib/stores/cluster.svelte'
+  import {evalExpr} from "$lib/registry/index";
+  import type {DescriptorDef} from "$lib/registry/index";
+  import {formatAge} from "$lib/utils/age";
+  import {getControllerRef, type ControllerRef} from "$lib/utils/relationships";
+  import {clusterStore} from "$lib/stores/cluster.svelte";
 
-  import { SectionHeader, KeyValueBadge, EmptyState, StatusBadge, KeyValuePairEditor, CopyableValue } from '@klados/ui'
-  import { slotRegistry } from '$lib/plugins/slots.svelte.js'
-  import { loadPluginComponent } from '$lib/plugins/loader.js'
-  import { streamingStore } from '$lib/stores/streaming.svelte.js'
-  import * as ResourceService from '../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import { notificationStore } from '$lib/stores/notification.svelte'
-  import PortForwardDialog from '$lib/components/PortForwardDialog.svelte'
-  import PortButton from '$lib/components/PortButton.svelte'
+  import {SectionHeader, KeyValueBadge, EmptyState, StatusBadge, KeyValuePairEditor, CopyableValue} from "@klados/ui";
+  import {slotRegistry} from "$lib/plugins/slots.svelte.js";
+  import {loadPluginComponent} from "$lib/plugins/loader.js";
+  import {streamingStore} from "$lib/stores/streaming.svelte.js";
+  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {notificationStore} from "$lib/stores/notification.svelte";
+  import PortForwardDialog from "$lib/components/PortForwardDialog.svelte";
+  import PortButton from "$lib/components/PortButton.svelte";
 
   let {
     obj,
     onupdate,
     descriptor,
-    gvr = '',
-    ctxName = '',
-    namespace = '',
-    name = '',
+    gvr = "",
+    ctxName = "",
+    namespace = "",
+    name = "",
     onopenowner,
   }: {
-    obj: Record<string, any>
-    onupdate?: (updated: Record<string, any>) => void
-    descriptor: DescriptorDef
-    gvr?: string
-    ctxName?: string
-    namespace?: string
-    name?: string
-    onopenowner?: (ref: ControllerRef, namespace: string) => void
-  } = $props()
+    obj: Record<string, any>;
+    onupdate?: (updated: Record<string, any>) => void;
+    descriptor: DescriptorDef;
+    gvr?: string;
+    ctxName?: string;
+    namespace?: string;
+    name?: string;
+    onopenowner?: (ref: ControllerRef, namespace: string) => void;
+  } = $props();
 
   const basePluginURL = $derived(
-    streamingStore.config
-      ? `http://127.0.0.1:${streamingStore.config.port}/${streamingStore.config.token}/plugins`
-      : null
-  )
+    streamingStore.config ? `http://127.0.0.1:${streamingStore.config.port}/${streamingStore.config.token}/plugins` : null,
+  );
 
   function getRawValue(expr: string): string {
-    const raw = evalExpr(expr, obj)
-    if (raw === null || raw === undefined) return ''
-    return String(raw)
+    const raw = evalExpr(expr, obj);
+    if (raw === null || raw === undefined) return "";
+    return String(raw);
   }
 
   function renderValue(expr: string, renderType: string): string {
-    const raw = evalExpr(expr, obj)
-    if (renderType === 'age' && raw) {
-      return formatAge(String(raw))
+    const raw = evalExpr(expr, obj);
+    if (renderType === "age" && raw) {
+      return formatAge(String(raw));
     }
-    if (raw === null || raw === undefined) return '—'
-    return String(raw)
+    if (raw === null || raw === undefined) return "—";
+    return String(raw);
   }
 
   // Labels/annotations state
-  const hasLabelsPanel = $derived(descriptor.detailPanels.includes('labels'))
-  let editingLabels = $state(false)
-  let saving = $state(false)
-  let editLabels = $state<[string, string][]>([])
-  let editAnnotations = $state<[string, string][]>([])
+  const hasLabelsPanel = $derived(descriptor.detailPanels.includes("labels"));
+  let editingLabels = $state(false);
+  let saving = $state(false);
+  let editLabels = $state<[string, string][]>([]);
+  let editAnnotations = $state<[string, string][]>([]);
 
   function startEdit() {
-    editLabels = Object.entries(obj.metadata?.labels ?? {}).map(([k, v]) => [k, String(v)])
-    editAnnotations = Object.entries(obj.metadata?.annotations ?? {}).map(([k, v]) => [k, String(v)])
-    editingLabels = true
+    editLabels = Object.entries(obj.metadata?.labels ?? {}).map(([k, v]) => [k, String(v)]);
+    editAnnotations = Object.entries(obj.metadata?.annotations ?? {}).map(([k, v]) => [k, String(v)]);
+    editingLabels = true;
   }
 
   function cancelEdit() {
-    editingLabels = false
+    editingLabels = false;
   }
 
   async function saveLabels() {
-    saving = true
+    saving = true;
     try {
-      const updated = JSON.parse(JSON.stringify(obj))
-      updated.metadata.labels = Object.fromEntries(editLabels.filter(([k]) => k.trim()))
-      updated.metadata.annotations = Object.fromEntries(editAnnotations.filter(([k]) => k.trim()))
-      const result = await ResourceService.UpdateResource(ctxName, gvr, namespace, updated)
-      if (result) onupdate?.(result)
-      editingLabels = false
-      notificationStore.push('Labels and annotations saved.', 'success')
+      const updated = JSON.parse(JSON.stringify(obj));
+      updated.metadata.labels = Object.fromEntries(editLabels.filter(([k]) => k.trim()));
+      updated.metadata.annotations = Object.fromEntries(editAnnotations.filter(([k]) => k.trim()));
+      const result = await ResourceService.UpdateResource(ctxName, gvr, namespace, updated);
+      if (result) onupdate?.(result);
+      editingLabels = false;
+      notificationStore.push("Labels and annotations saved.", "success");
     } catch (e: any) {
-      notificationStore.push(e?.message ?? 'Save failed', 'error')
+      notificationStore.push(e?.message ?? "Save failed", "error");
     } finally {
-      saving = false
+      saving = false;
     }
   }
 
-  const controllerRef = $derived(getControllerRef(obj))
+  const controllerRef = $derived(getControllerRef(obj));
 
-  const tolerations = $derived<any[]>(
-    obj.spec?.tolerations ?? obj.spec?.template?.spec?.tolerations ?? []
-  )
-  let tolerationsExpanded = $state(true)
-  let tolerationsEl: HTMLElement | undefined = $state()
+  const tolerations = $derived<any[]>(obj.spec?.tolerations ?? obj.spec?.template?.spec?.tolerations ?? []);
+  let tolerationsExpanded = $state(true);
+  let tolerationsEl: HTMLElement | undefined = $state();
 
   function formatToleration(t: any): string {
-    const key = t.key || '*'
-    const op = t.operator === 'Exists' ? 'Exists' : `=${t.value ?? ''}`
-    const effect = t.effect || 'All'
-    const seconds = t.tolerationSeconds != null ? ` (${t.tolerationSeconds}s)` : ''
-    return `${key} ${op} — ${effect}${seconds}`
+    const key = t.key || "*";
+    const op = t.operator === "Exists" ? "Exists" : `=${t.value ?? ""}`;
+    const effect = t.effect || "All";
+    const seconds = t.tolerationSeconds != null ? ` (${t.tolerationSeconds}s)` : "";
+    return `${key} ${op} — ${effect}${seconds}`;
   }
 
   function scrollToTolerations() {
-    tolerationsExpanded = true
-    tolerationsEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    tolerationsExpanded = true;
+    tolerationsEl?.scrollIntoView({behavior: "smooth", block: "nearest"});
   }
 
-  const labels = $derived(Object.entries(obj.metadata?.labels ?? {}))
-  const annotations = $derived(Object.entries(obj.metadata?.annotations ?? {}))
+  const labels = $derived(Object.entries(obj.metadata?.labels ?? {}));
+  const annotations = $derived(Object.entries(obj.metadata?.annotations ?? {}));
 
   // Containers state
-  const hasContainersPanel = $derived(descriptor.detailPanels.includes('containers'))
-  const containers = $derived<any[]>(obj.spec?.containers ?? [])
-  const initContainers = $derived<any[]>(obj.spec?.initContainers ?? [])
-  const conditions = $derived<any[]>(obj.status?.conditions ?? [])
+  const hasContainersPanel = $derived(descriptor.detailPanels.includes("containers"));
+  const containers = $derived<any[]>(obj.spec?.containers ?? []);
+  const initContainers = $derived<any[]>(obj.spec?.initContainers ?? []);
+  const conditions = $derived<any[]>(obj.status?.conditions ?? []);
 
-  let pfPort = $state<number | null>(null)
+  let pfPort = $state<number | null>(null);
 
   function containerStatus(cname: string): any {
-    return (obj.status?.containerStatuses ?? []).find((s: any) => s.name === cname)
+    return (obj.status?.containerStatuses ?? []).find((s: any) => s.name === cname);
   }
 
   function initContainerStatus(cname: string): any {
-    return (obj.status?.initContainerStatuses ?? []).find((s: any) => s.name === cname)
+    return (obj.status?.initContainerStatuses ?? []).find((s: any) => s.name === cname);
   }
 
   function stateLabel(status: any): string {
-    if (!status) return 'Unknown'
-    if (status.state?.running) return 'Running'
-    if (status.state?.waiting) return `Waiting: ${status.state.waiting.reason ?? ''}`
-    if (status.state?.terminated) return `Terminated: ${status.state.terminated.reason ?? ''}`
-    return 'Unknown'
+    if (!status) return "Unknown";
+    if (status.state?.running) return "Running";
+    if (status.state?.waiting) return `Waiting: ${status.state.waiting.reason ?? ""}`;
+    if (status.state?.terminated) return `Terminated: ${status.state.terminated.reason ?? ""}`;
+    return "Unknown";
   }
 
-  let sectionOverrides = $state<Record<string, boolean>>({})
+  let sectionOverrides = $state<Record<string, boolean>>({});
 
   function isSectionOpen(cname: string, section: string): boolean {
-    const key = `${cname}:${section}`
-    if (key in sectionOverrides) return sectionOverrides[key]
-    return section === 'resources' || section === 'ports'
+    const key = `${cname}:${section}`;
+    if (key in sectionOverrides) return sectionOverrides[key];
+    return section === "resources" || section === "ports";
   }
 
   function toggleSection(cname: string, section: string) {
-    const key = `${cname}:${section}`
-    sectionOverrides = { ...sectionOverrides, [key]: !isSectionOpen(cname, section) }
+    const key = `${cname}:${section}`;
+    sectionOverrides = {...sectionOverrides, [key]: !isSectionOpen(cname, section)};
   }
 
-
-  let showInitContainers = $state(false)
+  let showInitContainers = $state(false);
 </script>
 
 <div class="overflow-auto h-full p-4 flex flex-col gap-4">
@@ -163,14 +158,8 @@
         <div class="min-w-0">
           <div class="text-xs text-muted mb-0.5">{field.label}</div>
           {#if field.renderType === 'badge'}
-            <CopyableValue
-              value={renderValue(field.expr, field.renderType)}
-              rawValue={getRawValue(field.expr)}
-              class="text-xs font-mono"
-            >
-              <span class="bg-bg border border-border rounded px-2 py-0.5 inline-block">
-                {renderValue(field.expr, field.renderType)}
-              </span>
+            <CopyableValue value={renderValue(field.expr, field.renderType)} rawValue={getRawValue(field.expr)} class="text-xs font-mono">
+              <span class="bg-bg border border-border rounded px-2 py-0.5 inline-block"> {renderValue(field.expr, field.renderType)} </span>
             </CopyableValue>
           {:else}
             <CopyableValue
@@ -188,7 +177,9 @@
             <button
               class="text-xs font-mono text-accent hover:underline text-left"
               onclick={() => onopenowner!(controllerRef, obj.metadata?.namespace ?? '')}
-            >{controllerRef.kind}/{controllerRef.name}</button>
+            >
+              {controllerRef.kind}/{controllerRef.name}
+            </button>
           {:else}
             <div class="text-xs font-mono truncate">{controllerRef.kind}/{controllerRef.name}</div>
           {/if}
@@ -197,10 +188,7 @@
       {#if tolerations.length > 0}
         <div class="min-w-0">
           <div class="text-xs text-muted mb-0.5">Tolerations</div>
-          <button
-            onclick={scrollToTolerations}
-            class="text-xs font-mono text-accent hover:underline"
-          >{tolerations.length}</button>
+          <button onclick={scrollToTolerations} class="text-xs font-mono text-accent hover:underline">{tolerations.length}</button>
         </div>
       {/if}
     </div>
@@ -217,10 +205,7 @@
 
   {#if tolerations.length > 0}
     <section bind:this={tolerationsEl} class="bg-surface border border-border rounded-lg p-4">
-      <button
-        onclick={() => tolerationsExpanded = !tolerationsExpanded}
-        class="flex items-center gap-1 w-full text-left"
-      >
+      <button onclick={() => tolerationsExpanded = !tolerationsExpanded} class="flex items-center gap-1 w-full text-left">
         <SectionHeader class="">{tolerationsExpanded ? '▾' : '▸'} Tolerations ({tolerations.length})</SectionHeader>
       </button>
       {#if tolerationsExpanded}
@@ -239,21 +224,21 @@
       <div class="flex items-center justify-between mb-3">
         <SectionHeader class="">Labels & Annotations</SectionHeader>
         {#if !editingLabels}
-          <button
-            onclick={startEdit}
-            class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
-          >Edit</button>
+          <button onclick={startEdit} class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors">
+            Edit
+          </button>
         {:else}
           <div class="flex gap-2">
-            <button
-              onclick={cancelEdit}
-              class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
-            >Cancel</button>
+            <button onclick={cancelEdit} class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors">
+              Cancel
+            </button>
             <button
               onclick={saveLabels}
               disabled={saving}
               class="text-xs px-2.5 py-1 rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"
-            >{saving ? 'Saving…' : 'Save'}</button>
+            >
+              {saving ? 'Saving…' : 'Save'}
+            </button>
           </div>
         {/if}
       </div>
@@ -270,7 +255,7 @@
             <EmptyState />
           {:else}
             <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
-              {#each annotations.sort(([a], [b]) => a.localeCompare(b)) as [k, v]}
+              {#each annotations.sort(([a], [b]) => a.localeCompare(b)) as [ k, v ]}
                 <span class="text-xs font-mono text-muted">{k}</span>
                 <span class="text-xs font-mono break-all">{v}</span>
               {/each}
@@ -298,14 +283,18 @@
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {#each conditions as cond}
           <div class="flex items-center gap-2 px-3 py-2 rounded-md bg-bg border border-border" title={cond.message ?? ''}>
-            <span class="w-2 h-2 rounded-full shrink-0
-              {cond.status === 'True' ? 'bg-green-500' : 'bg-muted'}"></span>
+            <span
+              class="w-2 h-2 rounded-full shrink-0
+              {cond.status === 'True' ? 'bg-green-500' : 'bg-muted'}"
+            ></span>
             <span class="text-xs font-mono flex-1 truncate">{cond.type}</span>
             {#if cond.reason}
               <span class="text-xs text-muted truncate">{cond.reason}</span>
             {/if}
             {#if cond.lastTransitionTime}
-              <span class="text-xs text-muted shrink-0 tabular-nums" title={new Date(cond.lastTransitionTime).toLocaleString()}>{formatAge(cond.lastTransitionTime)}</span>
+              <span class="text-xs text-muted shrink-0 tabular-nums" title={new Date(cond.lastTransitionTime).toLocaleString()}
+                >{formatAge(cond.lastTransitionTime)}</span
+              >
             {/if}
           </div>
         {/each}
@@ -327,7 +316,8 @@
               <div class="flex items-center gap-1.5">
                 {#if status?.restartCount > 0}
                   <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-600 dark:text-yellow-400">
-                    {status.restartCount} restart{status.restartCount !== 1 ? 's' : ''}
+                    {status.restartCount}
+                    restart{status.restartCount !== 1 ? 's' : ''}
                   </span>
                 {/if}
                 <StatusBadge status={!!status?.ready} mode="pill">{stateLabel(status)}</StatusBadge>
@@ -344,7 +334,8 @@
                     onclick={() => toggleSection(c.name, 'resources')}
                     class="flex items-center gap-1 w-full text-left py-1.5 text-xs font-semibold text-muted uppercase tracking-wide hover:text-fg transition-colors"
                   >
-                    {isSectionOpen(c.name, 'resources') ? '▾' : '▸'} Resources
+                    {isSectionOpen(c.name, 'resources') ? '▾' : '▸'}
+                    Resources
                   </button>
                   {#if isSectionOpen(c.name, 'resources')}
                     <div class="pl-4 pb-2">
@@ -387,7 +378,8 @@
                     onclick={() => toggleSection(c.name, 'ports')}
                     class="flex items-center gap-1 w-full text-left py-1.5 text-xs font-semibold text-muted uppercase tracking-wide hover:text-fg transition-colors"
                   >
-                    {isSectionOpen(c.name, 'ports') ? '▾' : '▸'} Ports ({c.ports.length})
+                    {isSectionOpen(c.name, 'ports') ? '▾' : '▸'}
+                    Ports ({c.ports.length})
                   </button>
                   {#if isSectionOpen(c.name, 'ports')}
                     <div class="pl-4 pb-2 flex flex-wrap gap-1">
@@ -406,7 +398,8 @@
                     onclick={() => toggleSection(c.name, 'env')}
                     class="flex items-center gap-1 w-full text-left py-1.5 text-xs font-semibold text-muted uppercase tracking-wide hover:text-fg transition-colors"
                   >
-                    {isSectionOpen(c.name, 'env') ? '▾' : '▸'} Environment ({c.env.length})
+                    {isSectionOpen(c.name, 'env') ? '▾' : '▸'}
+                    Environment ({c.env.length})
                   </button>
                   {#if isSectionOpen(c.name, 'env')}
                     <div class="pl-4 pb-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
@@ -429,7 +422,8 @@
                     onclick={() => toggleSection(c.name, 'mounts')}
                     class="flex items-center gap-1 w-full text-left py-1.5 text-xs font-semibold text-muted uppercase tracking-wide hover:text-fg transition-colors"
                   >
-                    {isSectionOpen(c.name, 'mounts') ? '▾' : '▸'} Mounts ({c.volumeMounts.length})
+                    {isSectionOpen(c.name, 'mounts') ? '▾' : '▸'}
+                    Mounts ({c.volumeMounts.length})
                   </button>
                   {#if isSectionOpen(c.name, 'mounts')}
                     <div class="pl-4 pb-2 flex flex-col gap-1">
@@ -465,7 +459,8 @@
         onclick={() => showInitContainers = !showInitContainers}
         class="text-xs font-semibold text-muted uppercase tracking-wide flex items-center gap-1"
       >
-        {showInitContainers ? '▾' : '▸'} Init Containers ({initContainers.length})
+        {showInitContainers ? '▾' : '▸'}
+        Init Containers ({initContainers.length})
       </button>
       {#if showInitContainers}
         <div class="flex flex-col gap-2 mt-3">

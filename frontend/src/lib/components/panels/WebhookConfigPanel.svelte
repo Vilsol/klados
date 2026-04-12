@@ -1,21 +1,21 @@
 <script lang="ts">
-  import { SectionHeader, KeyValueBadge, DataTable } from '@klados/ui'
+  import {SectionHeader, KeyValueBadge, DataTable} from "@klados/ui";
 
-  let { obj }: { obj: Record<string, any> } = $props()
+  let {obj}: {obj: Record<string, any>} = $props();
 
-  const webhooks = $derived<any[]>(obj.webhooks ?? [])
-  let expanded = $state<boolean[]>([])
+  const webhooks = $derived<any[]>(obj.webhooks ?? []);
+  let expanded = $state<boolean[]>([]);
 
   $effect(() => {
     if (expanded.length !== webhooks.length) {
-      expanded = webhooks.map(() => true)
+      expanded = webhooks.map(() => true);
     }
-  })
+  });
 
   function failurePolicyClass(policy: string): string {
-    if (policy === 'Fail') return 'bg-red-500/20 text-red-400 border border-red-500/30'
-    if (policy === 'Ignore') return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-    return 'bg-surface border border-border text-muted'
+    if (policy === "Fail") return "bg-red-500/20 text-red-400 border border-red-500/30";
+    if (policy === "Ignore") return "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30";
+    return "bg-surface border border-border text-muted";
   }
 </script>
 
@@ -49,7 +49,9 @@
                 {#if wh.clientConfig?.service}
                   {@const svc = wh.clientConfig.service}
                   <span class="text-muted">Service</span>
-                  <span class="font-mono">{svc.namespace}/{svc.name}{svc.port != null ? `:${svc.port}` : ''}{svc.path ? svc.path : ''}</span>
+                  <span class="font-mono"
+                    >{svc.namespace}/{svc.name}{svc.port != null ? `:${svc.port}` : ''}{svc.path ? svc.path : ''}</span
+                  >
                 {:else if wh.clientConfig?.url}
                   <span class="text-muted">URL</span>
                   <span class="font-mono break-all">{wh.clientConfig.url}</span>
@@ -82,7 +84,9 @@
                     </td>
                     <td class="px-2 py-1.5 font-mono text-xs">
                       {#each (rule.resources ?? []) as res, ri}
-                        {#if ri > 0}<span class="text-muted">, </span>{/if}
+                        {#if ri > 0}
+                          <span class="text-muted">, </span>
+                        {/if}
                         {#if res === '*'}
                           <span class="text-accent font-bold">*</span>
                         {:else}

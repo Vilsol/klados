@@ -1,56 +1,62 @@
 <script lang="ts">
-  import { Dialog } from 'bits-ui'
-  import * as ClusterService from '../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js'
-  import * as AppService from '../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js'
-  import { notificationStore } from '$lib/stores/notification.svelte.js'
-  import { unwrapError } from '$lib/utils/async.js'
+  import {Dialog} from "bits-ui";
+  import * as ClusterService from "../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js";
+  import * as AppService from "../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
+  import {notificationStore} from "$lib/stores/notification.svelte.js";
+  import {unwrapError} from "$lib/utils/async.js";
 
   let {
     open = $bindable(false),
     onsuccess,
   }: {
-    open: boolean
-    onsuccess: (contexts: any[]) => void
-  } = $props()
+    open: boolean;
+    onsuccess: (contexts: any[]) => void;
+  } = $props();
 
-  let mode = $state<'path' | 'paste'>('path')
-  let filePath = $state('')
-  let yamlContent = $state('')
-  let error = $state('')
-  let loading = $state(false)
+  let mode = $state<"path" | "paste">("path");
+  let filePath = $state("");
+  let yamlContent = $state("");
+  let error = $state("");
+  let loading = $state(false);
 
   async function browse() {
     try {
-      const path = await AppService.BrowseKubeconfigFile()
-      if (path) filePath = path
+      const path = await AppService.BrowseKubeconfigFile();
+      if (path) filePath = path;
     } catch (e: any) {
-      error = e?.message ?? String(e)
+      error = e?.message ?? String(e);
     }
   }
 
   async function submit() {
-    error = ''
-    loading = true
+    error = "";
+    loading = true;
     try {
-      let contexts: any[]
-      if (mode === 'path') {
-        if (!filePath.trim()) { error = 'Enter a file path'; return }
-        contexts = await ClusterService.AddKubeconfigPath(filePath.trim())
+      let contexts: any[];
+      if (mode === "path") {
+        if (!filePath.trim()) {
+          error = "Enter a file path";
+          return;
+        }
+        contexts = await ClusterService.AddKubeconfigPath(filePath.trim());
       } else {
-        if (!yamlContent.trim()) { error = 'Paste kubeconfig YAML'; return }
-        contexts = await ClusterService.ImportKubeconfigContent(yamlContent.trim())
+        if (!yamlContent.trim()) {
+          error = "Paste kubeconfig YAML";
+          return;
+        }
+        contexts = await ClusterService.ImportKubeconfigContent(yamlContent.trim());
       }
-      open = false
-      filePath = ''
-      yamlContent = ''
-      const count = (contexts ?? []).length
-      notificationStore.success(`Imported ${count} context${count !== 1 ? 's' : ''}`)
-      onsuccess(contexts ?? [])
+      open = false;
+      filePath = "";
+      yamlContent = "";
+      const count = (contexts ?? []).length;
+      notificationStore.success(`Imported ${count} context${count !== 1 ? "s" : ""}`);
+      onsuccess(contexts ?? []);
     } catch (e: any) {
-      error = e?.message ?? String(e)
-      notificationStore.error('Failed to import kubeconfig', unwrapError(e))
+      error = e?.message ?? String(e);
+      notificationStore.error("Failed to import kubeconfig", unwrapError(e));
     } finally {
-      loading = false
+      loading = false;
     }
   }
 </script>
@@ -88,7 +94,7 @@
             bind:value={filePath}
             placeholder="/path/to/kubeconfig.yaml"
             class="flex-1 px-3 py-1.5 text-sm rounded border border-border bg-surface focus:outline-none focus:border-accent"
-          />
+          >
           <button
             onclick={browse}
             class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors shrink-0"
@@ -110,9 +116,7 @@
       {/if}
 
       <div class="flex justify-end gap-2">
-        <Dialog.Close
-          class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors"
-        >
+        <Dialog.Close class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors">
           Cancel
         </Dialog.Close>
         <button

@@ -1,1 +1,1 @@
-export { notificationStore, type Toast, type ToastAction } from '@klados/ui'
+export {notificationStore, type Toast, type ToastAction} from "@klados/ui";

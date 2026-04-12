@@ -1,39 +1,48 @@
 <script lang="ts">
-  import { Trash2, Tag, StickyNote, Scale, Download, X } from 'lucide-svelte'
-  import { selectionStore } from '$lib/stores/selection.svelte'
-  import { exportItems } from '$lib/utils/export'
-  import BulkDeleteDialog from './BulkDeleteDialog.svelte'
-  import BulkMetadataDialog from './BulkMetadataDialog.svelte'
-  import BulkScaleDialog from './BulkScaleDialog.svelte'
+  import {Trash2, Tag, StickyNote, Scale, Download, X} from "lucide-svelte";
+  import {selectionStore} from "$lib/stores/selection.svelte";
+  import {exportItems} from "$lib/utils/export";
+  import BulkDeleteDialog from "./BulkDeleteDialog.svelte";
+  import BulkMetadataDialog from "./BulkMetadataDialog.svelte";
+  import BulkScaleDialog from "./BulkScaleDialog.svelte";
 
-  let { contextName, gvr }: { contextName: string; gvr: string } = $props()
+  let {contextName, gvr}: {contextName: string; gvr: string} = $props();
 
-  let deleteOpen = $state(false)
-  let labelOpen = $state(false)
-  let annotateOpen = $state(false)
-  let scaleOpen = $state(false)
-  let exportMenuOpen = $state(false)
+  let deleteOpen = $state(false);
+  let labelOpen = $state(false);
+  let annotateOpen = $state(false);
+  let scaleOpen = $state(false);
+  let exportMenuOpen = $state(false);
 
-  const SCALABLE_GVRS = ['apps.v1.deployments', 'apps.v1.statefulsets']
-  const canScale = $derived(SCALABLE_GVRS.includes(gvr))
+  const SCALABLE_GVRS = ["apps.v1.deployments", "apps.v1.statefulsets"];
+  const canScale = $derived(SCALABLE_GVRS.includes(gvr));
 
   $effect(() => {
-    if (!exportMenuOpen) return
-    const close = () => { exportMenuOpen = false }
-    const timer = setTimeout(() => window.addEventListener('click', close, { once: true }), 0)
-    return () => { clearTimeout(timer); window.removeEventListener('click', close) }
-  })
+    if (!exportMenuOpen) return;
+    const close = () => {
+      exportMenuOpen = false;
+    };
+    const timer = setTimeout(() => window.addEventListener("click", close, {once: true}), 0);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("click", close);
+    };
+  });
 
-  function doExport(format: 'yaml' | 'json') {
-    exportItems(selectionStore.items(), gvr, format)
-    exportMenuOpen = false
+  function doExport(format: "yaml" | "json") {
+    exportItems(selectionStore.items(), gvr, format);
+    exportMenuOpen = false;
   }
 </script>
 
 {#if selectionStore.count > 0}
-  <div class="animate-slide-up fixed bottom-6 left-1/2 z-30 flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 shadow-lg">
+  <div
+    class="animate-slide-up fixed bottom-6 left-1/2 z-30 flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 shadow-lg"
+  >
     <span class="text-sm font-medium text-fg whitespace-nowrap">
-      {selectionStore.count} selected{#if selectionStore.notVisibleCount > 0}
+      {selectionStore.count}
+      selected
+      {#if selectionStore.notVisibleCount > 0}
         <span class="text-muted-foreground"> ({selectionStore.notVisibleCount} not visible)</span>
       {/if}
     </span>
@@ -97,16 +106,10 @@
       </button>
       {#if exportMenuOpen}
         <div class="absolute bottom-full mb-1 left-0 rounded-md border border-border bg-surface shadow-lg py-1 min-w-[100px]">
-          <button
-            class="block w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover text-fg"
-            onclick={() => doExport('yaml')}
-          >
+          <button class="block w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover text-fg" onclick={() => doExport('yaml')}>
             YAML
           </button>
-          <button
-            class="block w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover text-fg"
-            onclick={() => doExport('json')}
-          >
+          <button class="block w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover text-fg" onclick={() => doExport('json')}>
             JSON
           </button>
         </div>

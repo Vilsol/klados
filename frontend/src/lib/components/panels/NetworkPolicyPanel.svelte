@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { SectionHeader, KeyValueBadge, EmptyState } from '@klados/ui'
+  import {SectionHeader, KeyValueBadge, EmptyState} from "@klados/ui";
 
-  let { obj }: { obj: Record<string, any> } = $props()
+  let {obj}: {obj: Record<string, any>} = $props();
 
-  const podSelector = $derived<Record<string, string>>(obj.spec?.podSelector?.matchLabels ?? {})
-  const policyTypes = $derived<string[]>(obj.spec?.policyTypes ?? [])
-  const ingressRules = $derived<any[] | undefined>(obj.spec?.ingress)
-  const egressRules = $derived<any[] | undefined>(obj.spec?.egress)
+  const podSelector = $derived<Record<string, string>>(obj.spec?.podSelector?.matchLabels ?? {});
+  const policyTypes = $derived<string[]>(obj.spec?.policyTypes ?? []);
+  const ingressRules = $derived<any[] | undefined>(obj.spec?.ingress);
+  const egressRules = $derived<any[] | undefined>(obj.spec?.egress);
 
   function formatPorts(ports: any[]): string {
-    if (!ports || ports.length === 0) return 'All ports'
-    return ports.map((p: any) => `${p.port ?? '*'}/${p.protocol ?? 'TCP'}`).join(', ')
+    if (!ports || ports.length === 0) return "All ports";
+    return ports.map((p: any) => `${p.port ?? "*"}/${p.protocol ?? "TCP"}`).join(", ");
   }
 </script>
 
@@ -19,7 +19,9 @@
   <section>
     <SectionHeader>Applies To</SectionHeader>
     {#if Object.keys(podSelector).length === 0}
-      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+      <span
+        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+      >
         All pods in namespace
       </span>
     {:else}

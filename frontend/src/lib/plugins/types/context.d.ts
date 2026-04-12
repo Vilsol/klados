@@ -37,7 +37,12 @@ export interface K8SContext {
  */
 export interface LogsContext {
   /** Start a log stream for a container */
-  stream: (pod: string, ns: string, container: string, opts?: { follow?: boolean; previous?: boolean; tailLines?: number }) => Promise<string>;
+  stream: (
+    pod: string,
+    ns: string,
+    container: string,
+    opts?: {follow?: boolean; previous?: boolean; tailLines?: number},
+  ) => Promise<string>;
   /** Stop a log stream */
   stop: (streamID: string) => Promise<void>;
   [k: string]: unknown;

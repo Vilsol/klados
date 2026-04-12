@@ -1,44 +1,44 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { X, ChevronDown, ChevronUp, PanelTopOpen, ScrollText, TerminalSquare, Layers, FileCode } from 'lucide-svelte'
-  import { Events } from '@wailsio/runtime'
-  import { bottomPanelStore, type PanelKind } from '$lib/stores/bottom-panel.svelte'
-  import LogsPanel from './panels/LogsPanel.svelte'
-  import TerminalPanel from './panels/TerminalPanel.svelte'
-  import AggregateLogsPanel from './panels/AggregateLogsPanel.svelte'
-  import { YAMLEditor } from '@klados/ui'
-  import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import * as SchemaService from '../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js'
-  import * as WindowService from '../../../bindings/github.com/Vilsol/klados/internal/services/windowservice.js'
-  import { notificationStore } from '$lib/stores/notification.svelte.js'
-  import { unwrapError } from '$lib/utils/async.js'
+  import {onMount} from "svelte";
+  import {X, ChevronDown, ChevronUp, PanelTopOpen, ScrollText, TerminalSquare, Layers, FileCode} from "lucide-svelte";
+  import {Events} from "@wailsio/runtime";
+  import {bottomPanelStore, type PanelKind} from "$lib/stores/bottom-panel.svelte";
+  import LogsPanel from "./panels/LogsPanel.svelte";
+  import TerminalPanel from "./panels/TerminalPanel.svelte";
+  import AggregateLogsPanel from "./panels/AggregateLogsPanel.svelte";
+  import {YAMLEditor} from "@klados/ui";
+  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import * as SchemaService from "../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js";
+  import * as WindowService from "../../../bindings/github.com/Vilsol/klados/internal/services/windowservice.js";
+  import {notificationStore} from "$lib/stores/notification.svelte.js";
+  import {unwrapError} from "$lib/utils/async.js";
 
   const kindLabel: Record<PanelKind, string> = {
-    'logs': 'Logs',
-    'terminal': 'Terminal',
-    'aggregate-logs': 'Logs',
-    'yaml': 'YAML',
-  }
+    logs: "Logs",
+    terminal: "Terminal",
+    "aggregate-logs": "Logs",
+    yaml: "YAML",
+  };
 
-  const visibleTabs = $derived(bottomPanelStore.visibleTabs)
+  const visibleTabs = $derived(bottomPanelStore.visibleTabs);
 
   async function popOutTab(id: string) {
-    const tab = bottomPanelStore.tabs.find((t) => t.id === id)
-    if (!tab) return
-    const title = `${kindLabel[tab.kind]}: ${tab.resourceName}`
-    bottomPanelStore.popOut(id)
-    await WindowService.OpenPanelWindow(id, title)
+    const tab = bottomPanelStore.tabs.find((t) => t.id === id);
+    if (!tab) return;
+    const title = `${kindLabel[tab.kind]}: ${tab.resourceName}`;
+    bottomPanelStore.popOut(id);
+    await WindowService.OpenPanelWindow(id, title);
   }
 
   onMount(() => {
-    const unsubClosed = Events.On('panel:closed', (event: { data: string }) => {
-      bottomPanelStore.closeTab(event.data)
-    })
+    const unsubClosed = Events.On("panel:closed", (event: {data: string}) => {
+      bottomPanelStore.closeTab(event.data);
+    });
 
-    const unsubReady = Events.On('panel:ready', (event: { data: string }) => {
-      const id = event.data
-      const tab = bottomPanelStore.tabs.find((t) => t.id === id)
-      if (!tab) return
+    const unsubReady = Events.On("panel:ready", (event: {data: string}) => {
+      const id = event.data;
+      const tab = bottomPanelStore.tabs.find((t) => t.id === id);
+      if (!tab) return;
       Events.Emit(`panel:init:${id}`, {
         kind: tab.kind,
         resourceKind: tab.resourceKind,
@@ -48,23 +48,26 @@
         namespace: tab.namespace,
         name: tab.name,
         obj: tab.obj,
-      })
-    })
+      });
+    });
 
-    const unsubPopIn = Events.On('panel:pop-in', (event: { data: string }) => {
-      bottomPanelStore.popIn(event.data)
-    })
+    const unsubPopIn = Events.On("panel:pop-in", (event: {data: string}) => {
+      bottomPanelStore.popIn(event.data);
+    });
 
     return () => {
-      unsubClosed()
-      unsubReady()
-      unsubPopIn()
-    }
-  })
+      unsubClosed();
+      unsubReady();
+      unsubPopIn();
+    };
+  });
 </script>
 
 {#if bottomPanelStore.hasVisibleTabs}
-  <div class="flex flex-col shrink-0 border-t border-border bg-bg" style:height={bottomPanelStore.collapsed ? 'auto' : `${bottomPanelStore.height}px`}>
+  <div
+    class="flex flex-col shrink-0 border-t border-border bg-bg"
+    style:height={bottomPanelStore.collapsed ? 'auto' : `${bottomPanelStore.height}px`}
+  >
     <!-- Tab bar -->
     <div class="flex items-center shrink-0 border-b border-border bg-surface">
       <div class="flex items-center overflow-x-auto flex-1" role="tablist">

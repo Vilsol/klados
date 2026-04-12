@@ -1,30 +1,32 @@
 <script lang="ts">
-  import { Eye, EyeOff, Copy, Check } from 'lucide-svelte'
-  import { SectionHeader } from '@klados/ui'
-  import { toggleSet } from '$lib/utils/collections'
+  import {Eye, EyeOff, Copy, Check} from "lucide-svelte";
+  import {SectionHeader} from "@klados/ui";
+  import {toggleSet} from "$lib/utils/collections";
 
-  let { obj }: { obj: Record<string, any> } = $props()
+  let {obj}: {obj: Record<string, any>} = $props();
 
-  const secretType = $derived<string>(obj.type ?? 'Opaque')
-  const data = $derived<Record<string, string>>(obj.data ?? {})
-  const entries = $derived(Object.entries(data))
+  const secretType = $derived<string>(obj.type ?? "Opaque");
+  const data = $derived<Record<string, string>>(obj.data ?? {});
+  const entries = $derived(Object.entries(data));
 
-  let revealed = $state<Set<string>>(new Set())
-  let copied = $state<string | null>(null)
+  let revealed = $state<Set<string>>(new Set());
+  let copied = $state<string | null>(null);
 
   function decode(b64: string): string {
     try {
-      return atob(b64)
+      return atob(b64);
     } catch {
-      return b64
+      return b64;
     }
   }
 
   async function copyDecoded(key: string, b64: string) {
     try {
-      await navigator.clipboard.writeText(decode(b64))
-      copied = key
-      setTimeout(() => { copied = null }, 2000)
+      await navigator.clipboard.writeText(decode(b64));
+      copied = key;
+      setTimeout(() => {
+        copied = null;
+      }, 2000);
     } catch {
       // clipboard unavailable
     }
@@ -47,7 +49,7 @@
         <span class="text-xs text-muted">Values are base64-encoded</span>
       </div>
       <div class="flex flex-col gap-2">
-        {#each entries as [key, value]}
+        {#each entries as [ key, value ]}
           {@const isRevealed = revealed.has(key)}
           {@const decoded = decode(value)}
           <div class="bg-surface border border-border rounded-lg overflow-hidden">

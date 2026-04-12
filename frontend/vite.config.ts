@@ -1,5 +1,5 @@
-import { defineConfig } from "vite";
-import { svelte } from "@sveltejs/vite-plugin-svelte";
+import {defineConfig} from "vite";
+import {svelte} from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
 import wails from "@wailsio/runtime/plugins/vite";
 import path from "path";
@@ -25,11 +25,7 @@ const svelteSharedRuntime = () => {
     resolveId(id: string, importer: string | undefined) {
       if (!isBuild || process.env.VITEST) return;
       if (importer === runtimePath) return; // let runtime file import real svelte
-      if (
-        id === "svelte" ||
-        id === "svelte/internal/client" ||
-        id === "svelte/internal"
-      ) {
+      if (id === "svelte" || id === "svelte/internal/client" || id === "svelte/internal") {
         return runtimePath;
       }
     },
@@ -43,10 +39,7 @@ const svelteSharedRuntime = () => {
         if (req.url === SHARED_URL) {
           const result = await server.transformRequest(RUNTIME_SRC);
           if (result?.code) {
-            res.setHeader(
-              "Content-Type",
-              "application/javascript; charset=utf-8"
-            );
+            res.setHeader("Content-Type", "application/javascript; charset=utf-8");
             res.setHeader("Cache-Control", "no-cache");
             res.end(result.code);
             return;
@@ -79,8 +72,7 @@ export default defineConfig({
       preserveEntrySignatures: "exports-only",
       output: {
         entryFileNames(chunk) {
-          if (chunk.name === "plugin-shared/svelte-runtime")
-            return "[name].js";
+          if (chunk.name === "plugin-shared/svelte-runtime") return "[name].js";
           return "assets/[name]-[hash].js";
         },
         chunkFileNames: "assets/[name]-[hash].js",

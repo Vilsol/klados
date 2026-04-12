@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { SectionHeader, EmptyState } from '@klados/ui'
+  import {SectionHeader, EmptyState} from "@klados/ui";
 
-  let { obj }: { obj: Record<string, any> } = $props()
+  let {obj}: {obj: Record<string, any>} = $props();
 
-  const rules = $derived<any[]>(obj.rules ?? [])
+  const rules = $derived<any[]>(obj.rules ?? []);
 </script>
 
 <div class="p-4 space-y-6">

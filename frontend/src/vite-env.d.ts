@@ -1,4 +1,4 @@
 /// <reference types="svelte" />
 /// <reference types="vite/client" />
 
-declare module '@fontsource/jetbrains-mono';
+declare module "@fontsource/jetbrains-mono";

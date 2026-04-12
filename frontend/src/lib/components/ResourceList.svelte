@@ -1,39 +1,41 @@
 <script lang="ts">
-  import { createVirtualizer } from '@tanstack/svelte-virtual'
-  import { ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw, Columns3, Check, Minus, Download } from 'lucide-svelte'
-  import { ConfirmDialog } from '@klados/ui'
-  import { notificationStore } from '$lib/stores/notification.svelte'
-  import { evalExpr, defaultAlign, type ColumnDef, type RenderType } from '$lib/registry/index'
-  import { getControllerRef, type ControllerRef } from '$lib/utils/relationships'
-  import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import { formatAge } from '$lib/utils/age'
-  import { onMount } from 'svelte'
-  import { slotRegistry } from '$lib/plugins/slots.svelte.js'
-  import { loadPluginComponent } from '$lib/plugins/loader.js'
-  import { streamingStore } from '$lib/stores/streaming.svelte.js'
-  import Sparkline from './charts/Sparkline.svelte'
-  import type { MetricResult } from './charts/types'
-  import { columnStore } from '$lib/stores/columns.svelte'
-  import { clusterStore } from '$lib/stores/cluster.svelte'
-  import { selectionStore } from '$lib/stores/selection.svelte'
-  import ColumnMenu from './ColumnMenu.svelte'
-  import SmartSearch from './SmartSearch.svelte'
-  import SavedFilterDropdown from './SavedFilterDropdown.svelte'
-  import { filterItems } from '$lib/search/filter'
-  import type { SearchTerm } from '$lib/search/parser'
-  import { exportItems } from '$lib/utils/export'
+  import {createVirtualizer} from "@tanstack/svelte-virtual";
+  import {ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw, Columns3, Check, Minus, Download} from "lucide-svelte";
+  import {ConfirmDialog} from "@klados/ui";
+  import {notificationStore} from "$lib/stores/notification.svelte";
+  import {evalExpr, defaultAlign, type ColumnDef, type RenderType} from "$lib/registry/index";
+  import {getControllerRef, type ControllerRef} from "$lib/utils/relationships";
+  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {formatAge} from "$lib/utils/age";
+  import {onMount} from "svelte";
+  import {slotRegistry} from "$lib/plugins/slots.svelte.js";
+  import {loadPluginComponent} from "$lib/plugins/loader.js";
+  import {streamingStore} from "$lib/stores/streaming.svelte.js";
+  import Sparkline from "./charts/Sparkline.svelte";
+  import type {MetricResult} from "./charts/types";
+  import {columnStore} from "$lib/stores/columns.svelte";
+  import {clusterStore} from "$lib/stores/cluster.svelte";
+  import {selectionStore} from "$lib/stores/selection.svelte";
+  import ColumnMenu from "./ColumnMenu.svelte";
+  import SmartSearch from "./SmartSearch.svelte";
+  import SavedFilterDropdown from "./SavedFilterDropdown.svelte";
+  import {filterItems} from "$lib/search/filter";
+  import type {SearchTerm} from "$lib/search/parser";
+  import {exportItems} from "$lib/utils/export";
 
   function itemKey(obj: Record<string, any>): string {
-    const ns = obj.metadata?.namespace ?? ''
-    const name = obj.metadata?.name ?? ''
-    return ns ? `${ns}/${name}` : name
+    const ns = obj.metadata?.namespace ?? "";
+    const name = obj.metadata?.name ?? "";
+    return ns ? `${ns}/${name}` : name;
   }
 
-  let now = $state(Date.now())
+  let now = $state(Date.now());
   onMount(() => {
-    const id = setInterval(() => { now = Date.now() }, 1_000)
-    return () => clearInterval(id)
-  })
+    const id = setInterval(() => {
+      now = Date.now();
+    }, 1_000);
+    return () => clearInterval(id);
+  });
 
   let {
     items,
@@ -53,285 +55,279 @@
     onSparklineToggle,
     rowActions,
   }: {
-    items: Record<string, any>[]
-    contextName: string
-    gvr: string
-    selectedNamespaces?: string[]
-    loading?: boolean
-    error?: string | null
-    selectedName?: string | null
-    scrollContainer?: HTMLDivElement
-    onrefresh?: () => void
-    onselect?: (item: Record<string, any>) => void
-    onopenowner?: (ref: ControllerRef, namespace: string) => void
-    sparklineGvrs?: string[]
-    sparklineData?: Record<string, MetricResult[]>
-    sparklineColumns?: string[]
-    onSparklineToggle?: (columns: string[]) => void
-    rowActions?: (item: Record<string, any>) => Array<{ label: string; icon?: any; onClick: () => void; variant?: 'default' | 'destructive' }>
-  } = $props()
+    items: Record<string, any>[];
+    contextName: string;
+    gvr: string;
+    selectedNamespaces?: string[];
+    loading?: boolean;
+    error?: string | null;
+    selectedName?: string | null;
+    scrollContainer?: HTMLDivElement;
+    onrefresh?: () => void;
+    onselect?: (item: Record<string, any>) => void;
+    onopenowner?: (ref: ControllerRef, namespace: string) => void;
+    sparklineGvrs?: string[];
+    sparklineData?: Record<string, MetricResult[]>;
+    sparklineColumns?: string[];
+    onSparklineToggle?: (columns: string[]) => void;
+    rowActions?: (
+      item: Record<string, any>,
+    ) => Array<{label: string; icon?: any; onClick: () => void; variant?: "default" | "destructive"}>;
+  } = $props();
 
-  let searchTerms = $state<SearchTerm[]>([])
-  let searchQuery = $state('')
-  let deleteTarget = $state<{ namespace: string; name: string } | null>(null)
-  let confirmOpen = $state(false)
-  let ctxMenu = $state<{ x: number; y: number; item: Record<string, any> } | null>(null)
-  let ctxMenuEl = $state<HTMLDivElement | null>(null)
-  let columnMenuOpen = $state(false)
-  let exportMenuOpen = $state(false)
-  let resizing = $state<{ name: string; startX: number; startWidth: number } | null>(null)
+  let searchTerms = $state<SearchTerm[]>([]);
+  let searchQuery = $state("");
+  let deleteTarget = $state<{namespace: string; name: string} | null>(null);
+  let confirmOpen = $state(false);
+  let ctxMenu = $state<{x: number; y: number; item: Record<string, any>} | null>(null);
+  let ctxMenuEl = $state<HTMLDivElement | null>(null);
+  let columnMenuOpen = $state(false);
+  let exportMenuOpen = $state(false);
+  let resizing = $state<{name: string; startX: number; startWidth: number} | null>(null);
 
-  function getSparklinePoints(itemName: string, metricName: string): { t: number; v: number }[] {
-    const metrics = sparklineData[itemName]
-    if (!metrics) return []
-    const metric = metrics.find(m => m.name === metricName)
-    if (!metric?.series?.[0]?.points) return []
-    return metric.series[0].points
+  function getSparklinePoints(itemName: string, metricName: string): {t: number; v: number}[] {
+    const metrics = sparklineData[itemName];
+    if (!metrics) return [];
+    const metric = metrics.find((m) => m.name === metricName);
+    if (!metric?.series?.[0]?.points) return [];
+    return metric.series[0].points;
   }
 
-  const pluginColumns = $derived(slotRegistry.getListColumns(gvr))
-  const pluginMenuItems = $derived(slotRegistry.getContextMenuItems(gvr))
+  const pluginColumns = $derived(slotRegistry.getListColumns(gvr));
+  const pluginMenuItems = $derived(slotRegistry.getContextMenuItems(gvr));
   const basePluginURL = $derived(
-    streamingStore.config
-      ? `http://127.0.0.1:${streamingStore.config.port}/${streamingStore.config.token}/plugins`
-      : null
-  )
+    streamingStore.config ? `http://127.0.0.1:${streamingStore.config.port}/${streamingStore.config.token}/plugins` : null,
+  );
 
   $effect(() => {
-    if (!ctxMenu) return
-    const close = () => { ctxMenu = null }
-    window.addEventListener('click', close, { once: true })
-    return () => window.removeEventListener('click', close)
-  })
+    if (!ctxMenu) return;
+    const close = () => {
+      ctxMenu = null;
+    };
+    window.addEventListener("click", close, {once: true});
+    return () => window.removeEventListener("click", close);
+  });
 
   $effect(() => {
-    if (!ctxMenu || !ctxMenuEl) return
-    const rect = ctxMenuEl.getBoundingClientRect()
-    const maxX = window.innerWidth - rect.width - 8
-    const maxY = window.innerHeight - rect.height - 8
+    if (!ctxMenu || !ctxMenuEl) return;
+    const rect = ctxMenuEl.getBoundingClientRect();
+    const maxX = window.innerWidth - rect.width - 8;
+    const maxY = window.innerHeight - rect.height - 8;
     if (ctxMenu.x > maxX || ctxMenu.y > maxY) {
       ctxMenu = {
         ...ctxMenu,
         x: Math.max(0, Math.min(ctxMenu.x, maxX)),
         y: Math.max(0, Math.min(ctxMenu.y, maxY)),
-      }
+      };
     }
-  })
+  });
 
   $effect(() => {
-    if (!columnMenuOpen) return
-    const close = () => { columnMenuOpen = false }
-    const timer = setTimeout(() => window.addEventListener('click', close, { once: true }), 0)
-    return () => { clearTimeout(timer); window.removeEventListener('click', close) }
-  })
+    if (!columnMenuOpen) return;
+    const close = () => {
+      columnMenuOpen = false;
+    };
+    const timer = setTimeout(() => window.addEventListener("click", close, {once: true}), 0);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("click", close);
+    };
+  });
 
   $effect(() => {
-    if (!exportMenuOpen) return
-    const close = () => { exportMenuOpen = false }
-    const timer = setTimeout(() => window.addEventListener('click', close, { once: true }), 0)
-    return () => { clearTimeout(timer); window.removeEventListener('click', close) }
-  })
+    if (!exportMenuOpen) return;
+    const close = () => {
+      exportMenuOpen = false;
+    };
+    const timer = setTimeout(() => window.addEventListener("click", close, {once: true}), 0);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("click", close);
+    };
+  });
 
   // Scroll to top when GVR changes
   $effect(() => {
-    gvr
-    searchQuery = ''
-    searchTerms = []
-    if (scrollContainer) scrollContainer.scrollTop = 0
-  })
+    gvr;
+    searchQuery = "";
+    searchTerms = [];
+    if (scrollContainer) scrollContainer.scrollTop = 0;
+  });
 
   const filtered = $derived.by(() => {
-    let result = items
+    let result = items;
     if (selectedNamespaces.length > 1) {
-      result = result.filter((item) => selectedNamespaces.includes(item.metadata?.namespace ?? ''))
+      result = result.filter((item) => selectedNamespaces.includes(item.metadata?.namespace ?? ""));
     }
-    result = filterItems(result, searchTerms)
+    result = filterItems(result, searchTerms);
     if (columnStore.sortState) {
-      const { column, direction } = columnStore.sortState
-      const col = columnStore.visibleColumns.find((c) => c.name === column)
+      const {column, direction} = columnStore.sortState;
+      const col = columnStore.visibleColumns.find((c) => c.name === column);
       if (col?.expr) {
         // Pre-compute sort keys to avoid repeated evalExpr in comparator
-        const keyed = result.map((item) => ({ item, key: String(evalExpr(col.expr, item) ?? '') }))
-        const isAge = col.renderType === 'age'
+        const keyed = result.map((item) => ({item, key: String(evalExpr(col.expr, item) ?? "")}));
+        const isAge = col.renderType === "age";
         keyed.sort((a, b) => {
-          let cmp: number
+          let cmp: number;
           if (isAge) {
-            cmp = a.key.localeCompare(b.key)
+            cmp = a.key.localeCompare(b.key);
           } else {
-            const an = parseFloat(a.key)
-            const bn = parseFloat(b.key)
-            cmp = Number.isFinite(an) && Number.isFinite(bn)
-              ? an - bn
-              : a.key.localeCompare(b.key)
+            const an = parseFloat(a.key);
+            const bn = parseFloat(b.key);
+            cmp = Number.isFinite(an) && Number.isFinite(bn) ? an - bn : a.key.localeCompare(b.key);
           }
-          return direction === 'asc' ? cmp : -cmp
-        })
-        result = keyed.map((k) => k.item)
+          return direction === "asc" ? cmp : -cmp;
+        });
+        result = keyed.map((k) => k.item);
       }
     }
-    return result
-  })
+    return result;
+  });
 
-  const filteredKeys = $derived(filtered.map(item => itemKey(item)))
+  const filteredKeys = $derived(filtered.map((item) => itemKey(item)));
   const filteredItemsByKey = $derived.by(() => {
-    const map = new Map<string, Record<string, any>>()
+    const map = new Map<string, Record<string, any>>();
     for (const item of filtered) {
-      map.set(itemKey(item), item)
+      map.set(itemKey(item), item);
     }
-    return map
-  })
+    return map;
+  });
 
   $effect(() => {
-    selectionStore.setVisibleKeys(new Set(filteredKeys))
-  })
+    selectionStore.setVisibleKeys(new Set(filteredKeys));
+  });
 
-  const allVisibleSelected = $derived(
-    filtered.length > 0 && filteredKeys.every(k => selectionStore.isSelected(k))
-  )
-  const someVisibleSelected = $derived(
-    !allVisibleSelected && filteredKeys.some(k => selectionStore.isSelected(k))
-  )
-  const canMutate = $derived(clusterStore.canMutate())
+  const allVisibleSelected = $derived(filtered.length > 0 && filteredKeys.every((k) => selectionStore.isSelected(k)));
+  const someVisibleSelected = $derived(!allVisibleSelected && filteredKeys.some((k) => selectionStore.isSelected(k)));
+  const canMutate = $derived(clusterStore.canMutate());
 
-  const tooManyForSparklines = $derived(filtered.length > 200)
+  const tooManyForSparklines = $derived(filtered.length > 200);
 
-  const rowHeight = $derived(columnStore.compact ? 28 : 36)
+  const rowHeight = $derived(columnStore.compact ? 28 : 36);
 
   const virtualizer = $derived.by(() => {
-    const rh = rowHeight
+    const rh = rowHeight;
     return createVirtualizer({
       count: filtered.length,
       getScrollElement: () => scrollContainer ?? null,
       estimateSize: () => rh,
       overscan: 10,
-    })
-  })
+    });
+  });
 
   function toggleSort(name: string) {
-    const current = columnStore.sortState
+    const current = columnStore.sortState;
     if (current?.column === name) {
-      columnStore.setSort(name, current.direction === 'asc' ? 'desc' : 'asc')
+      columnStore.setSort(name, current.direction === "asc" ? "desc" : "asc");
     } else {
-      columnStore.setSort(name, 'asc')
+      columnStore.setSort(name, "asc");
     }
   }
 
   function renderCell(col: ColumnDef, item: Record<string, any>) {
-    return evalExpr(col.expr, item)
+    return evalExpr(col.expr, item);
   }
 
   function renderValue(value: any, renderType: RenderType): string {
-    if (value == null) return ''
-    if (renderType === 'age') return formatAge(String(value), now)
-    return String(value)
+    if (value == null) return "";
+    if (renderType === "age") return formatAge(String(value), now);
+    return String(value);
   }
 
   function badgeClass(value: any): string {
-    const v = String(value ?? '').toLowerCase()
-    if (['running', 'active', 'bound', 'available', 'true'].includes(v))
-      return 'bg-accent/20 text-accent border-accent/30'
-    if (['error', 'crashloopbackoff', 'failed', 'oomkilled'].includes(v))
-      return 'bg-destructive/20 text-destructive border-destructive/30'
-    if (['pending', 'terminating'].includes(v))
-      return 'bg-muted/20 text-muted border-muted/30'
-    return 'bg-muted/10 text-fg border-border'
+    const v = String(value ?? "").toLowerCase();
+    if (["running", "active", "bound", "available", "true"].includes(v)) return "bg-accent/20 text-accent border-accent/30";
+    if (["error", "crashloopbackoff", "failed", "oomkilled"].includes(v)) return "bg-destructive/20 text-destructive border-destructive/30";
+    if (["pending", "terminating"].includes(v)) return "bg-muted/20 text-muted border-muted/30";
+    return "bg-muted/10 text-fg border-border";
   }
 
   function alignClass(col: ColumnDef): string {
-    const align = col.align ?? defaultAlign(col.renderType)
-    return align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'
+    const align = col.align ?? defaultAlign(col.renderType);
+    return align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left";
   }
 
   async function confirmDelete() {
-    if (!deleteTarget) return
-    const { namespace, name } = deleteTarget
+    if (!deleteTarget) return;
+    const {namespace, name} = deleteTarget;
     try {
-      await ResourceService.DeleteResource(contextName, gvr, namespace, name)
-      notificationStore.push(`Deleted ${name}`, 'success')
+      await ResourceService.DeleteResource(contextName, gvr, namespace, name);
+      notificationStore.push(`Deleted ${name}`, "success");
     } catch (e: any) {
-      notificationStore.push(`Failed to delete: ${e?.message ?? e}`, 'error')
+      notificationStore.push(`Failed to delete: ${e?.message ?? e}`, "error");
     }
-    deleteTarget = null
+    deleteTarget = null;
   }
 
   function requestDelete(item: Record<string, any>) {
     deleteTarget = {
-      namespace: item.metadata?.namespace ?? '',
-      name: item.metadata?.name ?? '',
-    }
-    confirmOpen = true
+      namespace: item.metadata?.namespace ?? "",
+      name: item.metadata?.name ?? "",
+    };
+    confirmOpen = true;
   }
 
   const gridTemplateCols = $derived.by(() => {
-    const parts: string[] = []
-    if (canMutate) parts.push('36px')
+    const parts: string[] = [];
+    if (canMutate) parts.push("36px");
     for (const c of columnStore.visibleColumns) {
-      parts.push(c.width ? `${c.width}px` : 'minmax(20px, 1fr)')
+      parts.push(c.width ? `${c.width}px` : "minmax(20px, 1fr)");
     }
-    for (const _ of pluginColumns) parts.push('1fr')
-    for (const _ of sparklineColumns) parts.push('80px')
-    parts.push('36px')
-    return parts.join(' ')
-  })
+    for (const _ of pluginColumns) parts.push("1fr");
+    for (const _ of sparklineColumns) parts.push("80px");
+    parts.push("36px");
+    return parts.join(" ");
+  });
 
   function snapAllColumnsToPixels() {
-    const headerCells = scrollContainer?.querySelectorAll<HTMLElement>('[data-header-col]')
-    if (!headerCells) return
+    const headerCells = scrollContainer?.querySelectorAll<HTMLElement>("[data-header-col]");
+    if (!headerCells) return;
     for (const cell of headerCells) {
-      const name = cell.dataset.headerCol!
-      const col = columnStore.visibleColumns.find(c => c.name === name)
+      const name = cell.dataset.headerCol!;
+      const col = columnStore.visibleColumns.find((c) => c.name === name);
       if (col && !col.width) {
-        columnStore.resizeColumn(name, cell.getBoundingClientRect().width)
+        columnStore.resizeColumn(name, cell.getBoundingClientRect().width);
       }
     }
   }
 
   function startResize(e: MouseEvent, col: ColumnDef) {
-    e.preventDefault()
-    snapAllColumnsToPixels()
-    const cell = (e.currentTarget as HTMLElement).parentElement
-    const measuredWidth = cell ? cell.getBoundingClientRect().width : (col.width ?? 100)
-    resizing = { name: col.name, startX: e.clientX, startWidth: measuredWidth }
-    window.addEventListener('mousemove', onResizeMove)
-    window.addEventListener('mouseup', onResizeUp, { once: true })
+    e.preventDefault();
+    snapAllColumnsToPixels();
+    const cell = (e.currentTarget as HTMLElement).parentElement;
+    const measuredWidth = cell ? cell.getBoundingClientRect().width : (col.width ?? 100);
+    resizing = {name: col.name, startX: e.clientX, startWidth: measuredWidth};
+    window.addEventListener("mousemove", onResizeMove);
+    window.addEventListener("mouseup", onResizeUp, {once: true});
   }
 
   function onResizeMove(e: MouseEvent) {
-    if (!resizing) return
-    const delta = e.clientX - resizing.startX
-    const newWidth = Math.max(20, resizing.startWidth + delta)
-    columnStore.resizeColumn(resizing.name, newWidth)
+    if (!resizing) return;
+    const delta = e.clientX - resizing.startX;
+    const newWidth = Math.max(20, resizing.startWidth + delta);
+    columnStore.resizeColumn(resizing.name, newWidth);
   }
 
   function onResizeUp() {
-    window.removeEventListener('mousemove', onResizeMove)
-    resizing = null
+    window.removeEventListener("mousemove", onResizeMove);
+    resizing = null;
   }
 
   function autoFit(name: string) {
-    const cells = scrollContainer?.querySelectorAll(`[data-col="${name}"]`)
-    if (!cells) return
-    let max = 60
+    const cells = scrollContainer?.querySelectorAll(`[data-col="${name}"]`);
+    if (!cells) return;
+    let max = 60;
     for (const cell of cells) {
-      max = Math.max(max, (cell as HTMLElement).scrollWidth)
+      max = Math.max(max, (cell as HTMLElement).scrollWidth);
     }
-    columnStore.autoFitColumn(name, max)
+    columnStore.autoFitColumn(name, max);
   }
 </script>
 
 <div class="flex flex-col h-full overflow-hidden isolate">
   <div class="flex items-center gap-2 px-3 py-2 border-b border-border shrink-0">
-    <SmartSearch
-      {items}
-      bind:value={searchQuery}
-      ontermschange={(t) => { searchTerms = t }}
-    />
-    <SavedFilterDropdown
-      {gvr}
-      {contextName}
-      currentQuery={searchQuery}
-      onapply={(q) => { searchQuery = q }}
-    />
+    <SmartSearch {items} bind:value={searchQuery} ontermschange={(t) => { searchTerms = t }} />
+    <SavedFilterDropdown {gvr} {contextName} currentQuery={searchQuery} onapply={(q) => { searchQuery = q }} />
     <span class="text-xs text-muted">{filtered.length} items</span>
     <div class="relative">
       <button
@@ -347,11 +343,15 @@
           <button
             class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover"
             onclick={() => { exportItems(filtered, gvr, 'yaml'); exportMenuOpen = false }}
-          >YAML</button>
+          >
+            YAML
+          </button>
           <button
             class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover"
             onclick={() => { exportItems(filtered, gvr, 'json'); exportMenuOpen = false }}
-          >JSON</button>
+          >
+            JSON
+          </button>
         </div>
       {/if}
     </div>
@@ -369,12 +369,7 @@
       {/if}
     </div>
     {#if onrefresh}
-      <button
-        onclick={onrefresh}
-        class="p-1 rounded hover:bg-surface-hover transition-colors"
-        title="Refresh"
-        aria-label="Refresh"
-      >
+      <button onclick={onrefresh} class="p-1 rounded hover:bg-surface-hover transition-colors" title="Refresh" aria-label="Refresh">
         <RefreshCw size={14} class={loading ? 'animate-spin' : ''} />
       </button>
     {/if}
@@ -384,7 +379,8 @@
     <div class="p-4 text-sm text-destructive">{error}</div>
   {:else}
     <div bind:this={scrollContainer} class="flex-1 overflow-auto">
-      <div class="grid text-xs font-semibold uppercase tracking-wider text-muted border-b border-border sticky top-0 z-20 bg-bg px-2"
+      <div
+        class="grid text-xs font-semibold uppercase tracking-wider text-muted border-b border-border sticky top-0 z-20 bg-bg px-2"
         style="grid-template-columns: {gridTemplateCols}"
       >
         {#if canMutate}
@@ -417,7 +413,11 @@
             >
               {col.name}
               {#if columnStore.sortState?.column === col.name}
-                {#if columnStore.sortState.direction === 'asc'}<ArrowUp size={10} />{:else}<ArrowDown size={10} />{/if}
+                {#if columnStore.sortState.direction === 'asc'}
+                  <ArrowUp size={10} />
+                {:else}
+                  <ArrowDown size={10} />
+                {/if}
               {:else}
                 <ArrowUpDown size={10} class="opacity-30" />
               {/if}
@@ -461,16 +461,10 @@
               onkeydown={(e) => { if (e.key === 'Enter') onselect?.(item) }}
               oncontextmenu={(e) => { e.preventDefault(); e.stopPropagation(); ctxMenu = { x: e.clientX, y: e.clientY, item } }}
             >
-              <div
-                class="grid flex-1"
-                style="grid-template-columns: {gridTemplateCols}"
-              >
+              <div class="grid flex-1" style="grid-template-columns: {gridTemplateCols}">
                 {#if canMutate}
                   {@const key = itemKey(item)}
-                  <div class="flex items-center justify-center"
-                    onclick={(e) => e.stopPropagation()}
-                    role="none"
-                  >
+                  <div class="flex items-center justify-center" onclick={(e) => e.stopPropagation()} role="none">
                     <button
                       onclick={(e) => {
                         e.stopPropagation()
@@ -507,19 +501,19 @@
                             class="text-accent hover:underline cursor-pointer"
                             title="{ref.kind}/{ref.name}"
                             onclick={(e) => { e.stopPropagation(); onopenowner!(ref, item.metadata?.namespace ?? '') }}
-                          >{ref.kind}</button>
+                          >
+                            {ref.kind}
+                          </button>
                         {:else}
                           <span title="{ref.kind}/{ref.name}">{ref.kind}</span>
                         {/if}
                       {/if}
                     {:else if col.renderType === 'badge'}
-                      <span class="px-1.5 py-0.5 text-xs rounded border {badgeClass(value)}"
-                            title={renderValue(value, col.renderType)}>
+                      <span class="px-1.5 py-0.5 text-xs rounded border {badgeClass(value)}" title={renderValue(value, col.renderType)}>
                         {renderValue(value, col.renderType)}
                       </span>
                     {:else}
-                      <span class={col.renderType === 'age' ? 'text-muted' : ''}
-                            title={renderValue(value, col.renderType)}>
+                      <span class={col.renderType === 'age' ? 'text-muted' : ''} title={renderValue(value, col.renderType)}>
                         {renderValue(value, col.renderType)}
                       </span>
                     {/if}
@@ -529,7 +523,9 @@
                   <div class="px-1 flex items-center overflow-hidden text-sm">
                     {#if basePluginURL}
                       {#await loadPluginComponent(pcol.pluginName, pcol.component, basePluginURL) then Cmp}
-                        {#if Cmp}<Cmp resource={item} />{/if}
+                        {#if Cmp}
+                          <Cmp resource={item} />
+                        {/if}
                       {/await}
                     {/if}
                   </div>

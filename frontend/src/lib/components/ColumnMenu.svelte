@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { ArrowUp, ArrowDown } from 'lucide-svelte'
-  import { columnStore } from '$lib/stores/columns.svelte'
+  import {ArrowUp, ArrowDown} from "lucide-svelte";
+  import {columnStore} from "$lib/stores/columns.svelte";
 
   let {
     gvr,
@@ -8,25 +8,21 @@
     sparklineColumns = [],
     onSparklineToggle,
   }: {
-    gvr: string
-    sparklineGvrs?: string[]
-    sparklineColumns?: string[]
-    onSparklineToggle?: (columns: string[]) => void
-  } = $props()
+    gvr: string;
+    sparklineGvrs?: string[];
+    sparklineColumns?: string[];
+    onSparklineToggle?: (columns: string[]) => void;
+  } = $props();
 
-  const visibleEntries = $derived(
-    columnStore.visibleColumns.map((col) => ({ col, visible: true }))
-  )
-  const hiddenEntries = $derived(columnStore.allColumns.filter((e) => !e.visible))
-  const hasSparklines = $derived(sparklineGvrs.includes(gvr))
+  const visibleEntries = $derived(columnStore.visibleColumns.map((col) => ({col, visible: true})));
+  const hiddenEntries = $derived(columnStore.allColumns.filter((e) => !e.visible));
+  const hasSparklines = $derived(sparklineGvrs.includes(gvr));
 
-  const availableSparklineCols = ['CPU', 'Memory']
+  const availableSparklineCols = ["CPU", "Memory"];
 
   function toggleSparklineCol(col: string) {
-    const next = sparklineColumns.includes(col)
-      ? sparklineColumns.filter((c) => c !== col)
-      : [...sparklineColumns, col]
-    onSparklineToggle?.(next)
+    const next = sparklineColumns.includes(col) ? sparklineColumns.filter((c) => c !== col) : [...sparklineColumns, col];
+    onSparklineToggle?.(next);
   }
 </script>
 
@@ -38,10 +34,7 @@
 >
   <div class="flex items-center justify-between px-3 pb-1.5 mb-1 border-b border-border">
     <span class="text-xs font-semibold uppercase tracking-wider text-muted">Columns</span>
-    <button
-      onclick={() => columnStore.reset()}
-      class="text-xs text-muted hover:text-fg transition-colors"
-    >Reset</button>
+    <button onclick={() => columnStore.reset()} class="text-xs text-muted hover:text-fg transition-colors">Reset</button>
   </div>
 
   {#each visibleEntries as entry, i (entry.col.name)}
@@ -52,7 +45,7 @@
         disabled={entry.col.name === 'Name'}
         onchange={(e) => columnStore.setColumnVisible(entry.col.name, e.currentTarget.checked)}
         class="rounded border-border shrink-0"
-      />
+      >
       <span class="flex-1 text-sm truncate">{entry.col.name}</span>
       <div class="flex gap-0.5 shrink-0">
         <button
@@ -82,7 +75,7 @@
         checked={false}
         onchange={(e) => columnStore.setColumnVisible(entry.col.name, e.currentTarget.checked)}
         class="rounded border-border shrink-0"
-      />
+      >
       <span class="flex-1 text-sm truncate text-muted">{entry.col.name}</span>
     </div>
   {/each}
@@ -94,7 +87,7 @@
         checked={columnStore.compact}
         onchange={(e) => columnStore.setCompact(e.currentTarget.checked)}
         class="rounded border-border"
-      />
+      >
       <span class="text-sm">Compact rows</span>
     </label>
   </div>
@@ -109,7 +102,7 @@
             checked={sparklineColumns.includes(col)}
             onchange={() => toggleSparklineCol(col)}
             class="rounded border-border"
-          />
+          >
           <span class="text-sm">{col}</span>
         </label>
       {/each}

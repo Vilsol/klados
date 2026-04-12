@@ -1,122 +1,137 @@
 <script lang="ts">
-  import { untrack } from 'svelte'
-  import { Events } from '@wailsio/runtime'
-  import { onDestroy } from 'svelte'
-  import { clusterStore } from '$lib/stores/cluster.svelte'
-  import * as MetricsService from '../../bindings/github.com/Vilsol/klados/internal/services/metricsservice.js'
-  import * as AppService from '../../bindings/github.com/Vilsol/klados/internal/services/appservice.js'
-  import MetricsChart from '$lib/components/charts/MetricsChart.svelte'
-  import TimeRangeSelector from '$lib/components/charts/TimeRangeSelector.svelte'
-  import { Combobox } from '@klados/ui'
-  import type { MetricsCapability, MetricsResponse, TimeSeries } from '$lib/components/charts/types'
+  import {untrack} from "svelte";
+  import {Events} from "@wailsio/runtime";
+  import {onDestroy} from "svelte";
+  import {clusterStore} from "$lib/stores/cluster.svelte";
+  import * as MetricsService from "../../bindings/github.com/Vilsol/klados/internal/services/metricsservice.js";
+  import * as AppService from "../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
+  import MetricsChart from "$lib/components/charts/MetricsChart.svelte";
+  import TimeRangeSelector from "$lib/components/charts/TimeRangeSelector.svelte";
+  import {Combobox} from "@klados/ui";
+  import type {MetricsCapability, MetricsResponse, TimeSeries} from "$lib/components/charts/types";
 
-  let { params = {} }: { params?: Record<string, string> } = $props()
+  let {params = {}}: {params?: Record<string, string>} = $props();
 
-  let ctxName = $derived(params.ctx ?? 'unknown')
-
-  $effect(() => { if (ctxName) clusterStore.setActiveContext(ctxName) })
-
-  let namespaces = $derived(clusterStore.getNamespaces(ctxName))
-  let selectedNamespace = $state('')
+  let ctxName = $derived(params.ctx ?? "unknown");
 
   $effect(() => {
-    const ns = namespaces
-    untrack(() => {
-      if (selectedNamespace === '' && ns.length > 0) selectedNamespace = ns[0]
-    })
-  })
+    if (ctxName) clusterStore.setActiveContext(ctxName);
+  });
 
-  let capability: MetricsCapability | null = $state(null)
-  let rangeMinutes: number = $state(15)
-  let response: MetricsResponse | null = $state(null)
-  let zoomRange: { min: number; max: number } | null = $state(null)
-  let fetchError: string | null = $state(null)
+  let namespaces = $derived(clusterStore.getNamespaces(ctxName));
+  let selectedNamespace = $state("");
+
+  $effect(() => {
+    const ns = namespaces;
+    untrack(() => {
+      if (selectedNamespace === "" && ns.length > 0) selectedNamespace = ns[0];
+    });
+  });
+
+  let capability: MetricsCapability | null = $state(null);
+  let rangeMinutes: number = $state(15);
+  let response: MetricsResponse | null = $state(null);
+  let zoomRange: {min: number; max: number} | null = $state(null);
+  let fetchError: string | null = $state(null);
 
   $effect(() => {
     MetricsService.GetCapabilities(ctxName)
-      .then((cap) => { capability = cap as unknown as MetricsCapability })
-      .catch(() => {})
-  })
+      .then((cap) => {
+        capability = cap as unknown as MetricsCapability;
+      })
+      .catch(() => {});
+  });
 
   $effect(() => {
-    const ns = selectedNamespace
-    void [ctxName, ns]
-    untrack(() => { response = null; fetchError = null; zoomRange = null })
-  })
+    const ns = selectedNamespace;
+    void [ctxName, ns];
+    untrack(() => {
+      response = null;
+      fetchError = null;
+      zoomRange = null;
+    });
+  });
 
   $effect(() => {
-    const ns = selectedNamespace
-    if (!ns || !capability?.hasPrometheus) return
+    const ns = selectedNamespace;
+    if (!ns || !capability?.hasPrometheus) return;
 
-    const interval = rangeMinutes <= 60 ? 15_000 : 60_000
+    const interval = rangeMinutes <= 60 ? 15_000 : 60_000;
 
     async function fetchMetrics() {
       try {
-        const res = await MetricsService.GetNamespaceMetrics(ctxName, ns!, rangeMinutes)
-        fetchError = null
-        if (res) response = res as unknown as MetricsResponse
+        const res = await MetricsService.GetNamespaceMetrics(ctxName, ns!, rangeMinutes);
+        fetchError = null;
+        if (res) response = res as unknown as MetricsResponse;
       } catch (err: unknown) {
-        fetchError = err instanceof Error ? err.message : String(err)
+        fetchError = err instanceof Error ? err.message : String(err);
       }
     }
 
-    fetchMetrics()
-    const id = setInterval(fetchMetrics, interval)
-    return () => clearInterval(id)
-  })
+    fetchMetrics();
+    const id = setInterval(fetchMetrics, interval);
+    return () => clearInterval(id);
+  });
 
   function getSeriesByUnit(unit: string): TimeSeries[] {
-    if (!response) return []
-    const metric = response.metrics.find((m) => m.unit === unit || m.name.toLowerCase().includes(unit === 'cores' ? 'cpu' : 'mem'))
-    return metric?.series ?? []
+    if (!response) return [];
+    const metric = response.metrics.find((m) => m.unit === unit || m.name.toLowerCase().includes(unit === "cores" ? "cpu" : "mem"));
+    return metric?.series ?? [];
   }
 
   // --- Cluster health ---
 
-  const HealthOK = 0
-  const HealthDegraded = 1
-  const HealthUnknown = 2
+  const HealthOK = 0;
+  const HealthDegraded = 1;
+  const HealthUnknown = 2;
 
-  interface ComponentHealth { name: string; status: number; message: string }
+  interface ComponentHealth {
+    name: string;
+    status: number;
+    message: string;
+  }
   interface ClusterHealth {
-    apiServer: { livez: number; readyz: number; healthz: number }
-    components: ComponentHealth[]
-    nodes: { total: number; ready: number; notReady: number; schedulingDisabled: number; permissionDenied: boolean }
-    checkedAt: string
+    apiServer: {livez: number; readyz: number; healthz: number};
+    components: ComponentHealth[];
+    nodes: {total: number; ready: number; notReady: number; schedulingDisabled: number; permissionDenied: boolean};
+    checkedAt: string;
   }
 
-  let health = $state<ClusterHealth | null>(null)
+  let health = $state<ClusterHealth | null>(null);
 
   function statusLabel(s: number): string {
-    if (s === HealthOK) return 'OK'
-    if (s === HealthDegraded) return 'Degraded'
-    return 'Unknown'
+    if (s === HealthOK) return "OK";
+    if (s === HealthDegraded) return "Degraded";
+    return "Unknown";
   }
 
   function statusClass(s: number): string {
-    if (s === HealthOK) return 'bg-green-500/20 text-green-400 border-green-500/40'
-    if (s === HealthDegraded) return 'bg-red-500/20 text-red-400 border-red-500/40'
-    return 'bg-surface text-muted border-border'
+    if (s === HealthOK) return "bg-green-500/20 text-green-400 border-green-500/40";
+    if (s === HealthDegraded) return "bg-red-500/20 text-red-400 border-red-500/40";
+    return "bg-surface text-muted border-border";
   }
 
-  let healthUnsub: (() => void) | null = null
+  let healthUnsub: (() => void) | null = null;
 
   $effect(() => {
-    healthUnsub?.()
-    if (!ctxName) return
-    ;(async () => {
+    healthUnsub?.();
+    if (!ctxName) return;
+    (async () => {
       try {
-        const h = await AppService.GetClusterHealth(ctxName)
-        if (h) health = h as unknown as ClusterHealth
+        const h = await AppService.GetClusterHealth(ctxName);
+        if (h) health = h as unknown as ClusterHealth;
       } catch {}
-    })()
+    })();
     healthUnsub = Events.On(`cluster:${ctxName}:health`, (wailsEvent: any) => {
-      health = (wailsEvent.data ?? wailsEvent) as ClusterHealth
-    })
-    return () => { healthUnsub?.(); healthUnsub = null }
-  })
+      health = (wailsEvent.data ?? wailsEvent) as ClusterHealth;
+    });
+    return () => {
+      healthUnsub?.();
+      healthUnsub = null;
+    };
+  });
 
-  onDestroy(() => healthUnsub?.())
+  onDestroy(() => healthUnsub?.());
 </script>
 
 <div class="p-6 flex flex-col gap-6">
@@ -139,7 +154,7 @@
     <section class="flex flex-col gap-3">
       <h2 class="text-xs font-semibold uppercase tracking-wider text-muted">API Server</h2>
       <div class="flex gap-3 flex-wrap">
-        {#each [['livez', health.apiServer.livez], ['readyz', health.apiServer.readyz], ['healthz', health.apiServer.healthz]] as [probe, status]}
+        {#each [['livez', health.apiServer.livez], ['readyz', health.apiServer.readyz], ['healthz', health.apiServer.healthz]] as [ probe, status ]}
           <div class="flex items-center gap-2 px-3 py-1.5 rounded border text-xs {statusClass(status as number)}">
             <span class="font-mono">/{probe}</span>
             <span class="font-semibold">{statusLabel(status as number)}</span>

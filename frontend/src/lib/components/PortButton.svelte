@@ -1,13 +1,13 @@
 <script lang="ts">
   let {
     port,
-    protocol = 'TCP',
+    protocol = "TCP",
     onclick,
   }: {
-    port: number
-    protocol?: string
-    onclick: () => void
-  } = $props()
+    port: number;
+    protocol?: string;
+    onclick: () => void;
+  } = $props();
 </script>
 
 <button
@@ -16,5 +16,6 @@
   title="Forward port {port}"
   aria-label="Forward port {port}"
 >
-  {port}/{protocol} ↗
+  {port}/{protocol}
+  ↗
 </button>

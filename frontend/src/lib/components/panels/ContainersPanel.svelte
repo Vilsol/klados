@@ -1,38 +1,38 @@
 <script lang="ts">
-  import PortForwardDialog from '$lib/components/PortForwardDialog.svelte'
-  import PortButton from '$lib/components/PortButton.svelte'
-  import { SectionHeader, StatusBadge, DataTable } from '@klados/ui'
-  import { toggleSet } from '$lib/utils/collections'
+  import PortForwardDialog from "$lib/components/PortForwardDialog.svelte";
+  import PortButton from "$lib/components/PortButton.svelte";
+  import {SectionHeader, StatusBadge, DataTable} from "@klados/ui";
+  import {toggleSet} from "$lib/utils/collections";
 
-  let { obj, ctxName = '' }: { obj: Record<string, any>; ctxName?: string } = $props()
+  let {obj, ctxName = ""}: {obj: Record<string, any>; ctxName?: string} = $props();
 
-  let pfPort = $state<number | null>(null)
+  let pfPort = $state<number | null>(null);
 
-  const containers = $derived<any[]>(obj.spec?.containers ?? [])
-  const initContainers = $derived<any[]>(obj.spec?.initContainers ?? [])
-  const conditions = $derived<any[]>(obj.status?.conditions ?? [])
+  const containers = $derived<any[]>(obj.spec?.containers ?? []);
+  const initContainers = $derived<any[]>(obj.spec?.initContainers ?? []);
+  const conditions = $derived<any[]>(obj.status?.conditions ?? []);
 
   function containerStatus(name: string): any {
-    const statuses: any[] = obj.status?.containerStatuses ?? []
-    return statuses.find((s: any) => s.name === name)
+    const statuses: any[] = obj.status?.containerStatuses ?? [];
+    return statuses.find((s: any) => s.name === name);
   }
 
   function initContainerStatus(name: string): any {
-    const statuses: any[] = obj.status?.initContainerStatuses ?? []
-    return statuses.find((s: any) => s.name === name)
+    const statuses: any[] = obj.status?.initContainerStatuses ?? [];
+    return statuses.find((s: any) => s.name === name);
   }
 
   function stateLabel(status: any): string {
-    if (!status) return 'Unknown'
-    if (status.state?.running) return 'Running'
-    if (status.state?.waiting) return `Waiting: ${status.state.waiting.reason ?? ''}`
-    if (status.state?.terminated) return `Terminated: ${status.state.terminated.reason ?? ''}`
-    return 'Unknown'
+    if (!status) return "Unknown";
+    if (status.state?.running) return "Running";
+    if (status.state?.waiting) return `Waiting: ${status.state.waiting.reason ?? ""}`;
+    if (status.state?.terminated) return `Terminated: ${status.state.terminated.reason ?? ""}`;
+    return "Unknown";
   }
 
-  let expandedEnv = $state<Set<string>>(new Set())
+  let expandedEnv = $state<Set<string>>(new Set());
 
-  let showInitContainers = $state(false)
+  let showInitContainers = $state(false);
 </script>
 
 <div class="flex flex-col gap-4 p-4 overflow-auto">
@@ -75,28 +75,21 @@
           {/if}
 
           {#if c.env?.length}
-            <button
-              onclick={() => expandedEnv = toggleSet(expandedEnv, c.name)}
-              class="text-xs text-accent hover:underline mt-1"
-            >
+            <button onclick={() => expandedEnv = toggleSet(expandedEnv, c.name)} class="text-xs text-accent hover:underline mt-1">
               {expandedEnv.has(c.name) ? '▾' : '▸'} {c.env.length} env var{c.env.length !== 1 ? 's' : ''}
             </button>
             {#if expandedEnv.has(c.name)}
               <div class="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 pl-3">
                 {#each c.env as e}
                   <span class="text-xs font-mono text-accent">{e.name}</span>
-                  <span class="text-xs font-mono text-muted truncate">
-                    {e.value ?? (e.valueFrom ? '(from secret/configmap)' : '—')}
-                  </span>
+                  <span class="text-xs font-mono text-muted truncate"> {e.value ?? (e.valueFrom ? '(from secret/configmap)' : '—')} </span>
                 {/each}
               </div>
             {/if}
           {/if}
 
           {#if c.volumeMounts?.length}
-            <div class="mt-1.5 text-xs text-muted">
-              Mounts: {c.volumeMounts.map((m: any) => m.mountPath).join(', ')}
-            </div>
+            <div class="mt-1.5 text-xs text-muted">Mounts: {c.volumeMounts.map((m: any) => m.mountPath).join(', ')}</div>
           {/if}
         </div>
       {/each}
@@ -110,7 +103,8 @@
         onclick={() => showInitContainers = !showInitContainers}
         class="text-xs font-semibold text-muted uppercase tracking-wide mb-2 flex items-center gap-1"
       >
-        {showInitContainers ? '▾' : '▸'} Init Containers ({initContainers.length})
+        {showInitContainers ? '▾' : '▸'}
+        Init Containers ({initContainers.length})
       </button>
       {#if showInitContainers}
         <div class="flex flex-col gap-2">
@@ -133,10 +127,7 @@
   {#if conditions.length > 0}
     <section>
       <SectionHeader>Conditions</SectionHeader>
-      <DataTable
-        columns={[{ label: 'Type' }, { label: 'Status' }, { label: 'Reason' }]}
-        items={conditions}
-      >
+      <DataTable columns={[{ label: 'Type' }, { label: 'Status' }, { label: 'Reason' }]} items={conditions}>
         {#snippet row(cond)}
           <td class="px-2 py-1.5 font-mono">{cond.type}</td>
           <td class="px-2 py-1.5">

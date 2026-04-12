@@ -1,35 +1,33 @@
 <script lang="ts">
-  import * as ResourceService from '../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
+  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 
-  let { obj, ctxName }: { obj: Record<string, any>; ctxName: string } = $props()
+  let {obj, ctxName}: {obj: Record<string, any>; ctxName: string} = $props();
 
-  const spec = $derived(obj.spec ?? {})
-  const attachRequired = $derived<boolean>(spec.attachRequired ?? true)
-  const podInfoOnMount = $derived<boolean>(spec.podInfoOnMount ?? false)
-  const storageCapacity = $derived<boolean>(spec.storageCapacity ?? false)
-  const fsGroupPolicy = $derived<string>(spec.fsGroupPolicy ?? 'ReadWriteOnceWithFSType')
-  const volumeLifecycleModes = $derived<string[]>(spec.volumeLifecycleModes ?? ['Persistent'])
+  const spec = $derived(obj.spec ?? {});
+  const attachRequired = $derived<boolean>(spec.attachRequired ?? true);
+  const podInfoOnMount = $derived<boolean>(spec.podInfoOnMount ?? false);
+  const storageCapacity = $derived<boolean>(spec.storageCapacity ?? false);
+  const fsGroupPolicy = $derived<string>(spec.fsGroupPolicy ?? "ReadWriteOnceWithFSType");
+  const volumeLifecycleModes = $derived<string[]>(spec.volumeLifecycleModes ?? ["Persistent"]);
 
-  type SnapshotStatus = 'loading' | 'unknown' | 'none' | { classes: string[] }
-  let snapshotStatus = $state<SnapshotStatus>('loading')
+  type SnapshotStatus = "loading" | "unknown" | "none" | {classes: string[]};
+  let snapshotStatus = $state<SnapshotStatus>("loading");
 
   $effect(() => {
-    const driverName = obj.metadata?.name
-    ;(async () => {
+    const driverName = obj.metadata?.name;
+    (async () => {
       try {
-        const items: any[] = await ResourceService.ListResources(ctxName, 'snapshot.storage.k8s.io.v1.volumesnapshotclasses', '') ?? []
-        const matching = items
-          .filter((c) => c.driver === driverName)
-          .map((c) => c.metadata?.name ?? '')
-        snapshotStatus = matching.length > 0 ? { classes: matching } : 'none'
+        const items: any[] = (await ResourceService.ListResources(ctxName, "snapshot.storage.k8s.io.v1.volumesnapshotclasses", "")) ?? [];
+        const matching = items.filter((c) => c.driver === driverName).map((c) => c.metadata?.name ?? "");
+        snapshotStatus = matching.length > 0 ? {classes: matching} : "none";
       } catch {
-        snapshotStatus = 'unknown'
+        snapshotStatus = "unknown";
       }
-    })()
-  })
+    })();
+  });
 
   function boolStr(v: boolean): string {
-    return v ? 'true' : 'false'
+    return v ? "true" : "false";
   }
 </script>
 
@@ -64,7 +62,10 @@
       {:else if snapshotStatus === 'none'}
         <span class="text-muted">Not configured</span>
       {:else}
-        <span>Supported ({snapshotStatus.classes.length} {snapshotStatus.classes.length === 1 ? 'class' : 'classes'}: {snapshotStatus.classes.join(', ')})</span>
+        <span
+          >Supported ({snapshotStatus.classes.length} {snapshotStatus.classes.length === 1 ? 'class' : 'classes'}:
+          {snapshotStatus.classes.join(', ')})</span
+        >
       {/if}
     </span>
   </div>

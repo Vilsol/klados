@@ -1,19 +1,19 @@
 <script lang="ts">
-  import { SectionHeader } from '@klados/ui'
+  import {SectionHeader} from "@klados/ui";
 
-  let { obj }: { obj: Record<string, any> } = $props()
+  let {obj}: {obj: Record<string, any>} = $props();
 
-  const limits = $derived<any[]>(obj.spec?.limits ?? [])
+  const limits = $derived<any[]>(obj.spec?.limits ?? []);
 
   function getResources(entry: any): string[] {
-    const all = new Set<string>()
-    for (const field of ['default', 'defaultRequest', 'min', 'max', 'maxLimitRequestRatio']) {
-      if (entry[field]) Object.keys(entry[field]).forEach(k => all.add(k))
+    const all = new Set<string>();
+    for (const field of ["default", "defaultRequest", "min", "max", "maxLimitRequestRatio"]) {
+      if (entry[field]) Object.keys(entry[field]).forEach((k) => all.add(k));
     }
-    if (entry.type === 'PersistentVolumeClaim') {
-      return [...all].filter(r => r === 'storage')
+    if (entry.type === "PersistentVolumeClaim") {
+      return [...all].filter((r) => r === "storage");
     }
-    return [...all]
+    return [...all];
   }
 </script>
 
@@ -22,7 +22,9 @@
     <section>
       <SectionHeader>
         <span>Limit {i + 1}</span>
-        <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-surface border border-border font-mono normal-case tracking-normal">{entry.type ?? 'Unknown'}</span>
+        <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-surface border border-border font-mono normal-case tracking-normal"
+          >{entry.type ?? 'Unknown'}</span
+        >
       </SectionHeader>
       <table class="w-full text-xs">
         <thead class="bg-surface">

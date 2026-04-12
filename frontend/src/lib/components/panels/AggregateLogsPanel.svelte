@@ -1,146 +1,157 @@
 <script lang="ts">
-  import { onDestroy, untrack } from 'svelte'
-  import * as ResourceService from '../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import * as LogService from '../../../../bindings/github.com/Vilsol/klados/internal/services/logservice.js'
-  import { LogOptions } from '../../../../bindings/github.com/Vilsol/klados/internal/logs/models.js'
-  import { streamingStore } from '$lib/stores/streaming.svelte'
-  import { sessionStore } from '$lib/stores/session.svelte'
-  import { AggregateLogStore } from '$lib/stores/aggregate-logs.svelte'
-  import { createVirtualizer } from '@tanstack/svelte-virtual'
-  import type { SvelteVirtualizer } from '@tanstack/svelte-virtual'
+  import {onDestroy, untrack} from "svelte";
+  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import * as LogService from "../../../../bindings/github.com/Vilsol/klados/internal/services/logservice.js";
+  import {LogOptions} from "../../../../bindings/github.com/Vilsol/klados/internal/logs/models.js";
+  import {streamingStore} from "$lib/stores/streaming.svelte";
+  import {sessionStore} from "$lib/stores/session.svelte";
+  import {AggregateLogStore} from "$lib/stores/aggregate-logs.svelte";
+  import {createVirtualizer} from "@tanstack/svelte-virtual";
+  import type {SvelteVirtualizer} from "@tanstack/svelte-virtual";
 
-  let { obj, ctxName, namespace }: {
-    obj: Record<string, any>
-    ctxName: string
-    namespace: string
-    name: string
-  } = $props()
+  let {
+    obj,
+    ctxName,
+    namespace,
+  }: {
+    obj: Record<string, any>;
+    ctxName: string;
+    namespace: string;
+    name: string;
+  } = $props();
 
-  const store = new AggregateLogStore()
-  let streamIds: string[] = []
-  let loading = $state(true)
-  let error = $state<string | null>(null)
-  let podCount = $state(0)
+  const store = new AggregateLogStore();
+  let streamIds: string[] = [];
+  let loading = $state(true);
+  let error = $state<string | null>(null);
+  let podCount = $state(0);
 
-  let scrollEl = $state<HTMLDivElement | undefined>(undefined)
-  let sticky = $state(true)
-  let programmaticScroll = false
+  let scrollEl = $state<HTMLDivElement | undefined>(undefined);
+  let sticky = $state(true);
+  let programmaticScroll = false;
 
   const virtualizerStore = createVirtualizer<HTMLDivElement, HTMLDivElement>({
     count: 0,
     getScrollElement: () => scrollEl ?? null,
     estimateSize: () => 20,
     overscan: 15,
-  })
+  });
 
-  let virt: SvelteVirtualizer<HTMLDivElement, HTMLDivElement>
-  virtualizerStore.subscribe(v => { virt = v })
+  let virt: SvelteVirtualizer<HTMLDivElement, HTMLDivElement>;
+  virtualizerStore.subscribe((v) => {
+    virt = v;
+  });
 
   $effect(() => {
-    const count = store.lines.length
+    const count = store.lines.length;
     untrack(() => {
       virt?.setOptions({
         count,
         getScrollElement: () => scrollEl ?? null,
         estimateSize: () => 20,
         overscan: 15,
-      })
+      });
       if (sticky && scrollEl) {
-        programmaticScroll = true
+        programmaticScroll = true;
         requestAnimationFrame(() => {
-          if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight
-        })
+          if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
+        });
       }
-    })
-  })
+    });
+  });
 
   function onScroll(e: Event) {
-    if (programmaticScroll) { programmaticScroll = false; return }
-    const el = e.target as HTMLElement
-    const dist = el.scrollHeight - el.scrollTop - el.clientHeight
-    sticky = dist < 40
+    if (programmaticScroll) {
+      programmaticScroll = false;
+      return;
+    }
+    const el = e.target as HTMLElement;
+    const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+    sticky = dist < 40;
   }
 
   async function startStreams() {
-    if (!streamingStore.config) return
-    loading = true
-    error = null
+    if (!streamingStore.config) return;
+    loading = true;
+    error = null;
     try {
-      const pods = await ResourceService.ListResources(ctxName, 'core.v1.pods', namespace)
-      const selector: Record<string, string> = obj.spec?.selector?.matchLabels ?? {}
-      const matched = (pods ?? []).filter((pod: any) =>
-        Object.entries(selector).every(([k, v]) => pod.metadata?.labels?.[k] === v)
-      )
+      const pods = await ResourceService.ListResources(ctxName, "core.v1.pods", namespace);
+      const selector: Record<string, string> = obj.spec?.selector?.matchLabels ?? {};
+      const matched = (pods ?? []).filter((pod: any) => Object.entries(selector).every(([k, v]) => pod.metadata?.labels?.[k] === v));
 
-      podCount = matched.length
+      podCount = matched.length;
       if (matched.length === 0) {
-        error = 'No matching pods found'
-        loading = false
-        return
+        error = "No matching pods found";
+        loading = false;
+        return;
       }
 
       for (const pod of matched) {
-        const podName: string = pod.metadata?.name ?? ''
-        if (!podName) continue
+        const podName: string = pod.metadata?.name ?? "";
+        if (!podName) continue;
 
-        const id = await LogService.StartLogStream(ctxName, namespace, podName, new LogOptions({
-          follow: true,
-          tailLines: 200,
-          timestamps: false,
-        }))
-        streamIds.push(id)
+        const id = await LogService.StartLogStream(
+          ctxName,
+          namespace,
+          podName,
+          new LogOptions({
+            follow: true,
+            tailLines: 200,
+            timestamps: false,
+          }),
+        );
+        streamIds.push(id);
 
-        const ws = new WebSocket(
-          `ws://127.0.0.1:${streamingStore.config!.port}/${streamingStore.config!.token}/ws/logs/${id}`
-        )
+        const ws = new WebSocket(`ws://127.0.0.1:${streamingStore.config!.port}/${streamingStore.config!.token}/ws/logs/${id}`);
 
-        store.addStream(podName, id, ws)
+        store.addStream(podName, id, ws);
 
-        let buf = ''
+        let buf = "";
         ws.onmessage = (e) => {
-          if (typeof e.data !== 'string') return
+          if (typeof e.data !== "string") return;
           try {
-            const msg = JSON.parse(e.data)
-            if (msg.type === 'eof' || msg.type === 'error') {
-              store.markEnded(podName)
-              return
+            const msg = JSON.parse(e.data);
+            if (msg.type === "eof" || msg.type === "error") {
+              store.markEnded(podName);
+              return;
             }
           } catch {}
-          const parts = (buf + e.data).split('\n')
-          buf = parts.pop() ?? ''
+          const parts = (buf + e.data).split("\n");
+          buf = parts.pop() ?? "";
           for (const line of parts) {
-            if (line) store.appendLine(podName, line)
+            if (line) store.appendLine(podName, line);
           }
-        }
+        };
         ws.onclose = () => {
-          if (buf) { store.appendLine(podName, buf); buf = '' }
-          store.markEnded(podName)
-        }
-        ws.onerror = () => store.markEnded(podName)
+          if (buf) {
+            store.appendLine(podName, buf);
+            buf = "";
+          }
+          store.markEnded(podName);
+        };
+        ws.onerror = () => store.markEnded(podName);
       }
     } catch (e: any) {
-      error = e?.message ?? String(e)
+      error = e?.message ?? String(e);
     } finally {
-      loading = false
+      loading = false;
     }
   }
 
   $effect(() => {
     if (streamingStore.config) {
-      untrack(() => startStreams())
+      untrack(() => startStreams());
     }
-  })
+  });
 
   onDestroy(() => {
-    for (const id of streamIds) LogService.StopLogStream(id)
-    store.destroy()
-  })
+    for (const id of streamIds) LogService.StopLogStream(id);
+    store.destroy();
+  });
 </script>
 
 {#if !streamingStore.config}
-  <div class="flex items-center justify-center h-full text-sm text-muted">
-    Waiting for streaming server…
-  </div>
+  <div class="flex items-center justify-center h-full text-sm text-muted">Waiting for streaming server…</div>
 {:else}
   <div class="flex flex-col h-full overflow-hidden" style="--log-font-size: {sessionStore.terminalFontSize}px">
     <!-- Control bar -->
@@ -151,7 +162,8 @@
         {:else if error}
           <span class="text-destructive">{error}</span>
         {:else}
-          {podCount} pod{podCount !== 1 ? 's' : ''}
+          {podCount}
+          pod{podCount !== 1 ? 's' : ''}
         {/if}
       </span>
 
@@ -161,29 +173,31 @@
           {store.showPodPrefix
             ? 'border-accent text-accent bg-accent/10'
             : 'border-border text-muted hover:bg-surface-hover'}"
-      >Pod prefix</button>
+      >
+        Pod prefix
+      </button>
 
       <div class="flex items-center gap-1 ml-auto">
         <button
           onclick={() => sessionStore.terminalFontSize = Math.max(8, sessionStore.terminalFontSize - 1)}
           class="text-xs text-muted hover:text-fg border border-border rounded px-1.5 py-0.5 transition-colors"
           title="Decrease font size"
-        >−</button>
+        >
+          −
+        </button>
         <span class="text-xs text-muted w-6 text-center">{sessionStore.terminalFontSize}</span>
         <button
           onclick={() => sessionStore.terminalFontSize = Math.min(24, sessionStore.terminalFontSize + 1)}
           class="text-xs text-muted hover:text-fg border border-border rounded px-1.5 py-0.5 transition-colors"
           title="Increase font size"
-        >+</button>
+        >
+          +
+        </button>
       </div>
     </div>
 
     <!-- Log area -->
-    <div
-      bind:this={scrollEl}
-      class="flex-1 overflow-auto font-mono bg-bg"
-      onscroll={onScroll}
-    >
+    <div bind:this={scrollEl} class="flex-1 overflow-auto font-mono bg-bg" onscroll={onScroll}>
       <div style:height="{$virtualizerStore.getTotalSize()}px" style:position="relative">
         {#each $virtualizerStore.getVirtualItems() as row (row.index)}
           {@const line = store.lines[row.index]}
@@ -198,7 +212,8 @@
             >
               {#if store.showPodPrefix}
                 <span style="color: {line.color}" class="mr-1 select-none">[{line.pod}]</span>
-              {/if}{line.text}
+              {/if}
+              {line.text}
             </div>
           {/if}
         {/each}

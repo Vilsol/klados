@@ -1,19 +1,19 @@
 <script lang="ts">
   interface Props {
-    value: number
-    onchange: (v: number) => void
-    hasPrometheus: boolean
+    value: number;
+    onchange: (v: number) => void;
+    hasPrometheus: boolean;
   }
 
-  let { value, onchange, hasPrometheus }: Props = $props()
+  let {value, onchange, hasPrometheus}: Props = $props();
 
   const presets = [
-    { label: '15m', value: 15 },
-    { label: '1h', value: 60 },
-    { label: '6h', value: 360 },
-    { label: '24h', value: 1440 },
-    { label: '7d', value: 10080 },
-  ]
+    {label: "15m", value: 15},
+    {label: "1h", value: 60},
+    {label: "6h", value: 360},
+    {label: "24h", value: 1440},
+    {label: "7d", value: 10080},
+  ];
 </script>
 
 {#if hasPrometheus}

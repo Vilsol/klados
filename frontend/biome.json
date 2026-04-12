@@ -1,12 +1,10 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.11/schema.json",
   "vcs": {
-    "enabled": false,
-    "clientKind": "git",
-    "useIgnoreFile": false
+    "enabled": false
   },
   "files": {
-    "includes": ["**", "!!**/dist", "!!bindings"]
+    "includes": ["**", "!!dist", "!!bindings"]
   },
   "formatter": {
     "enabled": true,
@@ -15,7 +13,7 @@
     "lineEnding": "lf",
     "lineWidth": 140,
     "attributePosition": "auto",
-    "bracketSpacing": true,
+    "bracketSpacing": false,
     "expand": "auto",
     "trailingNewline": true
   },
@@ -28,6 +26,7 @@
   "javascript": {
     "experimentalEmbeddedSnippetsEnabled": true,
     "formatter": {
+      "enabled": true,
       "quoteStyle": "double",
       "quoteProperties": "asNeeded",
       "trailingCommas": "all",
@@ -37,7 +36,7 @@
       "indentWidth": 2,
       "lineEnding": "lf",
       "lineWidth": 140,
-      "bracketSpacing": true,
+      "bracketSpacing": false,
       "expand": "auto",
       "operatorLinebreak": "after",
       "trailingNewline": true
@@ -45,12 +44,13 @@
   },
   "json": {
     "formatter": {
+      "enabled": true,
       "indentStyle": "space",
       "indentWidth": 2,
       "lineEnding": "lf",
       "lineWidth": 140,
       "trailingCommas": "none",
-      "bracketSpacing": true,
+      "bracketSpacing": false,
       "expand": "auto",
       "trailingNewline": true
     }
@@ -60,6 +60,7 @@
       "tailwindDirectives": true
     },
     "formatter": {
+      "enabled": true,
       "indentStyle": "space",
       "indentWidth": 2,
       "lineEnding": "lf",
@@ -70,6 +71,7 @@
   "html": {
     "experimentalFullSupportEnabled": true,
     "formatter": {
+      "enabled": true,
       "indentStyle": "space",
       "indentWidth": 2,
       "lineEnding": "lf",

@@ -1,27 +1,27 @@
 <script lang="ts">
-  import type { ConnectionStatusType } from '$lib/stores/cluster.svelte'
+  import type {ConnectionStatusType} from "$lib/stores/cluster.svelte";
 
-  let { status, clusterName }: { status: ConnectionStatusType; clusterName: string } = $props()
+  let {status, clusterName}: {status: ConnectionStatusType; clusterName: string} = $props();
 
   let dotClass = $derived(
-    status === 'connected'
-      ? 'bg-green-500'
-      : status === 'connecting'
-        ? 'bg-yellow-500 animate-pulse'
-        : status === 'error'
-          ? 'bg-red-500 animate-pulse'
-          : 'bg-gray-400',
-  )
+    status === "connected"
+      ? "bg-green-500"
+      : status === "connecting"
+        ? "bg-yellow-500 animate-pulse"
+        : status === "error"
+          ? "bg-red-500 animate-pulse"
+          : "bg-gray-400",
+  );
 
   let label = $derived(
-    status === 'connected'
+    status === "connected"
       ? `Connected to ${clusterName}`
-      : status === 'connecting'
+      : status === "connecting"
         ? `Connecting to ${clusterName}...`
-        : status === 'error'
+        : status === "error"
           ? `Error connecting to ${clusterName}`
           : `Disconnected from ${clusterName}`,
-  )
+  );
 </script>
 
 <span class="relative inline-flex items-center" title={label}>

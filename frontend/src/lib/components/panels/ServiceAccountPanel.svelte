@@ -1,44 +1,45 @@
 <script lang="ts">
-  import * as ResourceService from '../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import { SectionHeader, EmptyState, StatusBadge } from '@klados/ui'
+  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {SectionHeader, EmptyState, StatusBadge} from "@klados/ui";
 
-  let { obj, ctxName }: { obj: Record<string, any>; ctxName: string } = $props()
+  let {obj, ctxName}: {obj: Record<string, any>; ctxName: string} = $props();
 
-  const saName = $derived<string>(obj.metadata?.name ?? '')
-  const saNamespace = $derived<string>(obj.metadata?.namespace ?? '')
-  const automount = $derived<boolean>(obj.automountServiceAccountToken ?? true)
-  const secrets = $derived<any[]>(obj.secrets ?? [])
-  const imagePullSecrets = $derived<any[]>(obj.imagePullSecrets ?? [])
+  const saName = $derived<string>(obj.metadata?.name ?? "");
+  const saNamespace = $derived<string>(obj.metadata?.namespace ?? "");
+  const automount = $derived<boolean>(obj.automountServiceAccountToken ?? true);
+  const secrets = $derived<any[]>(obj.secrets ?? []);
+  const imagePullSecrets = $derived<any[]>(obj.imagePullSecrets ?? []);
 
-  interface BindingRef { kind: string; name: string }
-  let associatedBindings = $state<BindingRef[]>([])
+  interface BindingRef {
+    kind: string;
+    name: string;
+  }
+  let associatedBindings = $state<BindingRef[]>([]);
 
   $effect(() => {
-    const name = saName
-    const ns = saNamespace
-    const ctx = ctxName
-    ;(async () => {
+    const name = saName;
+    const ns = saNamespace;
+    const ctx = ctxName;
+    (async () => {
       try {
         const [rbList, crbList] = await Promise.all([
-          ResourceService.ListResources(ctx, 'rbac.authorization.k8s.io.v1.rolebindings', ns),
-          ResourceService.ListResources(ctx, 'rbac.authorization.k8s.io.v1.clusterrolebindings', ''),
-        ])
-        const results: BindingRef[] = []
+          ResourceService.ListResources(ctx, "rbac.authorization.k8s.io.v1.rolebindings", ns),
+          ResourceService.ListResources(ctx, "rbac.authorization.k8s.io.v1.clusterrolebindings", ""),
+        ]);
+        const results: BindingRef[] = [];
         for (const binding of [...(rbList ?? []), ...(crbList ?? [])]) {
-          const b = binding as any
-          const matched = (b.subjects ?? []).some(
-            (s: any) => s.kind === 'ServiceAccount' && s.name === name && s.namespace === ns
-          )
+          const b = binding as any;
+          const matched = (b.subjects ?? []).some((s: any) => s.kind === "ServiceAccount" && s.name === name && s.namespace === ns);
           if (matched) {
-            results.push({ kind: b.kind ?? '', name: b.metadata?.name ?? '' })
+            results.push({kind: b.kind ?? "", name: b.metadata?.name ?? ""});
           }
         }
-        associatedBindings = results
+        associatedBindings = results;
       } catch {
         // ignore
       }
-    })()
-  })
+    })();
+  });
 </script>
 
 <div class="p-4 space-y-6">

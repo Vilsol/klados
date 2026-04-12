@@ -1,104 +1,104 @@
 <script lang="ts">
-  import { preferencesStore, type SavedFilter } from '$lib/stores/preferences.svelte'
-  import { savedFilterToQuery, queryToSavedFilter } from '$lib/search/serialize'
-  import { Bookmark, X } from 'lucide-svelte'
-  import * as ConfigService from '../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js'
+  import {preferencesStore, type SavedFilter} from "$lib/stores/preferences.svelte";
+  import {savedFilterToQuery, queryToSavedFilter} from "$lib/search/serialize";
+  import {Bookmark, X} from "lucide-svelte";
+  import * as ConfigService from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
 
   let {
     gvr,
     contextName,
-    currentQuery = '',
+    currentQuery = "",
     onapply,
   }: {
-    gvr: string
-    contextName: string
-    currentQuery: string
-    onapply?: (query: string) => void
-  } = $props()
+    gvr: string;
+    contextName: string;
+    currentQuery: string;
+    onapply?: (query: string) => void;
+  } = $props();
 
-  let dropdownOpen = $state(false)
-  let showSaveForm = $state(false)
-  let saveName = $state('')
-  let saveScope = $state<'cluster' | 'global'>('cluster')
-  let confirmOverwrite = $state(false)
+  let dropdownOpen = $state(false);
+  let showSaveForm = $state(false);
+  let saveName = $state("");
+  let saveScope = $state<"cluster" | "global">("cluster");
+  let confirmOverwrite = $state(false);
 
-  let savedFilters = $derived(preferencesStore.getSavedFilters(gvr))
+  let savedFilters = $derived(preferencesStore.getSavedFilters(gvr));
 
   function toggleDropdown() {
-    dropdownOpen = !dropdownOpen
-    if (!dropdownOpen) showSaveForm = false
+    dropdownOpen = !dropdownOpen;
+    if (!dropdownOpen) showSaveForm = false;
   }
 
   function applyFilter(filter: SavedFilter) {
-    onapply?.(savedFilterToQuery(filter))
-    dropdownOpen = false
+    onapply?.(savedFilterToQuery(filter));
+    dropdownOpen = false;
   }
 
   function openSaveForm() {
-    showSaveForm = true
-    saveName = ''
-    saveScope = 'cluster'
+    showSaveForm = true;
+    saveName = "";
+    saveScope = "cluster";
   }
 
   function isDuplicate(): boolean {
-    return savedFilters.some((f) => f.name === saveName.trim())
+    return savedFilters.some((f) => f.name === saveName.trim());
   }
 
   async function saveFilter(force = false) {
-    if (!saveName.trim()) return
+    if (!saveName.trim()) return;
 
     if (!force && isDuplicate()) {
-      confirmOverwrite = true
-      return
+      confirmOverwrite = true;
+      return;
     }
 
-    confirmOverwrite = false
-    const filterData = queryToSavedFilter(currentQuery)
-    const newFilter: SavedFilter = { name: saveName.trim(), ...filterData }
+    confirmOverwrite = false;
+    const filterData = queryToSavedFilter(currentQuery);
+    const newFilter: SavedFilter = {name: saveName.trim(), ...filterData};
 
-    const existing = [...savedFilters]
-    const dupeIdx = existing.findIndex((f) => f.name === newFilter.name)
+    const existing = [...savedFilters];
+    const dupeIdx = existing.findIndex((f) => f.name === newFilter.name);
     if (dupeIdx >= 0) {
-      existing[dupeIdx] = newFilter
+      existing[dupeIdx] = newFilter;
     } else {
-      existing.push(newFilter)
+      existing.push(newFilter);
     }
 
-    if (saveScope === 'cluster') {
-      await ConfigService.SetClusterSavedFilters(contextName, gvr, existing)
+    if (saveScope === "cluster") {
+      await ConfigService.SetClusterSavedFilters(contextName, gvr, existing);
     } else {
-      await ConfigService.SetSavedFilters(gvr, existing)
+      await ConfigService.SetSavedFilters(gvr, existing);
     }
 
-    showSaveForm = false
-    dropdownOpen = false
+    showSaveForm = false;
+    dropdownOpen = false;
   }
 
   async function deleteFilter(filter: SavedFilter) {
-    const name = filter.name
+    const name = filter.name;
     // Remove from both global and cluster scopes (we don't know which one it's from)
-    const globalFilters = await ConfigService.GetSavedFilters(gvr)
-    const globalUpdated = (globalFilters ?? []).filter((f: any) => f.name !== name)
+    const globalFilters = await ConfigService.GetSavedFilters(gvr);
+    const globalUpdated = (globalFilters ?? []).filter((f: any) => f.name !== name);
     if (globalUpdated.length !== (globalFilters ?? []).length) {
-      await ConfigService.SetSavedFilters(gvr, globalUpdated)
+      await ConfigService.SetSavedFilters(gvr, globalUpdated);
     }
 
-    const clusterPrefs = await ConfigService.GetClusterPrefs(contextName)
-    const clusterFilters = (clusterPrefs as any)?.savedFilters?.[gvr] ?? []
-    const clusterUpdated = clusterFilters.filter((f: any) => f.name !== name)
+    const clusterPrefs = await ConfigService.GetClusterPrefs(contextName);
+    const clusterFilters = (clusterPrefs as any)?.savedFilters?.[gvr] ?? [];
+    const clusterUpdated = clusterFilters.filter((f: any) => f.name !== name);
     if (clusterUpdated.length !== clusterFilters.length) {
-      await ConfigService.SetClusterSavedFilters(contextName, gvr, clusterUpdated)
+      await ConfigService.SetClusterSavedFilters(contextName, gvr, clusterUpdated);
     }
   }
 
   function filterPreview(filter: SavedFilter): string {
-    return savedFilterToQuery(filter) || '(empty)'
+    return savedFilterToQuery(filter) || "(empty)";
   }
 
   function handleClickOutside(e: MouseEvent) {
-    const target = e.target as HTMLElement
-    if (!target.closest('.saved-filter-dropdown')) {
-      dropdownOpen = false
+    const target = e.target as HTMLElement;
+    if (!target.closest(".saved-filter-dropdown")) {
+      dropdownOpen = false;
     }
   }
 </script>
@@ -106,11 +106,7 @@
 <svelte:window onclick={handleClickOutside} />
 
 <div class="relative saved-filter-dropdown">
-  <button
-    class="p-1.5 rounded text-muted hover:text-fg hover:bg-surface-hover"
-    title="Saved filters"
-    onclick={toggleDropdown}
-  >
+  <button class="p-1.5 rounded text-muted hover:text-fg hover:bg-surface-hover" title="Saved filters" onclick={toggleDropdown}>
     <Bookmark size={16} />
   </button>
 
@@ -125,10 +121,7 @@
 
         {#each savedFilters as filter}
           <div class="flex items-center hover:bg-surface-hover group">
-            <button
-              class="flex-1 text-left px-3 py-1.5"
-              onclick={() => applyFilter(filter)}
-            >
+            <button class="flex-1 text-left px-3 py-1.5" onclick={() => applyFilter(filter)}>
               <div class="text-sm text-fg font-medium">{filter.name}</div>
               <div class="text-xs text-muted font-mono truncate">{filterPreview(filter)}</div>
             </button>
@@ -160,44 +153,39 @@
             class="w-full px-2 py-1 text-sm bg-surface border border-border rounded text-fg placeholder:text-muted mb-2"
             placeholder="Filter name"
             onkeydown={(e) => e.key === 'Enter' && saveFilter()}
-          />
+          >
 
           <div class="flex gap-3 mb-3 text-sm">
             <label class="flex items-center gap-1.5 text-fg">
-              <input type="radio" bind:group={saveScope} value="cluster" class="accent-accent" />
+              <input type="radio" bind:group={saveScope} value="cluster" class="accent-accent">
               This cluster
             </label>
             <label class="flex items-center gap-1.5 text-fg">
-              <input type="radio" bind:group={saveScope} value="global" class="accent-accent" />
+              <input type="radio" bind:group={saveScope} value="global" class="accent-accent">
               Global
             </label>
           </div>
 
           {#if confirmOverwrite}
-            <div class="text-xs text-destructive mb-2">
-              A filter named "{saveName.trim()}" already exists. Overwrite it?
-            </div>
+            <div class="text-xs text-destructive mb-2">A filter named "{saveName.trim()}" already exists. Overwrite it?</div>
             <div class="flex justify-end gap-2">
-              <button
-                class="px-2 py-1 text-sm rounded text-muted hover:text-fg"
-                onclick={() => { confirmOverwrite = false }}
-              >Cancel</button>
-              <button
-                class="px-2 py-1 text-sm rounded bg-destructive text-white hover:opacity-90"
-                onclick={() => saveFilter(true)}
-              >Overwrite</button>
+              <button class="px-2 py-1 text-sm rounded text-muted hover:text-fg" onclick={() => { confirmOverwrite = false }}>
+                Cancel
+              </button>
+              <button class="px-2 py-1 text-sm rounded bg-destructive text-white hover:opacity-90" onclick={() => saveFilter(true)}>
+                Overwrite
+              </button>
             </div>
           {:else}
             <div class="flex justify-end gap-2">
-              <button
-                class="px-2 py-1 text-sm rounded text-muted hover:text-fg"
-                onclick={() => (showSaveForm = false)}
-              >Cancel</button>
+              <button class="px-2 py-1 text-sm rounded text-muted hover:text-fg" onclick={() => (showSaveForm = false)}>Cancel</button>
               <button
                 class="px-2 py-1 text-sm rounded bg-accent text-white hover:opacity-90 disabled:opacity-50"
                 disabled={!saveName.trim()}
                 onclick={() => saveFilter()}
-              >Save</button>
+              >
+                Save
+              </button>
             </div>
           {/if}
         </div>

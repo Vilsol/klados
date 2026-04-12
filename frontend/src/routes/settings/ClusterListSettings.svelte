@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { push } from 'svelte-spa-router'
-  import { clusterStore } from '$lib/stores/cluster.svelte'
+  import {push} from "svelte-spa-router";
+  import {clusterStore} from "$lib/stores/cluster.svelte";
 </script>
 
 <div class="max-w-2xl space-y-6">

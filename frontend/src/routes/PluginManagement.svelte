@@ -1,174 +1,178 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte'
-  import { Events } from '@wailsio/runtime'
-  import { RefreshCw, Trash2, ChevronDown, ChevronRight, FolderOpen } from 'lucide-svelte'
-  import * as PluginService from '../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
-  import * as AppService from '../../bindings/github.com/Vilsol/klados/internal/services/appservice.js'
-  import { ConfirmDialog } from '@klados/ui'
-  import { notificationStore } from '$lib/stores/notification.svelte.js'
+  import {onDestroy} from "svelte";
+  import {Events} from "@wailsio/runtime";
+  import {RefreshCw, Trash2, ChevronDown, ChevronRight, FolderOpen} from "lucide-svelte";
+  import * as PluginService from "../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
+  import * as AppService from "../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
+  import {ConfirmDialog} from "@klados/ui";
+  import {notificationStore} from "$lib/stores/notification.svelte.js";
 
   interface ResourcePerm {
-    group: string
-    version: string
-    resource: string
-    verbs: string[]
+    group: string;
+    version: string;
+    resource: string;
+    verbs: string[];
   }
 
   interface PermsSummary {
-    resources?: ResourcePerm[]
-    logs?: boolean
-    exec?: boolean
-    storage?: boolean
-    events?: boolean
-    wasi?: string[]
+    resources?: ResourcePerm[];
+    logs?: boolean;
+    exec?: boolean;
+    storage?: boolean;
+    events?: boolean;
+    wasi?: string[];
   }
 
   interface PluginInfo {
-    name: string
-    version: string
-    displayName: string
-    description?: string
-    status: string
-    error?: string
-    conflictWarnings?: string[]
-    dir?: string
-    permissions?: PermsSummary
+    name: string;
+    version: string;
+    displayName: string;
+    description?: string;
+    status: string;
+    error?: string;
+    conflictWarnings?: string[];
+    dir?: string;
+    permissions?: PermsSummary;
   }
 
-  let plugins = $state<PluginInfo[]>([])
-  let expandedPerms = $state<Record<string, boolean>>({})
-  let uninstallTarget = $state<string | null>(null)
-  let confirmOpen = $state(false)
-  let loadingActions = $state<Record<string, boolean>>({})
-  let installing = $state(false)
-  let registryRef = $state('')
-  let registryLoading = $state(false)
-  let registryError = $state('')
-  let showAuthForm = $state(false)
-  let authHost = $state('')
-  let authUsername = $state('')
-  let authPassword = $state('')
-  let authInsecure = $state(false)
+  let plugins = $state<PluginInfo[]>([]);
+  let expandedPerms = $state<Record<string, boolean>>({});
+  let uninstallTarget = $state<string | null>(null);
+  let confirmOpen = $state(false);
+  let loadingActions = $state<Record<string, boolean>>({});
+  let installing = $state(false);
+  let registryRef = $state("");
+  let registryLoading = $state(false);
+  let registryError = $state("");
+  let showAuthForm = $state(false);
+  let authHost = $state("");
+  let authUsername = $state("");
+  let authPassword = $state("");
+  let authInsecure = $state(false);
 
   async function loadPlugins() {
     try {
-      const result = await PluginService.ListPlugins()
-      plugins = (result ?? []) as PluginInfo[]
+      const result = await PluginService.ListPlugins();
+      plugins = (result ?? []) as PluginInfo[];
     } catch {
-      plugins = []
+      plugins = [];
     }
   }
 
-  const unsub = Events.On('plugins:loaded', () => loadPlugins())
-  onDestroy(() => unsub())
+  const unsub = Events.On("plugins:loaded", () => loadPlugins());
+  onDestroy(() => unsub());
 
-  loadPlugins()
+  loadPlugins();
 
   function statusColor(status: string) {
     switch (status) {
-      case 'active': return 'text-green-500'
-      case 'disabled': return 'text-muted'
-      case 'errored': return 'text-red-500'
-      default: return 'text-muted'
+      case "active":
+        return "text-green-500";
+      case "disabled":
+        return "text-muted";
+      case "errored":
+        return "text-red-500";
+      default:
+        return "text-muted";
     }
   }
 
   async function withLoading(name: string, fn: () => Promise<void>) {
-    loadingActions[name] = true
+    loadingActions[name] = true;
     try {
-      await fn()
+      await fn();
     } catch (err) {
-      notificationStore.error(`Action failed for "${name}"`, err instanceof Error ? err.message : String(err))
+      notificationStore.error(`Action failed for "${name}"`, err instanceof Error ? err.message : String(err));
     } finally {
-      loadingActions[name] = false
+      loadingActions[name] = false;
     }
   }
 
   async function togglePlugin(p: PluginInfo) {
     await withLoading(p.name, async () => {
-      if (p.status === 'disabled') {
-        await PluginService.EnablePlugin(p.name)
+      if (p.status === "disabled") {
+        await PluginService.EnablePlugin(p.name);
       } else {
-        await PluginService.DisablePlugin(p.name)
+        await PluginService.DisablePlugin(p.name);
       }
-      await loadPlugins()
-    })
+      await loadPlugins();
+    });
   }
 
   async function reloadPlugin(name: string) {
     await withLoading(name, async () => {
-      await PluginService.ReloadPluginManual(name)
-    })
+      await PluginService.ReloadPluginManual(name);
+    });
   }
 
   async function confirmUninstall() {
-    if (!uninstallTarget) return
-    const name = uninstallTarget
-    uninstallTarget = null
+    if (!uninstallTarget) return;
+    const name = uninstallTarget;
+    uninstallTarget = null;
     await withLoading(name, async () => {
-      await PluginService.UninstallPlugin(name)
-      await loadPlugins()
-    })
+      await PluginService.UninstallPlugin(name);
+      await loadPlugins();
+    });
   }
 
   async function installFromRegistry() {
-    const ref = registryRef.startsWith('oci://') ? registryRef : `oci://${registryRef}`
-    registryLoading = true
-    registryError = ''
+    const ref = registryRef.startsWith("oci://") ? registryRef : `oci://${registryRef}`;
+    registryLoading = true;
+    registryError = "";
     try {
-      await PluginService.InstallPlugin(ref)
-      registryRef = ''
-      showAuthForm = false
-      notificationStore.success('Plugin installed', ref.split('/').pop() ?? ref)
-      await loadPlugins()
+      await PluginService.InstallPlugin(ref);
+      registryRef = "";
+      showAuthForm = false;
+      notificationStore.success("Plugin installed", ref.split("/").pop() ?? ref);
+      await loadPlugins();
     } catch (err: any) {
-      if (err?.message?.includes('authentication required')) {
-        authHost = ref.replace(/^oci:\/\//, '').split('/')[0]
-        showAuthForm = true
+      if (err?.message?.includes("authentication required")) {
+        authHost = ref.replace(/^oci:\/\//, "").split("/")[0];
+        showAuthForm = true;
       } else {
-        registryError = err?.message ?? String(err)
+        registryError = err?.message ?? String(err);
       }
     } finally {
-      registryLoading = false
+      registryLoading = false;
     }
   }
 
   async function submitCredentials() {
-    const ref = registryRef.startsWith('oci://') ? registryRef : `oci://${registryRef}`
-    registryLoading = true
+    const ref = registryRef.startsWith("oci://") ? registryRef : `oci://${registryRef}`;
+    registryLoading = true;
     try {
-      await PluginService.SaveRegistryCredentials(authHost, authUsername, authPassword)
-      if (authInsecure) await PluginService.AddInsecureRegistry(authHost)
-      await PluginService.InstallPlugin(ref)
-      showAuthForm = false
-      authUsername = ''
-      authPassword = ''
-      authInsecure = false
-      registryRef = ''
-      notificationStore.success('Plugin installed', ref.split('/').pop() ?? ref)
-      await loadPlugins()
+      await PluginService.SaveRegistryCredentials(authHost, authUsername, authPassword);
+      if (authInsecure) await PluginService.AddInsecureRegistry(authHost);
+      await PluginService.InstallPlugin(ref);
+      showAuthForm = false;
+      authUsername = "";
+      authPassword = "";
+      authInsecure = false;
+      registryRef = "";
+      notificationStore.success("Plugin installed", ref.split("/").pop() ?? ref);
+      await loadPlugins();
     } catch (err: any) {
-      if (err?.message?.includes('authentication required')) {
-        registryError = 'Credentials rejected — verify and try again'
+      if (err?.message?.includes("authentication required")) {
+        registryError = "Credentials rejected — verify and try again";
       } else {
-        registryError = err?.message ?? String(err)
+        registryError = err?.message ?? String(err);
       }
     } finally {
-      registryLoading = false
+      registryLoading = false;
     }
   }
 
   async function installPlugin() {
-    installing = true
+    installing = true;
     try {
-      const path = await AppService.BrowsePluginFile()
-      if (!path) return
-      await PluginService.InstallPlugin(path)
-      notificationStore.success('Plugin installed', path.split('/').pop() ?? path)
+      const path = await AppService.BrowsePluginFile();
+      if (!path) return;
+      await PluginService.InstallPlugin(path);
+      notificationStore.success("Plugin installed", path.split("/").pop() ?? path);
     } catch (err) {
-      notificationStore.error('Install failed', err instanceof Error ? err.message : String(err))
+      notificationStore.error("Install failed", err instanceof Error ? err.message : String(err));
     } finally {
-      installing = false
+      installing = false;
     }
   }
 </script>
@@ -177,9 +181,7 @@
   <div class="flex items-center gap-2 px-6 py-4 border-b border-border">
     <h1 class="text-lg font-semibold">Plugins</h1>
     {#if plugins.length > 0}
-      <span class="text-xs bg-surface px-2 py-0.5 rounded-full border border-border text-muted">
-        {plugins.length}
-      </span>
+      <span class="text-xs bg-surface px-2 py-0.5 rounded-full border border-border text-muted"> {plugins.length} </span>
     {/if}
     <div class="ml-auto">
       <button
@@ -204,7 +206,7 @@
         disabled={registryLoading}
         class="flex-1 text-xs px-3 py-1.5 rounded border border-border bg-surface focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
         onkeydown={(e) => e.key === 'Enter' && installFromRegistry()}
-      />
+      >
       <button
         onclick={installFromRegistry}
         disabled={registryLoading || !registryRef}
@@ -221,10 +223,20 @@
     {#if showAuthForm}
       <div class="flex flex-col gap-2 border border-border rounded-lg p-3 bg-surface text-xs">
         <p class="text-muted">Authentication required for <span class="text-fg font-mono">{authHost}</span></p>
-        <input type="text" bind:value={authUsername} placeholder="Username" class="px-2 py-1 rounded border border-border bg-surface focus:outline-none" />
-        <input type="password" bind:value={authPassword} placeholder="Password or token" class="px-2 py-1 rounded border border-border bg-surface focus:outline-none" />
+        <input
+          type="text"
+          bind:value={authUsername}
+          placeholder="Username"
+          class="px-2 py-1 rounded border border-border bg-surface focus:outline-none"
+        >
+        <input
+          type="password"
+          bind:value={authPassword}
+          placeholder="Password or token"
+          class="px-2 py-1 rounded border border-border bg-surface focus:outline-none"
+        >
         <label class="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" bind:checked={authInsecure} />
+          <input type="checkbox" bind:checked={authInsecure}>
           Insecure (HTTP)
         </label>
         <button
@@ -254,9 +266,7 @@
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-medium text-sm">{plugin.displayName || plugin.name}</span>
                   <span class="text-xs text-muted">v{plugin.version}</span>
-                  <span class="text-xs font-medium {statusColor(plugin.status)} capitalize">
-                    {plugin.status}
-                  </span>
+                  <span class="text-xs font-medium {statusColor(plugin.status)} capitalize"> {plugin.status} </span>
                 </div>
                 {#if plugin.description}
                   <p class="text-xs text-muted mt-0.5 truncate">{plugin.description}</p>
@@ -338,10 +348,18 @@
                     {/if}
                     {#if p.logs || p.exec || p.storage || p.events}
                       <div class="flex flex-wrap gap-1 mt-0.5">
-                        {#if p.logs}<span class="bg-surface border border-border rounded px-1">logs</span>{/if}
-                        {#if p.exec}<span class="bg-surface border border-border rounded px-1">exec</span>{/if}
-                        {#if p.storage}<span class="bg-surface border border-border rounded px-1">storage</span>{/if}
-                        {#if p.events}<span class="bg-surface border border-border rounded px-1">events</span>{/if}
+                        {#if p.logs}
+                          <span class="bg-surface border border-border rounded px-1">logs</span>
+                        {/if}
+                        {#if p.exec}
+                          <span class="bg-surface border border-border rounded px-1">exec</span>
+                        {/if}
+                        {#if p.storage}
+                          <span class="bg-surface border border-border rounded px-1">storage</span>
+                        {/if}
+                        {#if p.events}
+                          <span class="bg-surface border border-border rounded px-1">events</span>
+                        {/if}
                       </div>
                     {/if}
                     {#if p.wasi && p.wasi.length > 0}

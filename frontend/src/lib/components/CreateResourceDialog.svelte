@@ -1,187 +1,205 @@
 <script lang="ts">
-  import { Dialog } from 'bits-ui'
-  import { Combobox } from '@klados/ui'
-  import { onDestroy } from 'svelte'
-  import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view'
-  import { EditorState } from '@codemirror/state'
-  import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-  import { yaml as yamlLang } from '@codemirror/lang-yaml'
-  import { search, searchKeymap } from '@codemirror/search'
-  import { syntaxHighlighting, foldGutter, foldKeymap } from '@codemirror/language'
-  import { oneDarkHighlightStyle } from '@codemirror/theme-one-dark'
-  import { parse } from 'yaml'
-  import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import { notificationStore } from '$lib/stores/notification.svelte'
-  import { getLogger } from '$lib/logger'
+  import {Dialog} from "bits-ui";
+  import {Combobox} from "@klados/ui";
+  import {onDestroy} from "svelte";
+  import {EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter} from "@codemirror/view";
+  import {EditorState} from "@codemirror/state";
+  import {defaultKeymap, history, historyKeymap} from "@codemirror/commands";
+  import {yaml as yamlLang} from "@codemirror/lang-yaml";
+  import {search, searchKeymap} from "@codemirror/search";
+  import {syntaxHighlighting, foldGutter, foldKeymap} from "@codemirror/language";
+  import {oneDarkHighlightStyle} from "@codemirror/theme-one-dark";
+  import {parse} from "yaml";
+  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {notificationStore} from "$lib/stores/notification.svelte";
+  import {getLogger} from "$lib/logger";
 
-  const log = getLogger('resources')
+  const log = getLogger("resources");
 
   type TemplateItem = {
-    gvr: string
-    name: string
-    description: string
-    content: string
-    source: string
-  }
+    gvr: string;
+    name: string;
+    description: string;
+    content: string;
+    source: string;
+  };
 
   let {
     open = $bindable(false),
     ctxName,
-    gvr: initialGvr = '',
-    defaultNamespace = 'default',
+    gvr: initialGvr = "",
+    defaultNamespace = "default",
     onsuccess,
   }: {
-    open: boolean
-    ctxName: string
-    gvr?: string
-    defaultNamespace?: string
-    onsuccess?: () => void
-  } = $props()
+    open: boolean;
+    ctxName: string;
+    gvr?: string;
+    defaultNamespace?: string;
+    onsuccess?: () => void;
+  } = $props();
 
-  let container: HTMLDivElement | undefined = $state()
-  let view: EditorView | undefined
-  let saving = $state(false)
+  let container: HTMLDivElement | undefined = $state();
+  let view: EditorView | undefined;
+  let saving = $state(false);
   // svelte-ignore state_referenced_locally
-  let selectedGvr = $state(initialGvr)
-  let allGvrs = $state<string[]>([])
-  let templates = $state<TemplateItem[]>([])
-  let selectedTemplateName = $state('')
-  let editorDirty = $state(false)
+  let selectedGvr = $state(initialGvr);
+  let allGvrs = $state<string[]>([]);
+  let templates = $state<TemplateItem[]>([]);
+  let selectedTemplateName = $state("");
+  let editorDirty = $state(false);
 
   const editorTheme = EditorView.theme({
-    '&': { height: '100%', fontSize: '12.5px', backgroundColor: 'var(--color-bg)', color: 'var(--color-fg)' },
-    '.cm-content': { padding: '4px 0', fontFamily: '"JetBrains Mono", "Fira Code", ui-monospace, monospace', caretColor: 'var(--color-accent)' },
-    '.cm-gutters': { backgroundColor: 'var(--color-surface)', color: 'var(--color-muted)', borderRight: '1px solid var(--color-border)', minWidth: '3rem' },
-    '.cm-scroller': { overflow: 'auto', lineHeight: '1.6' },
-  })
+    "&": {height: "100%", fontSize: "12.5px", backgroundColor: "var(--color-bg)", color: "var(--color-fg)"},
+    ".cm-content": {
+      padding: "4px 0",
+      fontFamily: '"JetBrains Mono", "Fira Code", ui-monospace, monospace',
+      caretColor: "var(--color-accent)",
+    },
+    ".cm-gutters": {
+      backgroundColor: "var(--color-surface)",
+      color: "var(--color-muted)",
+      borderRight: "1px solid var(--color-border)",
+      minWidth: "3rem",
+    },
+    ".cm-scroller": {overflow: "auto", lineHeight: "1.6"},
+  });
 
   function initEditor(doc: string) {
-    view?.destroy()
+    view?.destroy();
     view = new EditorView({
       state: EditorState.create({
         doc,
         extensions: [
-          lineNumbers(), highlightActiveLine(), highlightActiveLineGutter(), foldGutter(),
-          history(), syntaxHighlighting(oneDarkHighlightStyle), yamlLang(),
-          search({ top: true }),
+          lineNumbers(),
+          highlightActiveLine(),
+          highlightActiveLineGutter(),
+          foldGutter(),
+          history(),
+          syntaxHighlighting(oneDarkHighlightStyle),
+          yamlLang(),
+          search({top: true}),
           keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, ...foldKeymap]),
           EditorView.lineWrapping,
           editorTheme,
           EditorView.updateListener.of((update) => {
-            if (update.docChanged) editorDirty = true
+            if (update.docChanged) editorDirty = true;
           }),
         ],
       }),
       parent: container!,
-    })
-    editorDirty = false
+    });
+    editorDirty = false;
   }
 
-  onDestroy(() => view?.destroy())
+  onDestroy(() => view?.destroy());
 
   $effect(() => {
     if (open && ctxName) {
-      ResourceService.GetAllTemplateGVRs(ctxName).then((gvrs: string[]) => {
-        allGvrs = gvrs
-      }).catch((e) => log.warn('Failed to fetch template GVRs', { error: String(e) }))
+      ResourceService.GetAllTemplateGVRs(ctxName)
+        .then((gvrs: string[]) => {
+          allGvrs = gvrs;
+        })
+        .catch((e) => log.warn("Failed to fetch template GVRs", {error: String(e)}));
     }
-  })
+  });
 
   $effect(() => {
     if (open) {
-      selectedGvr = initialGvr
+      selectedGvr = initialGvr;
     }
-  })
+  });
 
   $effect(() => {
     if (selectedGvr && ctxName) {
-      const gvr = selectedGvr
-      ResourceService.GetTemplates(ctxName, gvr).then((t: TemplateItem[]) => {
-        if (selectedGvr !== gvr) return
-        templates = t
-        if (t.length > 0) {
-          loadTemplate(t[0])
-        }
-      }).catch((e) => log.warn('Failed to fetch templates', { error: String(e) }))
+      const gvr = selectedGvr;
+      ResourceService.GetTemplates(ctxName, gvr)
+        .then((t: TemplateItem[]) => {
+          if (selectedGvr !== gvr) return;
+          templates = t;
+          if (t.length > 0) {
+            loadTemplate(t[0]);
+          }
+        })
+        .catch((e) => log.warn("Failed to fetch templates", {error: String(e)}));
     } else {
-      templates = []
-      selectedTemplateName = ''
+      templates = [];
+      selectedTemplateName = "";
     }
-  })
+  });
 
   $effect(() => {
     if (open && container && !view) {
-      initEditor('')
+      initEditor("");
     }
-  })
+  });
 
   function injectNamespace(content: string, ns: string): string {
-    if (!ns || content.includes('namespace:')) return content
-    const nameMatch = content.match(/^( +)name:/m)
-    if (!nameMatch) return content
-    const indent = nameMatch[1]
-    return content.replace(/^( +name:[^\n]*\n)/m, `$1${indent}namespace: ${ns}\n`)
+    if (!ns || content.includes("namespace:")) return content;
+    const nameMatch = content.match(/^( +)name:/m);
+    if (!nameMatch) return content;
+    const indent = nameMatch[1];
+    return content.replace(/^( +name:[^\n]*\n)/m, `$1${indent}namespace: ${ns}\n`);
   }
 
   function loadTemplateContent(tmpl: TemplateItem) {
-    const content = injectNamespace(tmpl.content, defaultNamespace)
+    const content = injectNamespace(tmpl.content, defaultNamespace);
     if (view) {
-      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: content } })
-      editorDirty = false
+      view.dispatch({changes: {from: 0, to: view.state.doc.length, insert: content}});
+      editorDirty = false;
     } else if (container) {
-      initEditor(content)
+      initEditor(content);
     }
   }
 
   // Used by the GVR-change $effect to auto-load the first template (also sets selectedTemplateName).
   function loadTemplate(tmpl: TemplateItem) {
-    selectedTemplateName = tmpl.name
-    loadTemplateContent(tmpl)
+    selectedTemplateName = tmpl.name;
+    loadTemplateContent(tmpl);
   }
 
   function onTemplateValueChange(name: string) {
-    const tmpl = templates.find((t) => t.name === name)
-    if (!tmpl) return
-    if (editorDirty && !confirm('Replace current YAML with selected template?')) {
+    const tmpl = templates.find((t) => t.name === name);
+    if (!tmpl) return;
+    if (editorDirty && !confirm("Replace current YAML with selected template?")) {
       // Revert the Combobox binding back to the previous selection
-      selectedTemplateName = selectedTemplateName
-      return
+      selectedTemplateName = selectedTemplateName;
+      return;
     }
-    loadTemplateContent(tmpl)
+    loadTemplateContent(tmpl);
   }
 
   async function importFromClipboard() {
     try {
-      const text = await navigator.clipboard.readText()
+      const text = await navigator.clipboard.readText();
       if (text.trim()) {
-        view?.dispatch({ changes: { from: 0, to: view!.state.doc.length, insert: text } })
-        editorDirty = true
+        view?.dispatch({changes: {from: 0, to: view!.state.doc.length, insert: text}});
+        editorDirty = true;
       }
     } catch {
-      notificationStore.push('Could not read clipboard', 'error')
+      notificationStore.push("Could not read clipboard", "error");
     }
   }
 
   async function apply() {
-    if (!view) return
-    saving = true
+    if (!view) return;
+    saving = true;
     try {
-      const yamlText = view.state.doc.toString()
-      const parsed = parse(yamlText) as Record<string, any>
+      const yamlText = view.state.doc.toString();
+      const parsed = parse(yamlText) as Record<string, any>;
       if (!parsed) {
-        notificationStore.push('Invalid YAML', 'error')
-        return
+        notificationStore.push("Invalid YAML", "error");
+        return;
       }
-      const ns = parsed.metadata?.namespace || defaultNamespace
-      const gvrToUse = selectedGvr || ''
-      await ResourceService.CreateResource(ctxName, gvrToUse, ns, parsed)
-      notificationStore.push(`Created ${parsed.metadata?.name ?? 'resource'}`, 'success')
-      open = false
-      onsuccess?.()
+      const ns = parsed.metadata?.namespace || defaultNamespace;
+      const gvrToUse = selectedGvr || "";
+      await ResourceService.CreateResource(ctxName, gvrToUse, ns, parsed);
+      notificationStore.push(`Created ${parsed.metadata?.name ?? "resource"}`, "success");
+      open = false;
+      onsuccess?.();
     } catch (e: any) {
-      notificationStore.push(e?.message ?? 'Create failed', 'error')
+      notificationStore.push(e?.message ?? "Create failed", "error");
     } finally {
-      saving = false
+      saving = false;
     }
   }
 </script>
@@ -198,15 +216,19 @@
         <button
           onclick={importFromClipboard}
           class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
-        >Import from Clipboard</button>
-        <Dialog.Close
-          class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
-        >Cancel</Dialog.Close>
+        >
+          Import from Clipboard
+        </button>
+        <Dialog.Close class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
+          >Cancel</Dialog.Close
+        >
         <button
           onclick={apply}
           disabled={saving}
           class="text-xs px-2.5 py-1 rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"
-        >{saving ? 'Creating…' : 'Create'}</button>
+        >
+          {saving ? 'Creating…' : 'Create'}
+        </button>
       </div>
 
       <div class="flex items-center gap-3 px-4 py-2 border-b border-border shrink-0 flex-wrap">

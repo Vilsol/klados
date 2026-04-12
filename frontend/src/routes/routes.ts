@@ -1,22 +1,22 @@
-import ClusterList from './ClusterList.svelte'
-import ClusterOverview from './ClusterOverview.svelte'
-import ResourceListPage from './ResourceListPage.svelte'
-import ResourceDetailPage from './ResourceDetailPage.svelte'
-import EventStreamPage from './EventStreamPage.svelte'
-import PluginManagement from './PluginManagement.svelte'
-import PortForwardPage from './portforwards/PortForwardPage.svelte'
-import SettingsPage from './settings/SettingsPage.svelte'
+import ClusterList from "./ClusterList.svelte";
+import ClusterOverview from "./ClusterOverview.svelte";
+import ResourceListPage from "./ResourceListPage.svelte";
+import ResourceDetailPage from "./ResourceDetailPage.svelte";
+import EventStreamPage from "./EventStreamPage.svelte";
+import PluginManagement from "./PluginManagement.svelte";
+import PortForwardPage from "./portforwards/PortForwardPage.svelte";
+import SettingsPage from "./settings/SettingsPage.svelte";
 
 export const routes = {
-  '/': ClusterList,
-  '/clusters': ClusterList,
-  '/plugins': PluginManagement,
-  '/settings': SettingsPage,
-  '/settings/*wild': SettingsPage,
-  '/c/:ctx/:gvr/:ns/:name': ResourceDetailPage,
-  '/c/:ctx/events': EventStreamPage,
-  '/c/:ctx/port-forwards': PortForwardPage,
-  '/c/:ctx/:gvr': ResourceListPage,
-  '/c/:ctx': ClusterOverview,
-  '/c/:ctx/*': ClusterOverview,
-}
+  "/": ClusterList,
+  "/clusters": ClusterList,
+  "/plugins": PluginManagement,
+  "/settings": SettingsPage,
+  "/settings/*wild": SettingsPage,
+  "/c/:ctx/:gvr/:ns/:name": ResourceDetailPage,
+  "/c/:ctx/events": EventStreamPage,
+  "/c/:ctx/port-forwards": PortForwardPage,
+  "/c/:ctx/:gvr": ResourceListPage,
+  "/c/:ctx": ClusterOverview,
+  "/c/:ctx/*": ClusterOverview,
+};

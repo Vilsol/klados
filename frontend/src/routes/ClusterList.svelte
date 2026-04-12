@@ -1,20 +1,17 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { clusterStore } from '$lib/stores/cluster.svelte'
-  import ConnectionIndicator from '$lib/components/ConnectionIndicator.svelte'
-  import KubeconfigImportDialog from '$lib/components/KubeconfigImportDialog.svelte'
+  import {onMount} from "svelte";
+  import {clusterStore} from "$lib/stores/cluster.svelte";
+  import ConnectionIndicator from "$lib/components/ConnectionIndicator.svelte";
+  import KubeconfigImportDialog from "$lib/components/KubeconfigImportDialog.svelte";
 
-  let showImportDialog = $state(false)
+  let showImportDialog = $state(false);
 
   onMount(() => {
-    clusterStore.loadContexts()
-  })
+    clusterStore.loadContexts();
+  });
 </script>
 
-<KubeconfigImportDialog
-  bind:open={showImportDialog}
-  onsuccess={() => clusterStore.loadContexts()}
-/>
+<KubeconfigImportDialog bind:open={showImportDialog} onsuccess={() => clusterStore.loadContexts()} />
 
 <div class="p-6">
   <div class="flex items-center justify-between mb-6">

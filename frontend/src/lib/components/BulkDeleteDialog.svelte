@@ -1,64 +1,64 @@
 <script lang="ts">
-  import { Dialog } from 'bits-ui'
-  import { selectionStore } from '$lib/stores/selection.svelte'
-  import { notificationStore } from '$lib/stores/notification.svelte'
-  import { Check, X, Loader2 } from 'lucide-svelte'
-  import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
+  import {Dialog} from "bits-ui";
+  import {selectionStore} from "$lib/stores/selection.svelte";
+  import {notificationStore} from "$lib/stores/notification.svelte";
+  import {Check, X, Loader2} from "lucide-svelte";
+  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 
   let {
     open = $bindable(false),
     contextName,
   }: {
-    open: boolean
-    contextName: string
-  } = $props()
+    open: boolean;
+    contextName: string;
+  } = $props();
 
-  type ItemStatus = 'pending' | 'deleting' | 'success' | 'error'
-  let statuses = $state<Map<string, { status: ItemStatus; error?: string }>>(new Map())
-  let running = $state(false)
+  type ItemStatus = "pending" | "deleting" | "success" | "error";
+  let statuses = $state<Map<string, {status: ItemStatus; error?: string}>>(new Map());
+  let running = $state(false);
 
-  const selectedItems = $derived(selectionStore.items())
-  const gvr = $derived(selectionStore.selectedGVR)
+  const selectedItems = $derived(selectionStore.items());
+  const gvr = $derived(selectionStore.selectedGVR);
 
   function itemKey(obj: Record<string, any>): string {
-    const ns = obj.metadata?.namespace ?? ''
-    const name = obj.metadata?.name ?? ''
-    return ns ? `${ns}/${name}` : name
+    const ns = obj.metadata?.namespace ?? "";
+    const name = obj.metadata?.name ?? "";
+    return ns ? `${ns}/${name}` : name;
   }
 
   async function run() {
-    running = true
-    const items = [...selectedItems]
-    statuses = new Map(items.map(item => [itemKey(item), { status: 'pending' as ItemStatus }]))
+    running = true;
+    const items = [...selectedItems];
+    statuses = new Map(items.map((item) => [itemKey(item), {status: "pending" as ItemStatus}]));
 
-    const succeeded: string[] = []
-    let failCount = 0
+    const succeeded: string[] = [];
+    let failCount = 0;
 
     for (const item of items) {
-      const key = itemKey(item)
-      const ns = item.metadata?.namespace ?? ''
-      const name = item.metadata?.name ?? ''
+      const key = itemKey(item);
+      const ns = item.metadata?.namespace ?? "";
+      const name = item.metadata?.name ?? "";
 
-      statuses = new Map(statuses).set(key, { status: 'deleting' })
+      statuses = new Map(statuses).set(key, {status: "deleting"});
 
       try {
-        await ResourceService.DeleteResource(contextName, gvr, ns, name)
-        statuses = new Map(statuses).set(key, { status: 'success' })
-        succeeded.push(key)
+        await ResourceService.DeleteResource(contextName, gvr, ns, name);
+        statuses = new Map(statuses).set(key, {status: "success"});
+        succeeded.push(key);
       } catch (e: any) {
-        statuses = new Map(statuses).set(key, { status: 'error', error: e?.message ?? String(e) })
-        failCount++
+        statuses = new Map(statuses).set(key, {status: "error", error: e?.message ?? String(e)});
+        failCount++;
       }
     }
 
-    selectionStore.deselectKeys(succeeded)
-    running = false
+    selectionStore.deselectKeys(succeeded);
+    running = false;
 
     if (failCount === 0) {
-      notificationStore.push(`Deleted ${succeeded.length}/${items.length} resources`, 'success')
-      open = false
+      notificationStore.push(`Deleted ${succeeded.length}/${items.length} resources`, "success");
+      open = false;
     } else {
-      notificationStore.push(`Deleted ${succeeded.length}/${items.length} — ${failCount} failed`, 'error')
+      notificationStore.push(`Deleted ${succeeded.length}/${items.length} — ${failCount} failed`, "error");
     }
   }
 </script>
@@ -66,7 +66,9 @@
 <Dialog.Root bind:open>
   <Dialog.Portal>
     <Dialog.Overlay class="fixed inset-0 bg-black/50 z-40" />
-    <Dialog.Content class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-surface border border-border rounded-lg shadow-xl p-6 w-[480px] max-w-[90vw] max-h-[70vh] flex flex-col">
+    <Dialog.Content
+      class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-surface border border-border rounded-lg shadow-xl p-6 w-[480px] max-w-[90vw] max-h-[70vh] flex flex-col"
+    >
       <Dialog.Title class="text-base font-semibold mb-2">Delete {selectedItems.length} resources</Dialog.Title>
       <Dialog.Description class="text-sm text-muted mb-4">This action cannot be undone.</Dialog.Description>
 
@@ -93,10 +95,9 @@
       </div>
 
       <div class="flex justify-end gap-2">
-        <Dialog.Close
-          class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors"
-          disabled={running}
-        >Cancel</Dialog.Close>
+        <Dialog.Close class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors" disabled={running}
+          >Cancel</Dialog.Close
+        >
         <button
           onclick={run}
           disabled={running}

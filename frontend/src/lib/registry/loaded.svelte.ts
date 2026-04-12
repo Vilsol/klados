@@ -1,9 +1,9 @@
-let _loaded = $state(false)
+let _loaded = $state(false);
 
 export function registryLoaded() {
-  return _loaded
+  return _loaded;
 }
 
 export function setRegistryLoaded() {
-  _loaded = true
+  _loaded = true;
 }

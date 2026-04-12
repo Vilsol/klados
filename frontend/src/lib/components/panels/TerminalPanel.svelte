@@ -1,118 +1,113 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte'
-  import * as ExecService from '../../../../bindings/github.com/Vilsol/klados/internal/services/execservice.js'
-  import { streamingStore } from '$lib/stores/streaming.svelte'
-  import { sessionStore } from '$lib/stores/session.svelte'
-  import { Terminal, Combobox } from '@klados/ui'
+  import {onDestroy} from "svelte";
+  import * as ExecService from "../../../../bindings/github.com/Vilsol/klados/internal/services/execservice.js";
+  import {streamingStore} from "$lib/stores/streaming.svelte";
+  import {sessionStore} from "$lib/stores/session.svelte";
+  import {Terminal, Combobox} from "@klados/ui";
 
-  let { obj, ctxName, namespace, name }: {
-    obj: Record<string, any>
-    ctxName: string
-    namespace: string
-    name: string
-  } = $props()
+  let {
+    obj,
+    ctxName,
+    namespace,
+    name,
+  }: {
+    obj: Record<string, any>;
+    ctxName: string;
+    namespace: string;
+    name: string;
+  } = $props();
 
   interface TermSession {
-    id: string
-    container: string
-    shell: string
-    clearFn?: () => void
+    id: string;
+    container: string;
+    shell: string;
+    clearFn?: () => void;
   }
 
   const containers = $derived<any[]>([
-    ...(obj.spec?.containers ?? []).map((c: any) => ({ name: c.name, init: false })),
-    ...(obj.spec?.initContainers ?? []).map((c: any) => ({ name: c.name, init: true })),
-  ])
+    ...(obj.spec?.containers ?? []).map((c: any) => ({name: c.name, init: false})),
+    ...(obj.spec?.initContainers ?? []).map((c: any) => ({name: c.name, init: true})),
+  ]);
 
-  const shells = ['bash', 'sh', 'zsh']
+  const shells = ["bash", "sh", "zsh"];
 
-  let selectedContainer = $state('')
-  let selectedShell = $state('bash')
-  let sessions = $state<TermSession[]>([])
-  let activeIdx = $state(0)
-  let error = $state<string | null>(null)
-  let loading = $state(false)
+  let selectedContainer = $state("");
+  let selectedShell = $state("bash");
+  let sessions = $state<TermSession[]>([]);
+  let activeIdx = $state(0);
+  let error = $state<string | null>(null);
+  let loading = $state(false);
 
   $effect(() => {
     if (containers.length > 0 && !selectedContainer) {
-      selectedContainer = containers[0].name
+      selectedContainer = containers[0].name;
     }
-  })
+  });
 
   // Close all sessions when the target pod changes
   $effect(() => {
-    const _ctx = ctxName
-    const _ns = namespace
-    const _name = name
+    const _ctx = ctxName;
+    const _ns = namespace;
+    const _name = name;
     return () => {
       for (const s of sessions) {
-        ExecService.CloseExecSession(s.id)
+        ExecService.CloseExecSession(s.id);
       }
-      sessions = []
-      activeIdx = 0
-      error = null
-      selectedContainer = ''
-    }
-  })
+      sessions = [];
+      activeIdx = 0;
+      error = null;
+      selectedContainer = "";
+    };
+  });
 
   const containerOptions = $derived(
     containers.map((c) => ({
       value: c.name,
       label: c.init ? `${c.name} (init)` : c.name,
     })),
-  )
+  );
 
   async function connect() {
-    error = null
-    loading = true
+    error = null;
+    loading = true;
     try {
-      const id = await ExecService.OpenExecSession(
-        ctxName, namespace, name, selectedContainer, selectedShell,
-      )
-      sessions = [...sessions, { id, container: selectedContainer, shell: selectedShell }]
-      activeIdx = sessions.length - 1
+      const id = await ExecService.OpenExecSession(ctxName, namespace, name, selectedContainer, selectedShell);
+      sessions = [...sessions, {id, container: selectedContainer, shell: selectedShell}];
+      activeIdx = sessions.length - 1;
     } catch (e: any) {
-      error = e?.message ?? String(e)
+      error = e?.message ?? String(e);
     } finally {
-      loading = false
+      loading = false;
     }
   }
 
   function removeSession(i: number) {
-    if (i < 0 || i >= sessions.length) return
-    removeSessionById(sessions[i].id)
+    if (i < 0 || i >= sessions.length) return;
+    removeSessionById(sessions[i].id);
   }
 
   function removeSessionById(id: string) {
-    const idx = sessions.findIndex(s => s.id === id)
-    if (idx < 0) return
-    ExecService.CloseExecSession(id)
-    sessions = sessions.filter(s => s.id !== id)
+    const idx = sessions.findIndex((s) => s.id === id);
+    if (idx < 0) return;
+    ExecService.CloseExecSession(id);
+    sessions = sessions.filter((s) => s.id !== id);
     if (activeIdx >= sessions.length) {
-      activeIdx = Math.max(0, sessions.length - 1)
+      activeIdx = Math.max(0, sessions.length - 1);
     }
   }
 
   onDestroy(() => {
     for (const s of sessions) {
-      ExecService.CloseExecSession(s.id)
+      ExecService.CloseExecSession(s.id);
     }
-  })
+  });
 </script>
-
 
 {#if sessions.length > 0 && streamingStore.config}
   <div class="flex flex-col h-full overflow-hidden">
     <!-- Compact header: selectors + tab bar + new button -->
     <div class="flex items-center gap-2 px-2 py-1 border-b border-border bg-surface shrink-0 text-xs flex-wrap">
-      <div class="w-36">
-        <Combobox
-          bind:value={selectedContainer}
-          options={containerOptions}
-          placeholder="Container"
-          size="xs"
-        />
-      </div>
+      <div class="w-36"><Combobox bind:value={selectedContainer} options={containerOptions} placeholder="Container" size="xs" /></div>
 
       <!-- Shell selector (compact) -->
       <div class="flex gap-1">
@@ -123,7 +118,9 @@
               {selectedShell === shell
                 ? 'border-accent text-accent bg-accent/10'
                 : 'border-border text-muted hover:bg-surface-hover'}"
-          >{shell}</button>
+          >
+            {shell}
+          </button>
         {/each}
       </div>
 
@@ -145,7 +142,8 @@
               onclick={(e) => { e.stopPropagation(); removeSession(i) }}
               onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); removeSession(i) } }}
               class="ml-1 hover:text-destructive"
-            >×</span>
+              >×</span
+            >
           </button>
         {/each}
       </div>
@@ -156,7 +154,9 @@
         class="shrink-0 px-2 py-0.5 text-xs border border-border rounded hover:bg-surface-hover disabled:opacity-50 transition-colors"
         title="New session"
         aria-label="New terminal session"
-      >+</button>
+      >
+        +
+      </button>
 
       <div class="flex items-center gap-1 ml-auto shrink-0">
         <button
@@ -164,18 +164,24 @@
           disabled={sessions.length === 0}
           class="px-2 py-0.5 text-xs border border-border rounded hover:bg-surface-hover disabled:opacity-50 transition-colors text-muted"
           title="Clear terminal"
-        >Clear</button>
+        >
+          Clear
+        </button>
         <button
           onclick={() => sessionStore.terminalFontSize = Math.max(8, sessionStore.terminalFontSize - 1)}
           class="text-xs text-muted hover:text-fg border border-border rounded px-1.5 py-0.5 transition-colors"
           title="Decrease font size"
-        >−</button>
+        >
+          −
+        </button>
         <span class="text-xs text-muted w-6 text-center">{sessionStore.terminalFontSize}</span>
         <button
           onclick={() => sessionStore.terminalFontSize = Math.min(24, sessionStore.terminalFontSize + 1)}
           class="text-xs text-muted hover:text-fg border border-border rounded px-1.5 py-0.5 transition-colors"
           title="Increase font size"
-        >+</button>
+        >
+          +
+        </button>
       </div>
     </div>
 
@@ -203,11 +209,7 @@
       <div class="flex flex-col gap-1">
         <!-- svelte-ignore a11y_label_has_associated_control -->
         <label class="text-xs font-medium text-muted uppercase tracking-wide">Container</label>
-        <Combobox
-          bind:value={selectedContainer}
-          options={containerOptions}
-          placeholder="Select container"
-        />
+        <Combobox bind:value={selectedContainer} options={containerOptions} placeholder="Select container" />
       </div>
 
       <!-- Shell selector -->
@@ -222,7 +224,9 @@
                 {selectedShell === shell
                   ? 'border-accent text-accent bg-accent/10'
                   : 'border-border text-muted hover:bg-surface-hover'}"
-            >{shell}</button>
+            >
+              {shell}
+            </button>
           {/each}
         </div>
       </div>

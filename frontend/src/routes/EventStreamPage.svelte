@@ -1,49 +1,54 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte'
-  import { createResourceStore } from '$lib/stores/resource.svelte'
-  import { clusterStore } from '$lib/stores/cluster.svelte'
-  import { formatAge } from '$lib/utils/age'
-  import { RefreshCw } from 'lucide-svelte'
+  import {onDestroy} from "svelte";
+  import {createResourceStore} from "$lib/stores/resource.svelte";
+  import {clusterStore} from "$lib/stores/cluster.svelte";
+  import {formatAge} from "$lib/utils/age";
+  import {RefreshCw} from "lucide-svelte";
 
-  let { params = {} }: { params?: Record<string, string> } = $props()
+  let {params = {}}: {params?: Record<string, string>} = $props();
 
-  const ctxName = $derived(params.ctx ?? '')
-
-  $effect(() => { if (ctxName) clusterStore.setActiveContext(ctxName) })
-
-  const store = createResourceStore()
-  const EVENTS_GVR = 'core.v1.events'
+  const ctxName = $derived(params.ctx ?? "");
 
   $effect(() => {
-    if (ctxName) store.start(ctxName, EVENTS_GVR, '')
-    return () => store.stop()
-  })
+    if (ctxName) clusterStore.setActiveContext(ctxName);
+  });
 
-  let showWarning = $state(true)
-  let showNormal = $state(true)
-  let reasonFilter = $state('')
+  const store = createResourceStore();
+  const EVENTS_GVR = "core.v1.events";
 
-  const selectedNs = $derived(clusterStore.getSelectedNamespaces(ctxName))
+  $effect(() => {
+    if (ctxName) store.start(ctxName, EVENTS_GVR, "");
+    return () => store.stop();
+  });
 
-  let now = $state(Date.now())
-  const ticker = setInterval(() => { now = Date.now() }, 1_000)
-  onDestroy(() => clearInterval(ticker))
+  let showWarning = $state(true);
+  let showNormal = $state(true);
+  let reasonFilter = $state("");
+
+  const selectedNs = $derived(clusterStore.getSelectedNamespaces(ctxName));
+
+  let now = $state(Date.now());
+  const ticker = setInterval(() => {
+    now = Date.now();
+  }, 1_000);
+  onDestroy(() => clearInterval(ticker));
 
   const filtered = $derived.by(() => {
-    return store.items.filter((e) => {
-      const type = e.type ?? 'Normal'
-      if (type === 'Warning' && !showWarning) return false
-      if (type === 'Normal' && !showNormal) return false
-      if (reasonFilter && !(e.reason ?? '').toLowerCase().includes(reasonFilter.toLowerCase())) return false
-      if (selectedNs.length > 0 && !selectedNs.includes(e.metadata?.namespace ?? '')) return false
-      return true
-    }).sort((a, b) => {
-      const ta = a.lastTimestamp ?? a.eventTime ?? a.metadata?.creationTimestamp ?? ''
-      const tb = b.lastTimestamp ?? b.eventTime ?? b.metadata?.creationTimestamp ?? ''
-      return tb.localeCompare(ta)
-    })
-  })
-
+    return store.items
+      .filter((e) => {
+        const type = e.type ?? "Normal";
+        if (type === "Warning" && !showWarning) return false;
+        if (type === "Normal" && !showNormal) return false;
+        if (reasonFilter && !(e.reason ?? "").toLowerCase().includes(reasonFilter.toLowerCase())) return false;
+        if (selectedNs.length > 0 && !selectedNs.includes(e.metadata?.namespace ?? "")) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const ta = a.lastTimestamp ?? a.eventTime ?? a.metadata?.creationTimestamp ?? "";
+        const tb = b.lastTimestamp ?? b.eventTime ?? b.metadata?.creationTimestamp ?? "";
+        return tb.localeCompare(ta);
+      });
+  });
 </script>
 
 <div class="flex flex-col h-full">
@@ -53,11 +58,11 @@
 
     <div class="flex items-center gap-2 ml-2">
       <label class="flex items-center gap-1 text-xs cursor-pointer">
-        <input type="checkbox" bind:checked={showWarning} class="accent-destructive" />
+        <input type="checkbox" bind:checked={showWarning} class="accent-destructive">
         <span class="text-destructive font-medium">Warning</span>
       </label>
       <label class="flex items-center gap-1 text-xs cursor-pointer">
-        <input type="checkbox" bind:checked={showNormal} class="accent-accent" />
+        <input type="checkbox" bind:checked={showNormal} class="accent-accent">
         <span>Normal</span>
       </label>
     </div>
@@ -67,7 +72,7 @@
       placeholder="Filter reason…"
       bind:value={reasonFilter}
       class="text-xs bg-bg border border-border rounded px-2 py-1 outline-none focus:ring-1 focus:ring-accent w-36"
-    />
+    >
 
     <span class="text-xs text-muted ml-auto">{filtered.length} events</span>
 
@@ -102,18 +107,20 @@
             {@const message = event.message ?? ''}
             {@const count = event.count ?? 1}
             {@const ts = event.lastTimestamp ?? event.eventTime ?? event.metadata?.creationTimestamp ?? ''}
-            <tr class="border-b border-border hover:bg-surface-hover
-              {type === 'Warning' ? 'bg-destructive/5' : ''}">
+            <tr
+              class="border-b border-border hover:bg-surface-hover
+              {type === 'Warning' ? 'bg-destructive/5' : ''}"
+            >
               <td class="px-3 py-1.5">
-                <span class="px-1.5 py-0.5 rounded text-xs font-medium
-                  {type === 'Warning' ? 'bg-destructive/15 text-destructive' : 'bg-accent/15 text-accent'}">
+                <span
+                  class="px-1.5 py-0.5 rounded text-xs font-medium
+                  {type === 'Warning' ? 'bg-destructive/15 text-destructive' : 'bg-accent/15 text-accent'}"
+                >
                   {type}
                 </span>
               </td>
               <td class="px-3 py-1.5 font-mono text-muted truncate max-w-[128px]">{reason}</td>
-              <td class="px-3 py-1.5 truncate max-w-[160px]">
-                <span class="text-muted">{objKind}/</span>{objName}
-              </td>
+              <td class="px-3 py-1.5 truncate max-w-[160px]"><span class="text-muted">{objKind}/</span>{objName}</td>
               <td class="px-3 py-1.5 text-muted max-w-xs truncate">{message}</td>
               <td class="px-3 py-1.5 text-muted">{count}</td>
               <td class="px-3 py-1.5 text-muted">{ts ? formatAge(ts, now) : '—'}</td>

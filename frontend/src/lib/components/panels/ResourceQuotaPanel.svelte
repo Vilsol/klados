@@ -1,30 +1,30 @@
 <script lang="ts">
-  import { SectionHeader, StatusBadge } from '@klados/ui'
+  import {SectionHeader, StatusBadge} from "@klados/ui";
 
-  let { obj }: { obj: Record<string, any> } = $props()
+  let {obj}: {obj: Record<string, any>} = $props();
 
-  const hard = $derived<Record<string, string>>(obj.status?.hard ?? {})
-  const used = $derived<Record<string, string>>(obj.status?.used ?? {})
-  const scopes = $derived<string[]>(obj.spec?.scopes ?? [])
-  const scopeSelector = $derived(obj.spec?.scopeSelector)
+  const hard = $derived<Record<string, string>>(obj.status?.hard ?? {});
+  const used = $derived<Record<string, string>>(obj.status?.used ?? {});
+  const scopes = $derived<string[]>(obj.spec?.scopes ?? []);
+  const scopeSelector = $derived(obj.spec?.scopeSelector);
 
   function parseQuantity(q: string): number | null {
-    const s = String(q).trim()
-    if (/^\d+(\.\d+)?$/.test(s)) return parseFloat(s)
-    const mMatch = s.match(/^(\d+(?:\.\d+)?)m$/)
-    if (mMatch) return parseFloat(mMatch[1]) / 1000
-    const binMatch = s.match(/^(\d+(?:\.\d+)?)(Ki|Mi|Gi|Ti)$/)
+    const s = String(q).trim();
+    if (/^\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+    const mMatch = s.match(/^(\d+(?:\.\d+)?)m$/);
+    if (mMatch) return parseFloat(mMatch[1]) / 1000;
+    const binMatch = s.match(/^(\d+(?:\.\d+)?)(Ki|Mi|Gi|Ti)$/);
     if (binMatch) {
-      const mult: Record<string, number> = { Ki: 1024, Mi: 1024 ** 2, Gi: 1024 ** 3, Ti: 1024 ** 4 }
-      return parseFloat(binMatch[1]) * mult[binMatch[2]]
+      const mult: Record<string, number> = {Ki: 1024, Mi: 1024 ** 2, Gi: 1024 ** 3, Ti: 1024 ** 4};
+      return parseFloat(binMatch[1]) * mult[binMatch[2]];
     }
-    return null
+    return null;
   }
 
   function barColor(pct: number): string {
-    if (pct >= 90) return 'bg-red-500'
-    if (pct >= 70) return 'bg-yellow-500'
-    return 'bg-green-500'
+    if (pct >= 90) return "bg-red-500";
+    if (pct >= 70) return "bg-yellow-500";
+    return "bg-green-500";
   }
 </script>
 
@@ -38,7 +38,9 @@
         {/each}
         {#if scopeSelector?.matchExpressions}
           {#each scopeSelector.matchExpressions as expr}
-            <span class="text-xs px-2 py-0.5 rounded-full bg-surface border border-border font-mono">{expr.scopeName ?? expr.operator}</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-surface border border-border font-mono"
+              >{expr.scopeName ?? expr.operator}</span
+            >
           {/each}
         {/if}
       </div>
@@ -58,7 +60,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each Object.entries(hard) as [resource, hardVal]}
+          {#each Object.entries(hard) as [ resource, hardVal ]}
             {@const usedVal = used[resource]}
             {@const usedNum = parseQuantity(usedVal ?? '0')}
             {@const hardNum = parseQuantity(hardVal)}

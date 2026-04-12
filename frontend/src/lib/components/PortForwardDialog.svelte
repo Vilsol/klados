@@ -1,108 +1,98 @@
 <script lang="ts">
-  import { X } from 'lucide-svelte'
-  import { Combobox } from '@klados/ui'
-  import * as PortForwardService from '../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js'
-  import { TargetKind } from '../../../bindings/github.com/Vilsol/klados/internal/portforward/models.js'
-  import { Browser, Events } from '@wailsio/runtime'
-  import { notificationStore } from '$lib/stores/notification.svelte'
-  import { unwrapError } from '$lib/utils/async.js'
-  import { clusterStore } from '$lib/stores/cluster.svelte'
-  import { getLogger } from '$lib/logger'
+  import {X} from "lucide-svelte";
+  import {Combobox} from "@klados/ui";
+  import * as PortForwardService from "../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js";
+  import {TargetKind} from "../../../bindings/github.com/Vilsol/klados/internal/portforward/models.js";
+  import {Browser, Events} from "@wailsio/runtime";
+  import {notificationStore} from "$lib/stores/notification.svelte";
+  import {unwrapError} from "$lib/utils/async.js";
+  import {clusterStore} from "$lib/stores/cluster.svelte";
+  import {getLogger} from "$lib/logger";
 
-  const log = getLogger('portforward')
+  const log = getLogger("portforward");
 
   let {
     onclose,
     oncreated,
     // Quick mode: all context pre-filled, only ask about local port
-    prefillContext = '',
-    prefillNamespace = '',
-    prefillTargetKind = '',
-    prefillTarget = '',
-    prefillGVR = '',
+    prefillContext = "",
+    prefillNamespace = "",
+    prefillTargetKind = "",
+    prefillTarget = "",
+    prefillGVR = "",
     prefillRemotePort = 0,
   }: {
-    onclose: () => void
-    oncreated?: (spec: any) => void
-    prefillContext?: string
-    prefillNamespace?: string
-    prefillTargetKind?: string
-    prefillTarget?: string
-    prefillGVR?: string
-    prefillRemotePort?: number
-  } = $props()
+    onclose: () => void;
+    oncreated?: (spec: any) => void;
+    prefillContext?: string;
+    prefillNamespace?: string;
+    prefillTargetKind?: string;
+    prefillTarget?: string;
+    prefillGVR?: string;
+    prefillRemotePort?: number;
+  } = $props();
 
-  const isQuickMode = $derived(!!prefillTarget && prefillRemotePort > 0)
+  const isQuickMode = $derived(!!prefillTarget && prefillRemotePort > 0);
 
   // Quick mode state
-  let localPortMode = $state<'auto' | 'custom'>('auto')
-  let customLocalPort = $state('')
+  let localPortMode = $state<"auto" | "custom">("auto");
+  let customLocalPort = $state("");
 
   // Full mode state
   // svelte-ignore state_referenced_locally
-  let targetKind = $state(prefillGVR ? 'selector' : (prefillTargetKind || 'pod'))
+  let targetKind = $state(prefillGVR ? "selector" : prefillTargetKind || "pod");
   // svelte-ignore state_referenced_locally
-  let targetName = $state(prefillTarget)
+  let targetName = $state(prefillTarget);
   // svelte-ignore state_referenced_locally
-  let targetGVR = $state(prefillGVR)
-  let localPort = $state('')
+  let targetGVR = $state(prefillGVR);
+  let localPort = $state("");
   // svelte-ignore state_referenced_locally
-  let remotePort = $state(prefillRemotePort > 0 ? String(prefillRemotePort) : '')
+  let remotePort = $state(prefillRemotePort > 0 ? String(prefillRemotePort) : "");
   // svelte-ignore state_referenced_locally
-  let namespace = $state(prefillNamespace || (clusterStore.getSelectedNamespaces(clusterStore.activeContext ?? '')[0] ?? 'default'))
-  let submitting = $state(false)
-  let openInBrowser = $state(true)
+  let namespace = $state(prefillNamespace || (clusterStore.getSelectedNamespaces(clusterStore.activeContext ?? "")[0] ?? "default"));
+  let submitting = $state(false);
+  let openInBrowser = $state(true);
 
   async function submit() {
-    submitting = true
+    submitting = true;
     try {
-      const ctx = isQuickMode ? prefillContext : (clusterStore.activeContext ?? '')
-      const ns = isQuickMode ? prefillNamespace : namespace
-      const kind = isQuickMode ? prefillTargetKind : targetKind
-      const name = isQuickMode ? prefillTarget : targetName
-      const gvr = isQuickMode ? prefillGVR : targetGVR
-      const remote = isQuickMode ? prefillRemotePort : parseInt(remotePort)
-      const local = isQuickMode
-        ? (localPortMode === 'auto' ? 0 : (parseInt(customLocalPort) || 0))
-        : (localPort ? parseInt(localPort) : 0)
+      const ctx = isQuickMode ? prefillContext : (clusterStore.activeContext ?? "");
+      const ns = isQuickMode ? prefillNamespace : namespace;
+      const kind = isQuickMode ? prefillTargetKind : targetKind;
+      const name = isQuickMode ? prefillTarget : targetName;
+      const gvr = isQuickMode ? prefillGVR : targetGVR;
+      const remote = isQuickMode ? prefillRemotePort : parseInt(remotePort);
+      const local = isQuickMode ? (localPortMode === "auto" ? 0 : parseInt(customLocalPort) || 0) : localPort ? parseInt(localPort) : 0;
 
-      if (!name || isNaN(remote) || remote <= 0 || !ns) return
+      if (!name || isNaN(remote) || remote <= 0 || !ns) return;
 
-      const spec = await PortForwardService.StartForward(ctx, ns, kind as TargetKind, name, gvr, local, remote)
-      log.info('Port forward started', { localPort: local, remotePort: remote })
-      oncreated?.(spec)
+      const spec = await PortForwardService.StartForward(ctx, ns, kind as TargetKind, name, gvr, local, remote);
+      log.info("Port forward started", {localPort: local, remotePort: remote});
+      oncreated?.(spec);
       if (openInBrowser) {
         const unsub = Events.On(`portforward:${ctx}:${spec.id}`, (e: any) => {
-          const fw = e.data
-          if (fw?.status === 'active' && fw?.localPort > 0) {
-            unsub()
-            Browser.OpenURL(`http://localhost:${fw.localPort}`)
+          const fw = e.data;
+          if (fw?.status === "active" && fw?.localPort > 0) {
+            unsub();
+            Browser.OpenURL(`http://localhost:${fw.localPort}`);
           }
-        })
+        });
       }
-      onclose()
+      onclose();
     } catch (e: any) {
-      notificationStore.error(unwrapError(e))
+      notificationStore.error(unwrapError(e));
     } finally {
-      submitting = false
+      submitting = false;
     }
   }
 </script>
 
 <!-- Backdrop -->
-<div
-  class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center"
-  role="dialog"
-  aria-modal="true"
->
+<div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" role="dialog" aria-modal="true">
   <div class="bg-surface border border-border rounded-lg {isQuickMode ? 'w-80' : 'w-[26rem]'} shadow-xl z-50">
     <div class="flex items-center justify-between px-4 py-3 border-b border-border">
-      <h2 class="text-sm font-semibold">
-        {isQuickMode ? 'Forward Port' : 'Start Port Forward'}
-      </h2>
-      <button onclick={onclose} class="p-1 rounded hover:bg-surface-hover transition-colors">
-        <X size={14} />
-      </button>
+      <h2 class="text-sm font-semibold">{isQuickMode ? 'Forward Port' : 'Start Port Forward'}</h2>
+      <button onclick={onclose} class="p-1 rounded hover:bg-surface-hover transition-colors"><X size={14} /></button>
     </div>
 
     <div class="p-4 flex flex-col gap-3">
@@ -115,23 +105,11 @@
         <div class="flex flex-col gap-2">
           <p class="text-xs text-muted font-medium">Local port</p>
           <label class="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="radio"
-              name="local-port-mode"
-              value="auto"
-              bind:group={localPortMode}
-              class="accent-accent"
-            />
+            <input type="radio" name="local-port-mode" value="auto" bind:group={localPortMode} class="accent-accent">
             Auto-assign
           </label>
           <label class="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="radio"
-              name="local-port-mode"
-              value="custom"
-              bind:group={localPortMode}
-              class="accent-accent"
-            />
+            <input type="radio" name="local-port-mode" value="custom" bind:group={localPortMode} class="accent-accent">
             Custom:
             <input
               bind:value={customLocalPort}
@@ -139,7 +117,7 @@
               disabled={localPortMode !== 'custom'}
               onclick={() => localPortMode = 'custom'}
               class="w-20 text-sm bg-surface border border-border rounded px-2 py-0.5 font-mono disabled:opacity-40"
-            />
+            >
           </label>
         </div>
       {:else}
@@ -165,7 +143,7 @@
             bind:value={targetName}
             placeholder={targetKind === 'selector' ? 'my-service' : 'my-pod-abc123'}
             class="text-sm bg-surface-hover border border-border rounded px-2 py-1.5 font-mono"
-          />
+          >
         </div>
 
         {#if targetKind === 'selector'}
@@ -176,7 +154,7 @@
               bind:value={targetGVR}
               placeholder="core.v1.services"
               class="text-sm bg-surface-hover border border-border rounded px-2 py-1.5 font-mono"
-            />
+            >
           </div>
         {/if}
 
@@ -187,7 +165,7 @@
             bind:value={namespace}
             placeholder="default"
             class="text-sm bg-surface-hover border border-border rounded px-2 py-1.5 font-mono"
-          />
+          >
         </div>
 
         <div class="grid grid-cols-2 gap-2">
@@ -198,7 +176,7 @@
               bind:value={localPort}
               placeholder="auto"
               class="text-sm bg-surface-hover border border-border rounded px-2 py-1.5 font-mono w-full"
-            />
+            >
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-xs text-muted" for="pf-remote">Remote port</label>
@@ -207,21 +185,18 @@
               bind:value={remotePort}
               placeholder="8080"
               class="text-sm bg-surface-hover border border-border rounded px-2 py-1.5 font-mono w-full"
-            />
+            >
           </div>
         </div>
       {/if}
       <label class="flex items-center gap-2 text-sm cursor-pointer">
-        <input type="checkbox" bind:checked={openInBrowser} class="accent-accent" />
+        <input type="checkbox" bind:checked={openInBrowser} class="accent-accent">
         Open in browser after connecting
       </label>
     </div>
 
     <div class="flex justify-end gap-2 px-4 py-3 border-t border-border">
-      <button
-        onclick={onclose}
-        class="px-3 py-1.5 text-xs rounded border border-border hover:bg-surface-hover transition-colors"
-      >
+      <button onclick={onclose} class="px-3 py-1.5 text-xs rounded border border-border hover:bg-surface-hover transition-colors">
         Cancel
       </button>
       <button

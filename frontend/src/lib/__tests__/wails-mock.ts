@@ -1,4 +1,4 @@
-import { vi } from 'vitest'
+import {vi} from "vitest";
 
 export const mockClusterService = {
   ListContexts: vi.fn().mockResolvedValue([]),
@@ -7,15 +7,15 @@ export const mockClusterService = {
   ListNamespaces: vi.fn().mockResolvedValue([]),
   SwitchNamespace: vi.fn().mockResolvedValue(undefined),
   GetStatus: vi.fn().mockResolvedValue(0),
-}
+};
 
 export const mockConfigService = {
-  GetTheme: vi.fn().mockResolvedValue('system'),
+  GetTheme: vi.fn().mockResolvedValue("system"),
   SetTheme: vi.fn().mockResolvedValue(undefined),
   GetConfig: vi.fn().mockResolvedValue(null),
   GetResolvedPrefs: vi.fn().mockResolvedValue({
-    theme: 'system',
-    accentColor: '',
+    theme: "system",
+    accentColor: "",
     fontSize: 0,
     compactRows: false,
     readOnly: false,
@@ -37,13 +37,13 @@ export const mockConfigService = {
   GetSavedFilters: vi.fn().mockResolvedValue([]),
   SetSavedFilters: vi.fn().mockResolvedValue(undefined),
   SetClusterSavedFilters: vi.fn().mockResolvedValue(undefined),
-}
+};
 
 export const mockEvents = {
   On: vi.fn(),
   Off: vi.fn(),
   Emit: vi.fn(),
-}
+};
 
 export const mockResourceService = {
   GetDescriptors: vi.fn().mockResolvedValue([]),
@@ -58,11 +58,11 @@ export const mockResourceService = {
   StartWatch: vi.fn().mockResolvedValue(undefined),
   StopWatch: vi.fn().mockResolvedValue(undefined),
   ListAPIResources: vi.fn().mockResolvedValue([]),
-}
+};
 
 export const mockSchemaService = {
   GetSchema: vi.fn().mockResolvedValue({}),
-}
+};
 
 export const mockPluginService = {
   ListPlugins: vi.fn().mockResolvedValue([]),
@@ -72,16 +72,16 @@ export const mockPluginService = {
   GetPluginCommands: vi.fn().mockResolvedValue([]),
   SaveRegistryCredentials: vi.fn().mockResolvedValue(undefined),
   AddInsecureRegistry: vi.fn().mockResolvedValue(undefined),
-  GetPluginSettings: vi.fn().mockResolvedValue('{}'),
+  GetPluginSettings: vi.fn().mockResolvedValue("{}"),
   SetPluginSettings: vi.fn().mockResolvedValue(undefined),
-  GetPluginSettingsSchema: vi.fn().mockResolvedValue(''),
-}
+  GetPluginSettingsSchema: vi.fn().mockResolvedValue(""),
+};
 
 export function resetMocks() {
-  Object.values(mockClusterService).forEach((fn) => fn.mockClear())
-  Object.values(mockConfigService).forEach((fn) => fn.mockClear())
-  Object.values(mockEvents).forEach((fn) => fn.mockClear())
-  Object.values(mockResourceService).forEach((fn) => fn.mockClear())
-  Object.values(mockSchemaService).forEach((fn) => fn.mockClear())
-  Object.values(mockPluginService).forEach((fn) => fn.mockClear())
+  Object.values(mockClusterService).forEach((fn) => fn.mockClear());
+  Object.values(mockConfigService).forEach((fn) => fn.mockClear());
+  Object.values(mockEvents).forEach((fn) => fn.mockClear());
+  Object.values(mockResourceService).forEach((fn) => fn.mockClear());
+  Object.values(mockSchemaService).forEach((fn) => fn.mockClear());
+  Object.values(mockPluginService).forEach((fn) => fn.mockClear());
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import * as ResourceService from '../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import { notificationStore } from '$lib/stores/notification.svelte'
-  import { SectionHeader, KeyValueBadge, EmptyState, KeyValuePairEditor } from '@klados/ui'
+  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {notificationStore} from "$lib/stores/notification.svelte";
+  import {SectionHeader, KeyValueBadge, EmptyState, KeyValuePairEditor} from "@klados/ui";
 
   let {
     obj,
@@ -11,70 +11,70 @@
     namespace,
     name,
   }: {
-    obj: Record<string, any>
-    onupdate?: (updated: Record<string, any>) => void
-    ctxName: string
-    gvr: string
-    namespace: string
-    name: string
-  } = $props()
+    obj: Record<string, any>;
+    onupdate?: (updated: Record<string, any>) => void;
+    ctxName: string;
+    gvr: string;
+    namespace: string;
+    name: string;
+  } = $props();
 
-  let editing = $state(false)
-  let saving = $state(false)
+  let editing = $state(false);
+  let saving = $state(false);
 
-  let editLabels = $state<[string, string][]>([])
-  let editAnnotations = $state<[string, string][]>([])
+  let editLabels = $state<[string, string][]>([]);
+  let editAnnotations = $state<[string, string][]>([]);
 
   function startEdit() {
-    editLabels = Object.entries(obj.metadata?.labels ?? {}).map(([k, v]) => [k, String(v)])
-    editAnnotations = Object.entries(obj.metadata?.annotations ?? {}).map(([k, v]) => [k, String(v)])
-    editing = true
+    editLabels = Object.entries(obj.metadata?.labels ?? {}).map(([k, v]) => [k, String(v)]);
+    editAnnotations = Object.entries(obj.metadata?.annotations ?? {}).map(([k, v]) => [k, String(v)]);
+    editing = true;
   }
 
   function cancelEdit() {
-    editing = false
+    editing = false;
   }
 
   async function save() {
-    saving = true
+    saving = true;
     try {
-      const updated = JSON.parse(JSON.stringify(obj))
-      updated.metadata.labels = Object.fromEntries(editLabels.filter(([k]) => k.trim()))
-      updated.metadata.annotations = Object.fromEntries(editAnnotations.filter(([k]) => k.trim()))
-      const result = await ResourceService.UpdateResource(ctxName, gvr, namespace, updated)
-      if (result) onupdate?.(result)
-      editing = false
-      notificationStore.push('Labels and annotations saved.', 'success')
+      const updated = JSON.parse(JSON.stringify(obj));
+      updated.metadata.labels = Object.fromEntries(editLabels.filter(([k]) => k.trim()));
+      updated.metadata.annotations = Object.fromEntries(editAnnotations.filter(([k]) => k.trim()));
+      const result = await ResourceService.UpdateResource(ctxName, gvr, namespace, updated);
+      if (result) onupdate?.(result);
+      editing = false;
+      notificationStore.push("Labels and annotations saved.", "success");
     } catch (e: any) {
-      notificationStore.push(e?.message ?? 'Save failed', 'error')
+      notificationStore.push(e?.message ?? "Save failed", "error");
     } finally {
-      saving = false
+      saving = false;
     }
   }
 
-  const labels = $derived(Object.entries(obj.metadata?.labels ?? {}))
-  const annotations = $derived(Object.entries(obj.metadata?.annotations ?? {}))
+  const labels = $derived(Object.entries(obj.metadata?.labels ?? {}));
+  const annotations = $derived(Object.entries(obj.metadata?.annotations ?? {}));
 </script>
 
 <div class="p-4 flex flex-col gap-6 overflow-auto">
   <div class="flex items-center justify-between">
     <SectionHeader class="">Labels & Annotations</SectionHeader>
     {#if !editing}
-      <button
-        onclick={startEdit}
-        class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
-      >Edit</button>
+      <button onclick={startEdit} class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors">
+        Edit
+      </button>
     {:else}
       <div class="flex gap-2">
-        <button
-          onclick={cancelEdit}
-          class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
-        >Cancel</button>
+        <button onclick={cancelEdit} class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors">
+          Cancel
+        </button>
         <button
           onclick={save}
           disabled={saving}
           class="text-xs px-2.5 py-1 rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"
-        >{saving ? 'Saving…' : 'Save'}</button>
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
       </div>
     {/if}
   </div>
@@ -91,7 +91,7 @@
         <EmptyState />
       {:else}
         <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
-          {#each annotations.sort(([a], [b]) => a.localeCompare(b)) as [k, v]}
+          {#each annotations.sort(([a], [b]) => a.localeCompare(b)) as [ k, v ]}
             <span class="text-xs font-mono text-muted">{k}</span>
             <span class="text-xs font-mono break-all">{v}</span>
           {/each}

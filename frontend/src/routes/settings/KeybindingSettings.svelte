@@ -1,76 +1,76 @@
 <script lang="ts">
-  import * as ConfigService from '../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js'
-  import { shortcutStore, type ShortcutDef } from '$lib/stores/shortcuts.svelte'
+  import * as ConfigService from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
+  import {shortcutStore, type ShortcutDef} from "$lib/stores/shortcuts.svelte";
 
-  let listeningId = $state<string | null>(null)
+  let listeningId = $state<string | null>(null);
 
-  let shortcuts = $derived(shortcutStore.getAll())
+  let shortcuts = $derived(shortcutStore.getAll());
 
   let effectiveMap = $derived.by(() => {
-    const map = new Map<string, string>()
+    const map = new Map<string, string>();
     for (const def of shortcuts) {
-      map.set(def.id, shortcutStore.getEffectiveKeys(def))
+      map.set(def.id, shortcutStore.getEffectiveKeys(def));
     }
-    return map
-  })
+    return map;
+  });
 
   let conflicts = $derived.by(() => {
-    const comboCounts = new Map<string, string[]>()
+    const comboCounts = new Map<string, string[]>();
     for (const [id, combo] of effectiveMap) {
-      if (!combo) continue
-      const list = comboCounts.get(combo) ?? []
-      list.push(id)
-      comboCounts.set(combo, list)
+      if (!combo) continue;
+      const list = comboCounts.get(combo) ?? [];
+      list.push(id);
+      comboCounts.set(combo, list);
     }
-    const conflictIds = new Set<string>()
+    const conflictIds = new Set<string>();
     for (const ids of comboCounts.values()) {
-      if (ids.length > 1) ids.forEach((id) => conflictIds.add(id))
+      if (ids.length > 1) ids.forEach((id) => conflictIds.add(id));
     }
-    return conflictIds
-  })
+    return conflictIds;
+  });
 
   function startListening(id: string) {
-    listeningId = id
+    listeningId = id;
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (!listeningId) return
-    e.preventDefault()
-    e.stopPropagation()
+    if (!listeningId) return;
+    e.preventDefault();
+    e.stopPropagation();
 
-    if (e.key === 'Escape') {
-      listeningId = null
-      return
+    if (e.key === "Escape") {
+      listeningId = null;
+      return;
     }
 
-    if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return
+    if (["Control", "Alt", "Shift", "Meta"].includes(e.key)) return;
 
-    const hasModifier = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey
-    if (!hasModifier) return
+    const hasModifier = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey;
+    if (!hasModifier) return;
 
-    const parts: string[] = []
-    if (e.ctrlKey) parts.push('Control')
-    if (e.altKey) parts.push('Alt')
-    if (e.shiftKey) parts.push('Shift')
-    if (e.metaKey) parts.push('Meta')
-    parts.push(e.key)
-    const combo = parts.join('+')
+    const parts: string[] = [];
+    if (e.ctrlKey) parts.push("Control");
+    if (e.altKey) parts.push("Alt");
+    if (e.shiftKey) parts.push("Shift");
+    if (e.metaKey) parts.push("Meta");
+    parts.push(e.key);
+    const combo = parts.join("+");
 
-    ConfigService.SetKeybinding(listeningId, combo)
-    listeningId = null
+    ConfigService.SetKeybinding(listeningId, combo);
+    listeningId = null;
   }
 
   function resetBinding(id: string) {
-    ConfigService.SetKeybinding(id, '')
+    ConfigService.SetKeybinding(id, "");
   }
 
   function resetAll() {
-    ConfigService.ResetKeybindings()
+    ConfigService.ResetKeybindings();
   }
 
   function isOverridden(def: ShortcutDef): boolean {
-    const effective = effectiveMap.get(def.id) ?? def.keys
-    return effective !== def.keys
+    const effective = effectiveMap.get(def.id) ?? def.keys;
+    return effective !== def.keys;
   }
 </script>
 
@@ -79,10 +79,7 @@
 <div class="max-w-3xl space-y-6">
   <div class="flex items-center justify-between">
     <h2 class="text-base font-medium text-fg">Keyboard Shortcuts</h2>
-    <button
-      class="px-3 py-1.5 rounded border border-border text-fg text-sm hover:bg-surface-hover"
-      onclick={resetAll}
-    >
+    <button class="px-3 py-1.5 rounded border border-border text-fg text-sm hover:bg-surface-hover" onclick={resetAll}>
       Reset all to defaults
     </button>
   </div>
@@ -114,12 +111,7 @@
             <td class="px-3 py-2 text-muted-foreground font-mono text-xs">{def.keys}</td>
             <td class="px-3 py-2">
               {#if isOverridden(def)}
-                <button
-                  class="text-xs text-muted-foreground hover:text-fg underline"
-                  onclick={() => resetBinding(def.id)}
-                >
-                  Reset
-                </button>
+                <button class="text-xs text-muted-foreground hover:text-fg underline" onclick={() => resetBinding(def.id)}>Reset</button>
               {/if}
             </td>
           </tr>

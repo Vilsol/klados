@@ -42,10 +42,7 @@ export interface ResourcePermission {
   /**
    * @minItems 1
    */
-  verbs: [
-    "list" | "get" | "watch" | "create" | "update" | "delete",
-    ...("list" | "get" | "watch" | "create" | "update" | "delete")[]
-  ];
+  verbs: ["list" | "get" | "watch" | "create" | "update" | "delete", ...("list" | "get" | "watch" | "create" | "update" | "delete")[]];
 }
 export interface WasiPermissions {
   clock?: boolean;

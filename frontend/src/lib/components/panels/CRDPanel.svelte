@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { push } from 'svelte-spa-router'
-  import { SectionHeader, StatusBadge } from '@klados/ui'
+  import {push} from "svelte-spa-router";
+  import {SectionHeader, StatusBadge} from "@klados/ui";
 
-  const { obj, ctxName }: { obj: any; ctxName: string } = $props()
+  const {obj, ctxName}: {obj: any; ctxName: string} = $props();
 
-  const storageGVR = $derived(obj.status?.storageGVR as string | undefined)
-  const versions = $derived((obj.spec?.versions ?? []) as any[])
+  const storageGVR = $derived(obj.status?.storageGVR as string | undefined);
+  const versions = $derived((obj.spec?.versions ?? []) as any[]);
 </script>
 
 <div class="p-4 flex flex-col gap-6">

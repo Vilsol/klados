@@ -1,250 +1,269 @@
 <script lang="ts">
-  import { PanelLeftClose, PanelLeft, ChevronRight, X, Circle, Puzzle, LayoutList, Settings } from 'lucide-svelte'
-  import { sessionStore } from '$lib/stores/session.svelte'
-  import { clusterStore } from '$lib/stores/cluster.svelte'
-  import { Events } from '@wailsio/runtime'
-  import { push, router } from 'svelte-spa-router'
-  import { onDestroy } from 'svelte'
-  import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import * as PortForwardService from '../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js'
-  import * as PluginService from '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
-  import { notificationStore } from '$lib/stores/notification.svelte.js'
-  import { unwrapError } from '$lib/utils/async.js'
-  import { descriptorRegistry } from '$lib/registry/index'
-  import { registryLoaded } from '$lib/registry/loaded.svelte'
-  import { buildCRDTree } from '$lib/utils/crdTree'
-  import CRDTreeNode from './CRDTreeNode.svelte'
-  import { getLogger } from '$lib/logger'
+  import {PanelLeftClose, PanelLeft, ChevronRight, X, Circle, Puzzle, LayoutList, Settings} from "lucide-svelte";
+  import {sessionStore} from "$lib/stores/session.svelte";
+  import {clusterStore} from "$lib/stores/cluster.svelte";
+  import {Events} from "@wailsio/runtime";
+  import {push, router} from "svelte-spa-router";
+  import {onDestroy} from "svelte";
+  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import * as PortForwardService from "../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js";
+  import * as PluginService from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
+  import {notificationStore} from "$lib/stores/notification.svelte.js";
+  import {unwrapError} from "$lib/utils/async.js";
+  import {descriptorRegistry} from "$lib/registry/index";
+  import {registryLoaded} from "$lib/registry/loaded.svelte";
+  import {buildCRDTree} from "$lib/utils/crdTree";
+  import CRDTreeNode from "./CRDTreeNode.svelte";
+  import {getLogger} from "$lib/logger";
 
-  const log = getLogger('sidebar')
+  const log = getLogger("sidebar");
 
   interface APIResource {
-    gvr: string
-    kind: string
-    namespaced: boolean
+    gvr: string;
+    kind: string;
+    namespaced: boolean;
   }
 
   const gvrGroups: Record<string, string[]> = {
     Workloads: [
-      'core.v1.pods',
-      'apps.v1.deployments',
-      'apps.v1.statefulsets',
-      'apps.v1.daemonsets',
-      'apps.v1.replicasets',
-      'batch.v1.jobs',
-      'batch.v1.cronjobs',
-      'autoscaling.v2.horizontalpodautoscalers',
-      'policy.v1.poddisruptionbudgets',
+      "core.v1.pods",
+      "apps.v1.deployments",
+      "apps.v1.statefulsets",
+      "apps.v1.daemonsets",
+      "apps.v1.replicasets",
+      "batch.v1.jobs",
+      "batch.v1.cronjobs",
+      "autoscaling.v2.horizontalpodautoscalers",
+      "policy.v1.poddisruptionbudgets",
     ],
     Networking: [
-      'core.v1.services',
-      'networking.k8s.io.v1.ingresses',
-      'networking.k8s.io.v1.networkpolicies',
-      'networking.k8s.io.v1.ingressclasses',
-      'discovery.k8s.io.v1.endpointslices',
+      "core.v1.services",
+      "networking.k8s.io.v1.ingresses",
+      "networking.k8s.io.v1.networkpolicies",
+      "networking.k8s.io.v1.ingressclasses",
+      "discovery.k8s.io.v1.endpointslices",
     ],
-    Config: [
-      'core.v1.configmaps',
-      'core.v1.secrets',
-      'core.v1.resourcequotas',
-      'core.v1.limitranges',
-      'coordination.k8s.io.v1.leases',
-    ],
+    Config: ["core.v1.configmaps", "core.v1.secrets", "core.v1.resourcequotas", "core.v1.limitranges", "coordination.k8s.io.v1.leases"],
     Storage: [
-      'core.v1.persistentvolumeclaims',
-      'core.v1.persistentvolumes',
-      'storage.k8s.io.v1.storageclasses',
-      'storage.k8s.io.v1.csidrivers',
+      "core.v1.persistentvolumeclaims",
+      "core.v1.persistentvolumes",
+      "storage.k8s.io.v1.storageclasses",
+      "storage.k8s.io.v1.csidrivers",
     ],
     Cluster: [
-      'core.v1.namespaces',
-      'core.v1.nodes',
-      'apiextensions.k8s.io.v1.customresourcedefinitions',
-      'admissionregistration.k8s.io.v1.mutatingwebhookconfigurations',
-      'admissionregistration.k8s.io.v1.validatingwebhookconfigurations',
-      'scheduling.k8s.io.v1.priorityclasses',
-      'node.k8s.io.v1.runtimeclasses',
+      "core.v1.namespaces",
+      "core.v1.nodes",
+      "apiextensions.k8s.io.v1.customresourcedefinitions",
+      "admissionregistration.k8s.io.v1.mutatingwebhookconfigurations",
+      "admissionregistration.k8s.io.v1.validatingwebhookconfigurations",
+      "scheduling.k8s.io.v1.priorityclasses",
+      "node.k8s.io.v1.runtimeclasses",
     ],
     RBAC: [
-      'core.v1.serviceaccounts',
-      'rbac.authorization.k8s.io.v1.roles',
-      'rbac.authorization.k8s.io.v1.clusterroles',
-      'rbac.authorization.k8s.io.v1.rolebindings',
-      'rbac.authorization.k8s.io.v1.clusterrolebindings',
+      "core.v1.serviceaccounts",
+      "rbac.authorization.k8s.io.v1.roles",
+      "rbac.authorization.k8s.io.v1.clusterroles",
+      "rbac.authorization.k8s.io.v1.rolebindings",
+      "rbac.authorization.k8s.io.v1.clusterrolebindings",
     ],
-  }
+  };
 
   const kindByGvr: Record<string, string> = {
-    'core.v1.pods': 'Pods',
-    'apps.v1.deployments': 'Deployments',
-    'apps.v1.statefulsets': 'StatefulSets',
-    'apps.v1.daemonsets': 'DaemonSets',
-    'apps.v1.replicasets': 'ReplicaSets',
-    'batch.v1.jobs': 'Jobs',
-    'batch.v1.cronjobs': 'CronJobs',
-    'core.v1.services': 'Services',
-    'networking.k8s.io.v1.ingresses': 'Ingresses',
-    'core.v1.configmaps': 'ConfigMaps',
-    'core.v1.secrets': 'Secrets',
-    'core.v1.persistentvolumeclaims': 'PersistentVolumeClaims',
-    'core.v1.persistentvolumes': 'PersistentVolumes',
-    'storage.k8s.io.v1.storageclasses': 'StorageClasses',
-    'storage.k8s.io.v1.csidrivers': 'CSI Drivers',
-    'core.v1.namespaces': 'Namespaces',
-    'core.v1.nodes': 'Nodes',
-    'apiextensions.k8s.io.v1.customresourcedefinitions': 'CRDs',
-    'core.v1.serviceaccounts': 'ServiceAccounts',
-    'rbac.authorization.k8s.io.v1.roles': 'Roles',
-    'rbac.authorization.k8s.io.v1.clusterroles': 'ClusterRoles',
-    'rbac.authorization.k8s.io.v1.rolebindings': 'RoleBindings',
-    'rbac.authorization.k8s.io.v1.clusterrolebindings': 'ClusterRoleBindings',
-    'autoscaling.v2.horizontalpodautoscalers': 'HPAs',
-    'policy.v1.poddisruptionbudgets': 'PodDisruptionBudgets',
-    'networking.k8s.io.v1.networkpolicies': 'NetworkPolicies',
-    'networking.k8s.io.v1.ingressclasses': 'IngressClasses',
-    'discovery.k8s.io.v1.endpointslices': 'EndpointSlices',
-    'core.v1.resourcequotas': 'ResourceQuotas',
-    'core.v1.limitranges': 'LimitRanges',
-    'coordination.k8s.io.v1.leases': 'Leases',
-    'admissionregistration.k8s.io.v1.mutatingwebhookconfigurations': 'MutatingWebhookConfigs',
-    'admissionregistration.k8s.io.v1.validatingwebhookconfigurations': 'ValidatingWebhookConfigs',
-    'scheduling.k8s.io.v1.priorityclasses': 'PriorityClasses',
-    'node.k8s.io.v1.runtimeclasses': 'RuntimeClasses',
-  }
+    "core.v1.pods": "Pods",
+    "apps.v1.deployments": "Deployments",
+    "apps.v1.statefulsets": "StatefulSets",
+    "apps.v1.daemonsets": "DaemonSets",
+    "apps.v1.replicasets": "ReplicaSets",
+    "batch.v1.jobs": "Jobs",
+    "batch.v1.cronjobs": "CronJobs",
+    "core.v1.services": "Services",
+    "networking.k8s.io.v1.ingresses": "Ingresses",
+    "core.v1.configmaps": "ConfigMaps",
+    "core.v1.secrets": "Secrets",
+    "core.v1.persistentvolumeclaims": "PersistentVolumeClaims",
+    "core.v1.persistentvolumes": "PersistentVolumes",
+    "storage.k8s.io.v1.storageclasses": "StorageClasses",
+    "storage.k8s.io.v1.csidrivers": "CSI Drivers",
+    "core.v1.namespaces": "Namespaces",
+    "core.v1.nodes": "Nodes",
+    "apiextensions.k8s.io.v1.customresourcedefinitions": "CRDs",
+    "core.v1.serviceaccounts": "ServiceAccounts",
+    "rbac.authorization.k8s.io.v1.roles": "Roles",
+    "rbac.authorization.k8s.io.v1.clusterroles": "ClusterRoles",
+    "rbac.authorization.k8s.io.v1.rolebindings": "RoleBindings",
+    "rbac.authorization.k8s.io.v1.clusterrolebindings": "ClusterRoleBindings",
+    "autoscaling.v2.horizontalpodautoscalers": "HPAs",
+    "policy.v1.poddisruptionbudgets": "PodDisruptionBudgets",
+    "networking.k8s.io.v1.networkpolicies": "NetworkPolicies",
+    "networking.k8s.io.v1.ingressclasses": "IngressClasses",
+    "discovery.k8s.io.v1.endpointslices": "EndpointSlices",
+    "core.v1.resourcequotas": "ResourceQuotas",
+    "core.v1.limitranges": "LimitRanges",
+    "coordination.k8s.io.v1.leases": "Leases",
+    "admissionregistration.k8s.io.v1.mutatingwebhookconfigurations": "MutatingWebhookConfigs",
+    "admissionregistration.k8s.io.v1.validatingwebhookconfigurations": "ValidatingWebhookConfigs",
+    "scheduling.k8s.io.v1.priorityclasses": "PriorityClasses",
+    "node.k8s.io.v1.runtimeclasses": "RuntimeClasses",
+  };
 
-  let discoveredGVRs = $state<Set<string>>(new Set())
-  let expandedGroups = $state<Record<string, boolean>>({ Workloads: true })
-  let customResources = $state<APIResource[]>([])
+  let discoveredGVRs = $state<Set<string>>(new Set());
+  let expandedGroups = $state<Record<string, boolean>>({Workloads: true});
+  let customResources = $state<APIResource[]>([]);
 
-  const crdTree = $derived((() => {
-    const kindMap = new Map(customResources.map((r) => [r.gvr, r.kind]))
-    return buildCRDTree(
-      customResources.map((r) => r.gvr),
-      (gvr) => kindMap.get(gvr) || gvr.split('.').at(-1)!,
-    )
-  })())
+  const crdTree = $derived(
+    (() => {
+      const kindMap = new Map(customResources.map((r) => [r.gvr, r.kind]));
+      return buildCRDTree(
+        customResources.map((r) => r.gvr),
+        (gvr) => kindMap.get(gvr) || gvr.split(".").at(-1)!,
+      );
+    })(),
+  );
 
-  let expandedNodes = $state(new Set<string>())
+  let expandedNodes = $state(new Set<string>());
   $effect(() => {
-    clusterStore.activeContext // track
-    expandedNodes = new Set()
-  })
+    clusterStore.activeContext; // track
+    expandedNodes = new Set();
+  });
 
   function toggleExpand(fullSuffix: string) {
-    const next = new Set(expandedNodes)
-    if (next.has(fullSuffix)) next.delete(fullSuffix)
-    else next.add(fullSuffix)
-    expandedNodes = next
+    const next = new Set(expandedNodes);
+    if (next.has(fullSuffix)) next.delete(fullSuffix);
+    else next.add(fullSuffix);
+    expandedNodes = next;
   }
 
   interface ForwardSpec {
-    id: string
-    contextName: string
-    targetName: string
-    localPort: number
-    remotePort: number
-    status: string
-    podName: string
-    error: string
+    id: string;
+    contextName: string;
+    targetName: string;
+    localPort: number;
+    remotePort: number;
+    status: string;
+    podName: string;
+    error: string;
   }
 
   interface PluginSidebarEntry {
-    category: string
-    label: string
-    gvr: string
-    icon: string
-    plugin: string
+    category: string;
+    label: string;
+    gvr: string;
+    icon: string;
+    plugin: string;
   }
 
-  let forwards = $state<ForwardSpec[]>([])
-  let pluginEntries = $state<PluginSidebarEntry[]>([])
+  let forwards = $state<ForwardSpec[]>([]);
+  let pluginEntries = $state<PluginSidebarEntry[]>([]);
 
   async function loadPluginEntries() {
     try {
-      const result = await PluginService.GetPluginSidebarEntries()
-      pluginEntries = (result ?? []) as PluginSidebarEntry[]
+      const result = await PluginService.GetPluginSidebarEntries();
+      pluginEntries = (result ?? []) as PluginSidebarEntry[];
     } catch {
       // ignore
     }
   }
 
   async function loadForwards() {
-    if (!ctx) return
+    if (!ctx) return;
     try {
-      const result = await PortForwardService.ListForwards(ctx)
-      forwards = (result ?? []) as ForwardSpec[]
+      const result = await PortForwardService.ListForwards(ctx);
+      forwards = (result ?? []) as ForwardSpec[];
     } catch {
       // ignore
     }
   }
 
-  const ctx = $derived(clusterStore.activeContext)
+  const ctx = $derived(clusterStore.activeContext);
 
   function handleDiscovery(resources: APIResource[]) {
-    const gvrs = new Set(resources.map((r) => r.gvr))
-    discoveredGVRs = gvrs
-    descriptorRegistry.setAvailableGVRs(Array.from(gvrs))
-    clusterStore.setDiscoveryResources(resources)
+    const gvrs = new Set(resources.map((r) => r.gvr));
+    discoveredGVRs = gvrs;
+    descriptorRegistry.setAvailableGVRs(Array.from(gvrs));
+    clusterStore.setDiscoveryResources(resources);
 
-    const knownGVRs = new Set(Object.values(gvrGroups).flat())
+    const knownGVRs = new Set(Object.values(gvrGroups).flat());
     // Show resources not in any builtin group and not purely internal/meta resources
-    const internalPrefixes = ['core.v1.', 'rbac.authorization.k8s.io.', 'authorization.k8s.io.', 'authentication.k8s.io.', 'events.k8s.io.']
-    customResources = resources.filter(
-      (r) => !knownGVRs.has(r.gvr) && !internalPrefixes.some((p) => r.gvr.startsWith(p)),
-    )
+    const internalPrefixes = [
+      "core.v1.",
+      "rbac.authorization.k8s.io.",
+      "authorization.k8s.io.",
+      "authentication.k8s.io.",
+      "events.k8s.io.",
+    ];
+    customResources = resources.filter((r) => !knownGVRs.has(r.gvr) && !internalPrefixes.some((p) => r.gvr.startsWith(p)));
   }
 
-  let unsub: (() => void) | null = null
-  let unsubPF: (() => void) | null = null
-  let unsubPlugins: (() => void) | null = null
+  let unsub: (() => void) | null = null;
+  let unsubPF: (() => void) | null = null;
+  let unsubPlugins: (() => void) | null = null;
 
   $effect(() => {
-    if (unsub) { unsub(); unsub = null }
-    if (unsubPF) { unsubPF(); unsubPF = null }
-    if (unsubPlugins) { unsubPlugins(); unsubPlugins = null }
+    if (unsub) {
+      unsub();
+      unsub = null;
+    }
+    if (unsubPF) {
+      unsubPF();
+      unsubPF = null;
+    }
+    if (unsubPlugins) {
+      unsubPlugins();
+      unsubPlugins = null;
+    }
     if (ctx) {
       unsub = Events.On(`discovery:${ctx}:resources`, (wailsEvent: any) => {
-        handleDiscovery((wailsEvent.data ?? wailsEvent) as APIResource[])
-      })
+        handleDiscovery((wailsEvent.data ?? wailsEvent) as APIResource[]);
+      });
       ResourceService.ListAPIResources(ctx)
-        .then((r) => { if (r?.length) handleDiscovery(r as APIResource[]) })
-        .catch((e) => log.warn('ListAPIResources failed', { error: String(e) }))
+        .then((r) => {
+          if (r?.length) handleDiscovery(r as APIResource[]);
+        })
+        .catch((e) => log.warn("ListAPIResources failed", {error: String(e)}));
 
-      loadForwards()
-      unsubPF = Events.On(`portforward:${ctx}:updated`, () => { loadForwards() })
+      loadForwards();
+      unsubPF = Events.On(`portforward:${ctx}:updated`, () => {
+        loadForwards();
+      });
     }
 
-    loadPluginEntries()
-    unsubPlugins = Events.On('plugins:loaded', () => { loadPluginEntries() })
-  })
+    loadPluginEntries();
+    unsubPlugins = Events.On("plugins:loaded", () => {
+      loadPluginEntries();
+    });
+  });
 
   onDestroy(() => {
-    unsub?.()
-    unsubPF?.()
-    unsubPlugins?.()
-  })
+    unsub?.();
+    unsubPF?.();
+    unsubPlugins?.();
+  });
 
   async function stopForward(id: string) {
     try {
-      await PortForwardService.StopForward(id)
-      await loadForwards()
-      notificationStore.success('Port forward stopped')
+      await PortForwardService.StopForward(id);
+      await loadForwards();
+      notificationStore.success("Port forward stopped");
     } catch (e: any) {
-      notificationStore.error('Failed to stop port forward', unwrapError(e))
+      notificationStore.error("Failed to stop port forward", unwrapError(e));
     }
   }
 
-  const activePath = $derived(router.location)
-  function isActive(path: string) { return activePath === path }
-  function isGVRActive(gvr: string) { return ctx ? activePath === `/c/${ctx}/${gvr}` : false }
+  const activePath = $derived(router.location);
+  function isActive(path: string) {
+    return activePath === path;
+  }
+  function isGVRActive(gvr: string) {
+    return ctx ? activePath === `/c/${ctx}/${gvr}` : false;
+  }
 
   function navigate(gvr: string) {
-    if (!ctx) return
-    push(`/c/${ctx}/${gvr}`)
+    if (!ctx) return;
+    push(`/c/${ctx}/${gvr}`);
   }
 
   function toggleGroup(name: string) {
-    expandedGroups[name] = !expandedGroups[name]
+    expandedGroups[name] = !expandedGroups[name];
   }
 </script>
 
@@ -256,7 +275,11 @@
   <div class="w-60 h-full flex flex-col">
     <div class="flex items-center justify-between px-3 py-2 border-b border-border">
       <span class="text-xs font-semibold uppercase tracking-wider text-muted">Resources</span>
-      <button onclick={() => sessionStore.toggleSidebar()} class="p-1 rounded hover:bg-surface-hover transition-colors" aria-label="Collapse sidebar">
+      <button
+        onclick={() => sessionStore.toggleSidebar()}
+        class="p-1 rounded hover:bg-surface-hover transition-colors"
+        aria-label="Collapse sidebar"
+      >
         <PanelLeftClose size={14} />
       </button>
     </div>
@@ -270,16 +293,13 @@
           Overview
         </button>
       {/if}
-      {#each Object.entries(gvrGroups) as [groupName, gvrs]}
+      {#each Object.entries(gvrGroups) as [ groupName, gvrs ]}
         <div>
           <button
             onclick={() => toggleGroup(groupName)}
             class="w-full flex items-center gap-1 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted hover:bg-surface-hover transition-colors"
           >
-            <ChevronRight
-              size={12}
-              class="transition-transform {expandedGroups[groupName] ? 'rotate-90' : ''}"
-            />
+            <ChevronRight size={12} class="transition-transform {expandedGroups[groupName] ? 'rotate-90' : ''}" />
             {groupName}
           </button>
           {#if expandedGroups[groupName]}
@@ -306,10 +326,7 @@
             onclick={() => toggleGroup('Custom Resources')}
             class="w-full flex items-center gap-1 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted hover:bg-surface-hover transition-colors"
           >
-            <ChevronRight
-              size={12}
-              class="transition-transform {expandedGroups['Custom Resources'] ? 'rotate-90' : ''}"
-            />
+            <ChevronRight size={12} class="transition-transform {expandedGroups['Custom Resources'] ? 'rotate-90' : ''}" />
             Custom Resources
           </button>
           {#if expandedGroups['Custom Resources']}
@@ -329,10 +346,7 @@
               onclick={() => toggleGroup(`plugin:${category}`)}
               class="w-full flex items-center gap-1 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted hover:bg-surface-hover transition-colors"
             >
-              <ChevronRight
-                size={12}
-                class="transition-transform {expandedGroups[`plugin:${category}`] ? 'rotate-90' : ''}"
-              />
+              <ChevronRight size={12} class="transition-transform {expandedGroups[`plugin:${category}`] ? 'rotate-90' : ''}" />
               {category}
             </button>
             {#if expandedGroups[`plugin:${category}`]}
@@ -431,7 +445,6 @@
     </div>
   </div>
 </aside>
-
 
 {#if sessionStore.sidebarCollapsed}
   <button

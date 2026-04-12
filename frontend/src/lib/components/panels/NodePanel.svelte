@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { SectionHeader, EmptyState, StatusBadge, DataTable } from '@klados/ui'
+  import {SectionHeader, EmptyState, StatusBadge, DataTable} from "@klados/ui";
 
-  let { obj }: { obj: Record<string, any> } = $props()
+  let {obj}: {obj: Record<string, any>} = $props();
 
-  const conditions = $derived<any[]>(obj.status?.conditions ?? [])
-  const taints = $derived<any[]>(obj.spec?.taints ?? [])
+  const conditions = $derived<any[]>(obj.status?.conditions ?? []);
+  const taints = $derived<any[]>(obj.spec?.taints ?? []);
 </script>
 
 <div class="p-4 space-y-6">
@@ -19,9 +19,7 @@
       >
         {#snippet row(cond)}
           <td class="px-3 py-2 font-medium">{cond.type ?? ''}</td>
-          <td class="px-3 py-2">
-            <StatusBadge status={cond.status} mode="pill">{cond.status ?? ''}</StatusBadge>
-          </td>
+          <td class="px-3 py-2"><StatusBadge status={cond.status} mode="pill">{cond.status ?? ''}</StatusBadge></td>
           <td class="px-3 py-2 text-muted">{cond.reason ?? ''}</td>
           <td class="px-3 py-2 text-muted truncate max-w-xs" title={cond.message ?? ''}>{cond.message ?? ''}</td>
         {/snippet}

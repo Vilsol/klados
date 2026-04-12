@@ -1,33 +1,45 @@
 <script lang="ts">
-  import * as ResourceService from '../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import { formatAge } from '$lib/utils/age'
+  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {formatAge} from "$lib/utils/age";
 
   let {
     ctxName,
     namespace,
     uid,
   }: {
-    ctxName: string
-    namespace: string
-    uid: string
-  } = $props()
+    ctxName: string;
+    namespace: string;
+    uid: string;
+  } = $props();
 
-  let events = $state<Record<string, any>[]>([])
-  let loading = $state(true)
-  let error = $state<string | null>(null)
+  let events = $state<Record<string, any>[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   $effect(() => {
-    const currentCtx = ctxName
-    const currentNs = namespace
-    const currentUid = uid
-    let cancelled = false
-    loading = true
-    error = null
+    const currentCtx = ctxName;
+    const currentNs = namespace;
+    const currentUid = uid;
+    let cancelled = false;
+    loading = true;
+    error = null;
     ResourceService.GetEvents(currentCtx, currentNs, currentUid)
-      .then(result => { if (!cancelled) { events = result ?? []; loading = false } })
-      .catch((e: any) => { if (!cancelled) { error = e?.message ?? String(e); loading = false } })
-    return () => { cancelled = true }
-  })
+      .then((result) => {
+        if (!cancelled) {
+          events = result ?? [];
+          loading = false;
+        }
+      })
+      .catch((e: any) => {
+        if (!cancelled) {
+          error = e?.message ?? String(e);
+          loading = false;
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  });
 </script>
 
 <div class="flex flex-col h-full overflow-auto">
@@ -57,8 +69,10 @@
           {@const ts = event.lastTimestamp ?? event.eventTime ?? event.metadata?.creationTimestamp ?? ''}
           <tr class="border-b border-border hover:bg-surface-hover">
             <td class="px-3 py-1.5">
-              <span class="px-1.5 py-0.5 rounded text-xs font-medium
-                {type === 'Warning' ? 'bg-destructive/15 text-destructive' : 'bg-accent/15 text-accent'}">
+              <span
+                class="px-1.5 py-0.5 rounded text-xs font-medium
+                {type === 'Warning' ? 'bg-destructive/15 text-destructive' : 'bg-accent/15 text-accent'}"
+              >
                 {type}
               </span>
             </td>

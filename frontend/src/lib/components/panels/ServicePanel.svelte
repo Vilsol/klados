@@ -1,43 +1,50 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import * as ResourceService from '../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import PortForwardDialog from '$lib/components/PortForwardDialog.svelte'
-  import { SectionHeader, KeyValueBadge, EmptyState } from '@klados/ui'
+  import {onMount} from "svelte";
+  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import PortForwardDialog from "$lib/components/PortForwardDialog.svelte";
+  import {SectionHeader, KeyValueBadge, EmptyState} from "@klados/ui";
 
-  let { obj, ctxName }: { obj: Record<string, any>; ctxName: string } = $props()
+  let {obj, ctxName}: {obj: Record<string, any>; ctxName: string} = $props();
 
-  let pfPort = $state<number | null>(null)
+  let pfPort = $state<number | null>(null);
 
-  const selector = $derived<Record<string, string>>(obj.spec?.selector ?? {})
-  const ports = $derived<any[]>(obj.spec?.ports ?? [])
+  const selector = $derived<Record<string, string>>(obj.spec?.selector ?? {});
+  const ports = $derived<any[]>(obj.spec?.ports ?? []);
 
-  let endpoints = $state<any | null>(null)
-  let endpointError = $state('')
+  let endpoints = $state<any | null>(null);
+  let endpointError = $state("");
 
-  const ns = $derived<string>(obj.metadata?.namespace ?? '')
-  const svcName = $derived<string>(obj.metadata?.name ?? '')
+  const ns = $derived<string>(obj.metadata?.namespace ?? "");
+  const svcName = $derived<string>(obj.metadata?.name ?? "");
 
   $effect(() => {
-    if (!ctxName || !ns || !svcName) return
-    endpoints = null
-    endpointError = ''
-    ResourceService.GetResource(ctxName, 'core.v1.endpoints', ns, svcName)
-      .then((r: any) => { endpoints = r })
-      .catch((e: any) => { endpointError = String(e) })
-  })
+    if (!ctxName || !ns || !svcName) return;
+    endpoints = null;
+    endpointError = "";
+    ResourceService.GetResource(ctxName, "core.v1.endpoints", ns, svcName)
+      .then((r: any) => {
+        endpoints = r;
+      })
+      .catch((e: any) => {
+        endpointError = String(e);
+      });
+  });
 
-  const subsets = $derived<any[]>(endpoints?.subsets ?? [])
+  const subsets = $derived<any[]>(endpoints?.subsets ?? []);
 
-  interface BackingPod { name: string; ip: string }
+  interface BackingPod {
+    name: string;
+    ip: string;
+  }
 
   const backingPods = $derived<BackingPod[]>(
     subsets.flatMap((s: any) =>
       (s.addresses ?? []).map((a: any) => ({
         name: a.targetRef?.name ?? a.ip,
         ip: a.ip,
-      }))
-    )
-  )
+      })),
+    ),
+  );
 </script>
 
 <div class="flex flex-col gap-4 p-4 overflow-auto h-full">
@@ -78,7 +85,9 @@
                   class="text-xs font-mono text-accent hover:underline"
                   title="Forward port {p.port}"
                   aria-label="Forward port {p.port}"
-                >↗</button>
+                >
+                  ↗
+                </button>
               </td>
             </tr>
           {/each}

@@ -38,7 +38,9 @@
   }
 }
 
-html, body, #app {
+html,
+body,
+#app {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -52,8 +54,14 @@ body {
 }
 
 @keyframes slide-up {
-  from { translate: -50% 20px; opacity: 0; }
-  to { translate: -50% 0; opacity: 1; }
+  from {
+    translate: -50% 20px;
+    opacity: 0;
+  }
+  to {
+    translate: -50% 0;
+    opacity: 1;
+  }
 }
 .animate-slide-up {
   translate: -50% 0;

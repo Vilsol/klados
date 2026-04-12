@@ -1,152 +1,165 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte'
-  import { untrack } from 'svelte'
-  import ResourceList from '$lib/components/ResourceList.svelte'
-  import ResourceDetail from '$lib/components/ResourceDetail.svelte'
-  import { DetailDrawer } from '@klados/ui'
-  import * as ResourceService from '../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-  import * as MetricsService from '../../bindings/github.com/Vilsol/klados/internal/services/metricsservice.js'
-  import { createResourceStore } from '$lib/stores/resource.svelte'
-  import { createResourceStore as globalCreateStore } from '$lib/stores/createResource.svelte'
-  import { descriptorRegistry } from '$lib/registry/index'
-  import { registryLoaded } from '$lib/registry/loaded.svelte'
-  import { clusterStore } from '$lib/stores/cluster.svelte'
-  import { sessionStore } from '$lib/stores/session.svelte'
-  import { columnStore } from '$lib/stores/columns.svelte'
-  import { Plus } from 'lucide-svelte'
-  import type { MetricResult } from '$lib/components/charts/types'
-  import { notificationStore } from '$lib/stores/notification.svelte'
-  import type { ControllerRef } from '$lib/utils/relationships'
-  import { selectionStore } from '$lib/stores/selection.svelte'
+  import {onDestroy} from "svelte";
+  import {untrack} from "svelte";
+  import ResourceList from "$lib/components/ResourceList.svelte";
+  import ResourceDetail from "$lib/components/ResourceDetail.svelte";
+  import {DetailDrawer} from "@klados/ui";
+  import * as ResourceService from "../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import * as MetricsService from "../../bindings/github.com/Vilsol/klados/internal/services/metricsservice.js";
+  import {createResourceStore} from "$lib/stores/resource.svelte";
+  import {createResourceStore as globalCreateStore} from "$lib/stores/createResource.svelte";
+  import {descriptorRegistry} from "$lib/registry/index";
+  import {registryLoaded} from "$lib/registry/loaded.svelte";
+  import {clusterStore} from "$lib/stores/cluster.svelte";
+  import {sessionStore} from "$lib/stores/session.svelte";
+  import {columnStore} from "$lib/stores/columns.svelte";
+  import {Plus} from "lucide-svelte";
+  import type {MetricResult} from "$lib/components/charts/types";
+  import {notificationStore} from "$lib/stores/notification.svelte";
+  import type {ControllerRef} from "$lib/utils/relationships";
+  import {selectionStore} from "$lib/stores/selection.svelte";
 
-  let { params = {} }: { params?: Record<string, string> } = $props()
+  let {params = {}}: {params?: Record<string, string>} = $props();
 
-  const ctxName = $derived(params.ctx ?? '')
-  const gvr = $derived(params.gvr ?? '')
-  const selectedNamespaces = $derived(clusterStore.getSelectedNamespaces(ctxName))
-  const descriptor = $derived(registryLoaded() ? descriptorRegistry.get(gvr) : null)
-  let selectedGVR = $state('')
-  const selectedDescriptor = $derived(selectedGVR && registryLoaded() ? descriptorRegistry.get(selectedGVR) : descriptor)
-  const rawWatchNamespace = $derived(selectedNamespaces.length === 1 ? selectedNamespaces[0] : '')
-  const watchNamespace = $derived(descriptor?.clusterScoped ? '' : rawWatchNamespace)
+  const ctxName = $derived(params.ctx ?? "");
+  const gvr = $derived(params.gvr ?? "");
+  const selectedNamespaces = $derived(clusterStore.getSelectedNamespaces(ctxName));
+  const descriptor = $derived(registryLoaded() ? descriptorRegistry.get(gvr) : null);
+  let selectedGVR = $state("");
+  const selectedDescriptor = $derived(selectedGVR && registryLoaded() ? descriptorRegistry.get(selectedGVR) : descriptor);
+  const rawWatchNamespace = $derived(selectedNamespaces.length === 1 ? selectedNamespaces[0] : "");
+  const watchNamespace = $derived(descriptor?.clusterScoped ? "" : rawWatchNamespace);
 
   // Keep activeContext in sync with the current tab's context for the header
-  $effect(() => { if (ctxName) clusterStore.setActiveContext(ctxName) })
+  $effect(() => {
+    if (ctxName) clusterStore.setActiveContext(ctxName);
+  });
 
   // Initialize column store whenever GVR changes
-  $effect(() => { if (gvr) columnStore.loadForGVR(gvr) })
+  $effect(() => {
+    if (gvr) columnStore.loadForGVR(gvr);
+  });
 
   // Set GVR on selection store (auto-clears on GVR change)
   $effect(() => {
-    if (gvr) selectionStore.setGVR(gvr)
-  })
+    if (gvr) selectionStore.setGVR(gvr);
+  });
 
   // Clear selection on namespace change
   $effect(() => {
-    selectedNamespaces
-    selectionStore.deselectAll()
-  })
+    selectedNamespaces;
+    selectionStore.deselectAll();
+  });
 
-  let listScrollContainer = $state<HTMLDivElement | undefined>()
+  let listScrollContainer = $state<HTMLDivElement | undefined>();
 
   // Restore scroll position after items load
   $effect(() => {
-    if (!listScrollContainer || store.loading) return
-    const tab = sessionStore.tabs[sessionStore.activeTabIndex]
-    const saved = tab?.scrollPosition
-    if (saved) requestAnimationFrame(() => {
-      if (listScrollContainer) listScrollContainer.scrollTop = saved
-    })
-  })
+    if (!listScrollContainer || store.loading) return;
+    const tab = sessionStore.tabs[sessionStore.activeTabIndex];
+    const saved = tab?.scrollPosition;
+    if (saved)
+      requestAnimationFrame(() => {
+        if (listScrollContainer) listScrollContainer.scrollTop = saved;
+      });
+  });
 
   onDestroy(() => {
     if (listScrollContainer) {
-      sessionStore.saveScrollPosition(sessionStore.activeTabIndex, listScrollContainer.scrollTop)
+      sessionStore.saveScrollPosition(sessionStore.activeTabIndex, listScrollContainer.scrollTop);
     }
-  })
+  });
 
-  const store = createResourceStore()
+  const store = createResourceStore();
 
   $effect(() => {
     if (ctxName && gvr && descriptor) {
-      store.start(ctxName, gvr, watchNamespace)
+      store.start(ctxName, gvr, watchNamespace);
     }
-    return () => store.stop()
-  })
+    return () => store.stop();
+  });
 
   // Close drawer when GVR changes
-  $effect(() => { gvr; selectedItem = null; selectedGVR = gvr })
+  $effect(() => {
+    gvr;
+    selectedItem = null;
+    selectedGVR = gvr;
+  });
 
-  let selectedItem = $state<Record<string, any> | null>(null)
+  let selectedItem = $state<Record<string, any> | null>(null);
   const selectedName = $derived<string | null>(
-    selectedItem ? `${selectedItem.metadata?.name ?? ''}/${selectedItem.metadata?.namespace ?? ''}` : null
-  )
+    selectedItem ? `${selectedItem.metadata?.name ?? ""}/${selectedItem.metadata?.namespace ?? ""}` : null,
+  );
 
   // Keep selected item in sync with live watch updates
   $effect(() => {
-    if (!selectedItem) return
-    const name = selectedItem.metadata?.name
-    const ns = selectedItem.metadata?.namespace
-    const fresh = store.items.find(
-      (i) => i.metadata?.name === name && i.metadata?.namespace === ns
-    )
-    if (fresh) selectedItem = fresh
-  })
+    if (!selectedItem) return;
+    const name = selectedItem.metadata?.name;
+    const ns = selectedItem.metadata?.namespace;
+    const fresh = store.items.find((i) => i.metadata?.name === name && i.metadata?.namespace === ns);
+    if (fresh) selectedItem = fresh;
+  });
 
-  const sparklineGvrs = ['core.v1.pods', 'core.v1.nodes']
-  let sparklineColumns = $state<string[]>([])
-  let sparklineData = $state<Record<string, MetricResult[]>>({})
+  const sparklineGvrs = ["core.v1.pods", "core.v1.nodes"];
+  let sparklineColumns = $state<string[]>([]);
+  let sparklineData = $state<Record<string, MetricResult[]>>({});
 
   // Reset sparkline columns when GVR changes
-  $effect(() => { gvr; sparklineColumns = []; sparklineData = {} })
+  $effect(() => {
+    gvr;
+    sparklineColumns = [];
+    sparklineData = {};
+  });
 
   // Sparkline polling
   $effect(() => {
-    const enabled = sparklineColumns.length > 0
-    const ctx = ctxName
-    const g = gvr
-    const ns = watchNamespace
-    if (!enabled || !ctx || !g || !sparklineGvrs.includes(g)) return
+    const enabled = sparklineColumns.length > 0;
+    const ctx = ctxName;
+    const g = gvr;
+    const ns = watchNamespace;
+    if (!enabled || !ctx || !g || !sparklineGvrs.includes(g)) return;
 
     async function poll() {
       try {
-        const result = await MetricsService.GetListMetrics(ctx, g, ns)
+        const result = await MetricsService.GetListMetrics(ctx, g, ns);
         untrack(() => {
-          const data: Record<string, MetricResult[]> = {}
+          const data: Record<string, MetricResult[]> = {};
           if (result) {
             for (const [k, v] of Object.entries(result)) {
-              if (v) data[k] = v as MetricResult[]
+              if (v) data[k] = v as MetricResult[];
             }
           }
-          sparklineData = data
-        })
+          sparklineData = data;
+        });
       } catch {
-        untrack(() => { sparklineData = {} })
+        untrack(() => {
+          sparklineData = {};
+        });
       }
     }
 
-    poll()
-    const id = setInterval(poll, 15_000)
-    return () => clearInterval(id)
-  })
+    poll();
+    const id = setInterval(poll, 15_000);
+    return () => clearInterval(id);
+  });
 
   async function openOwnerDrawer(ref: ControllerRef, namespace: string) {
-    const ownerGVR = clusterStore.resolveOwnerGVR(ref.apiVersion, ref.kind)
-    if (!ownerGVR) return
+    const ownerGVR = clusterStore.resolveOwnerGVR(ref.apiVersion, ref.kind);
+    if (!ownerGVR) return;
     try {
-      const owner = await ResourceService.GetResource(ctxName, ownerGVR, namespace, ref.name)
+      const owner = await ResourceService.GetResource(ctxName, ownerGVR, namespace, ref.name);
       if (owner) {
-        selectedItem = owner as Record<string, any>
-        selectedGVR = ownerGVR
+        selectedItem = owner as Record<string, any>;
+        selectedGVR = ownerGVR;
       }
     } catch {
-      notificationStore.push('Owner resource not found', 'error')
+      notificationStore.push("Owner resource not found", "error");
     }
   }
 
   async function refresh() {
     if (ctxName && gvr) {
-      await store.start(ctxName, gvr, watchNamespace)
+      await store.start(ctxName, gvr, watchNamespace);
     }
   }
 </script>
@@ -221,7 +234,6 @@
         </DetailDrawer>
       {/if}
     {:else}
-
       <div class="flex-1 flex items-center justify-center text-sm text-muted">Loading...</div>
     {/if}
   </div>

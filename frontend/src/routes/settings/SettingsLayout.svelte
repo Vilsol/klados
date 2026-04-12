@@ -1,15 +1,15 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte'
-  import { push } from 'svelte-spa-router'
-  import { ArrowLeft } from 'lucide-svelte'
-  import SettingsSidebar from './SettingsSidebar.svelte'
+  import type {Snippet} from "svelte";
+  import {push} from "svelte-spa-router";
+  import {ArrowLeft} from "lucide-svelte";
+  import SettingsSidebar from "./SettingsSidebar.svelte";
 
   interface Props {
-    active: string
-    children: Snippet
+    active: string;
+    children: Snippet;
   }
 
-  let { active, children }: Props = $props()
+  let {active, children}: Props = $props();
 </script>
 
 <div class="flex flex-col h-full bg-bg">
@@ -26,8 +26,6 @@
 
   <div class="flex flex-1 overflow-hidden">
     <SettingsSidebar {active} />
-    <main class="flex-1 overflow-y-auto p-6">
-      {@render children()}
-    </main>
+    <main class="flex-1 overflow-y-auto p-6">{@render children()}</main>
   </div>
 </div>

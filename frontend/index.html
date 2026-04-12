@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/wails.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/wails.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Klados</title>
     <!-- Import map: bare svelte specifiers resolve to the shared runtime bundle.
          Both this app and dynamically loaded plugin modules use the same URL,
          so the browser module cache gives them a single Svelte instance. -->
     <script type="importmap">
-    {
-      "imports": {
-        "svelte":                    "/plugin-shared/svelte-runtime.js",
-        "svelte/internal":           "/plugin-shared/svelte-runtime.js",
-        "svelte/internal/client":    "/plugin-shared/svelte-runtime.js"
+      {
+        "imports": {
+          "svelte": "/plugin-shared/svelte-runtime.js",
+          "svelte/internal": "/plugin-shared/svelte-runtime.js",
+          "svelte/internal/client": "/plugin-shared/svelte-runtime.js"
+        }
       }
-    }
     </script>
   </head>
   <body>

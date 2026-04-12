@@ -1,91 +1,94 @@
 <script lang="ts">
-  import { Dialog } from 'bits-ui'
-  import { selectionStore } from '$lib/stores/selection.svelte'
-  import { notificationStore } from '$lib/stores/notification.svelte'
-  import { Check, X, Loader2 } from 'lucide-svelte'
-  import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
+  import {Dialog} from "bits-ui";
+  import {selectionStore} from "$lib/stores/selection.svelte";
+  import {notificationStore} from "$lib/stores/notification.svelte";
+  import {Check, X, Loader2} from "lucide-svelte";
+  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 
   let {
     open = $bindable(false),
     contextName,
   }: {
-    open: boolean
-    contextName: string
-  } = $props()
+    open: boolean;
+    contextName: string;
+  } = $props();
 
-  type ItemStatus = 'pending' | 'scaling' | 'success' | 'error'
-  type Mode = 'set' | 'increase' | 'decrease'
+  type ItemStatus = "pending" | "scaling" | "success" | "error";
+  type Mode = "set" | "increase" | "decrease";
 
-  let mode = $state<Mode>('set')
-  let value = $state(1)
-  let statuses = $state<Map<string, { status: ItemStatus; error?: string }>>(new Map())
-  let running = $state(false)
+  let mode = $state<Mode>("set");
+  let value = $state(1);
+  let statuses = $state<Map<string, {status: ItemStatus; error?: string}>>(new Map());
+  let running = $state(false);
 
-  const selectedItems = $derived(selectionStore.items())
-  const gvr = $derived(selectionStore.selectedGVR)
+  const selectedItems = $derived(selectionStore.items());
+  const gvr = $derived(selectionStore.selectedGVR);
 
   $effect(() => {
     if (open) {
-      mode = 'set'
-      value = 1
-      statuses = new Map()
-      running = false
+      mode = "set";
+      value = 1;
+      statuses = new Map();
+      running = false;
     }
-  })
+  });
 
   function itemKey(obj: Record<string, any>): string {
-    const ns = obj.metadata?.namespace ?? ''
-    const name = obj.metadata?.name ?? ''
-    return ns ? `${ns}/${name}` : name
+    const ns = obj.metadata?.namespace ?? "";
+    const name = obj.metadata?.name ?? "";
+    return ns ? `${ns}/${name}` : name;
   }
 
   function currentReplicas(item: Record<string, any>): number {
-    return item.spec?.replicas ?? 0
+    return item.spec?.replicas ?? 0;
   }
 
   function targetReplicas(item: Record<string, any>): number {
-    const current = currentReplicas(item)
+    const current = currentReplicas(item);
     switch (mode) {
-      case 'set': return Math.max(0, value)
-      case 'increase': return current + value
-      case 'decrease': return Math.max(0, current - value)
+      case "set":
+        return Math.max(0, value);
+      case "increase":
+        return current + value;
+      case "decrease":
+        return Math.max(0, current - value);
     }
   }
 
   async function run() {
-    running = true
-    const items = [...selectedItems]
-    statuses = new Map(items.map(item => [itemKey(item), { status: 'pending' as ItemStatus }]))
+    running = true;
+    const items = [...selectedItems];
+    statuses = new Map(items.map((item) => [itemKey(item), {status: "pending" as ItemStatus}]));
 
-    const succeeded: string[] = []
-    let failCount = 0
+    const succeeded: string[] = [];
+    let failCount = 0;
 
     for (const item of items) {
-      const key = itemKey(item)
-      const ns = item.metadata?.namespace ?? ''
-      const name = item.metadata?.name ?? ''
-      const target = targetReplicas(item)
+      const key = itemKey(item);
+      const ns = item.metadata?.namespace ?? "";
+      const name = item.metadata?.name ?? "";
+      const target = targetReplicas(item);
 
-      statuses = new Map(statuses).set(key, { status: 'scaling' })
+      statuses = new Map(statuses).set(key, {status: "scaling"});
 
       try {
-        await ResourceService.ScaleResource(contextName, gvr, ns, name, target)
-        statuses = new Map(statuses).set(key, { status: 'success' })
-        succeeded.push(key)
+        await ResourceService.ScaleResource(contextName, gvr, ns, name, target);
+        statuses = new Map(statuses).set(key, {status: "success"});
+        succeeded.push(key);
       } catch (e: any) {
-        statuses = new Map(statuses).set(key, { status: 'error', error: e?.message ?? String(e) })
-        failCount++
+        statuses = new Map(statuses).set(key, {status: "error", error: e?.message ?? String(e)});
+        failCount++;
       }
     }
 
-    selectionStore.deselectKeys(succeeded)
-    running = false
+    selectionStore.deselectKeys(succeeded);
+    running = false;
 
     if (failCount === 0) {
-      notificationStore.push(`Scaled ${succeeded.length}/${items.length} resources`, 'success')
-      open = false
+      notificationStore.push(`Scaled ${succeeded.length}/${items.length} resources`, "success");
+      open = false;
     } else {
-      notificationStore.push(`Scaled ${succeeded.length}/${items.length} — ${failCount} failed`, 'error')
+      notificationStore.push(`Scaled ${succeeded.length}/${items.length} — ${failCount} failed`, "error");
     }
   }
 </script>
@@ -93,7 +96,9 @@
 <Dialog.Root bind:open>
   <Dialog.Portal>
     <Dialog.Overlay class="fixed inset-0 bg-black/50 z-40" />
-    <Dialog.Content class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-surface border border-border rounded-lg shadow-xl p-6 w-[480px] max-w-[90vw] max-h-[80vh] flex flex-col">
+    <Dialog.Content
+      class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-surface border border-border rounded-lg shadow-xl p-6 w-[480px] max-w-[90vw] max-h-[80vh] flex flex-col"
+    >
       <Dialog.Title class="text-base font-semibold mb-4">Scale {selectedItems.length} resources</Dialog.Title>
 
       <div class="flex gap-0 mb-4 rounded border border-border overflow-hidden">
@@ -113,7 +118,7 @@
           min="0"
           bind:value
           class="w-full px-3 py-1.5 text-sm border border-border rounded bg-surface focus:outline-none focus:ring-1 focus:ring-accent"
-        />
+        >
       </div>
 
       <div class="flex-1 overflow-auto mb-4 border border-border rounded">
@@ -149,10 +154,9 @@
       </div>
 
       <div class="flex justify-end gap-2">
-        <Dialog.Close
-          class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors"
-          disabled={running}
-        >Cancel</Dialog.Close>
+        <Dialog.Close class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors" disabled={running}
+          >Cancel</Dialog.Close
+        >
         <button
           onclick={run}
           disabled={running}

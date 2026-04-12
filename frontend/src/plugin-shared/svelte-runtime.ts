@@ -1,2 +1,2 @@
-export * from 'svelte/internal/client'
-export * from 'svelte'
+export * from "svelte/internal/client";
+export * from "svelte";

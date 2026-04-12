@@ -1,48 +1,47 @@
 <script lang="ts">
-  import { Lock, LockOpen } from 'lucide-svelte'
-  import { clusterStore } from '$lib/stores/cluster.svelte'
-  import ConnectionIndicator from './ConnectionIndicator.svelte'
-  import { Combobox } from '@klados/ui'
-  import { push } from 'svelte-spa-router'
-  import { slotRegistry } from '$lib/plugins/slots.svelte.js'
-  import { loadPluginComponent } from '$lib/plugins/loader.js'
-  import { streamingStore } from '$lib/stores/streaming.svelte.js'
-  import { Events } from '@wailsio/runtime'
-  import * as DrainService from '../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js'
+  import {Lock, LockOpen} from "lucide-svelte";
+  import {clusterStore} from "$lib/stores/cluster.svelte";
+  import ConnectionIndicator from "./ConnectionIndicator.svelte";
+  import {Combobox} from "@klados/ui";
+  import {push} from "svelte-spa-router";
+  import {slotRegistry} from "$lib/plugins/slots.svelte.js";
+  import {loadPluginComponent} from "$lib/plugins/loader.js";
+  import {streamingStore} from "$lib/stores/streaming.svelte.js";
+  import {Events} from "@wailsio/runtime";
+  import * as DrainService from "../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js";
 
-  const ctx = $derived(clusterStore.activeContext)
-  const selected = $derived(ctx ? clusterStore.getSelectedNamespaces(ctx) : [])
-  const nsOptions = $derived(
-    (ctx ? clusterStore.getNamespaces(ctx) : []).map((ns) => ({ value: ns, label: ns })),
-  )
+  const ctx = $derived(clusterStore.activeContext);
+  const selected = $derived(ctx ? clusterStore.getSelectedNamespaces(ctx) : []);
+  const nsOptions = $derived((ctx ? clusterStore.getNamespaces(ctx) : []).map((ns) => ({value: ns, label: ns})));
 
   function onNamespaceChange(namespaces: string[]) {
-    if (ctx) clusterStore.setNamespaces(ctx, namespaces)
+    if (ctx) clusterStore.setNamespaces(ctx, namespaces);
   }
 
-  let activeDrains = $state<string[]>([])
+  let activeDrains = $state<string[]>([]);
 
   $effect(() => {
-    const currentCtx = ctx
-    if (!currentCtx) { activeDrains = []; return }
+    const currentCtx = ctx;
+    if (!currentCtx) {
+      activeDrains = [];
+      return;
+    }
 
     DrainService.ListActive(currentCtx).then((nodes: string[]) => {
-      activeDrains = nodes ?? []
-    })
+      activeDrains = nodes ?? [];
+    });
 
     const unsub = Events.On(`drain:${currentCtx}:updated`, () => {
       DrainService.ListActive(currentCtx).then((nodes: string[]) => {
-        activeDrains = nodes ?? []
-      })
-    })
-    return unsub
-  })
+        activeDrains = nodes ?? [];
+      });
+    });
+    return unsub;
+  });
 
   const basePluginURL = $derived(
-    streamingStore.config
-      ? `http://127.0.0.1:${streamingStore.config.port}/${streamingStore.config.token}/plugins`
-      : null
-  )
+    streamingStore.config ? `http://127.0.0.1:${streamingStore.config.port}/${streamingStore.config.token}/plugins` : null,
+  );
 </script>
 
 <header class="flex items-center h-12 px-4 border-b border-border bg-surface shrink-0 gap-4">
@@ -50,18 +49,10 @@
 
   <div class="flex items-center gap-2 ml-4">
     {#if ctx}
-      <ConnectionIndicator
-        status={clusterStore.connectionStatus[ctx] ?? 'disconnected'}
-        clusterName={ctx}
-      />
-      <button
-        onclick={() => push('/clusters')}
-        class="text-sm font-medium hover:underline"
-      >{ctx}</button>
+      <ConnectionIndicator status={clusterStore.connectionStatus[ctx] ?? 'disconnected'} clusterName={ctx} />
+      <button onclick={() => push('/clusters')} class="text-sm font-medium hover:underline">{ctx}</button>
     {:else}
-      <button onclick={() => push('/clusters')} class="text-sm text-muted hover:underline">
-        No cluster selected
-      </button>
+      <button onclick={() => push('/clusters')} class="text-sm text-muted hover:underline">No cluster selected</button>
     {/if}
   </div>
 

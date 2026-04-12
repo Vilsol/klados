@@ -1,99 +1,93 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/svelte'
-import Sidebar from '$lib/components/Sidebar.svelte'
-import { sessionStore } from '$lib/stores/session.svelte'
+import {describe, it, expect, beforeEach, vi} from "vitest";
+import {render, screen, waitFor} from "@testing-library/svelte";
+import Sidebar from "$lib/components/Sidebar.svelte";
+import {sessionStore} from "$lib/stores/session.svelte";
 
-vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js', () => ({
+vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js", () => ({
   ListAPIResources: vi.fn().mockResolvedValue([]),
-}))
+}));
 
-vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js', () => ({
+vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js", () => ({
   ListForwards: vi.fn().mockResolvedValue([]),
-}))
+}));
 
-vi.mock('../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js', () => ({
+vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js", () => ({
   GetPluginSidebarEntries: vi.fn().mockResolvedValue([]),
-}))
+}));
 
-describe('Sidebar', () => {
+describe("Sidebar", () => {
   beforeEach(() => {
-    sessionStore.sidebarCollapsed = false
-  })
+    sessionStore.sidebarCollapsed = false;
+  });
 
-  it('renders resource groups', () => {
-    render(Sidebar)
+  it("renders resource groups", () => {
+    render(Sidebar);
 
-    expect(screen.getByText('Workloads')).toBeTruthy()
-    expect(screen.getByText('Networking')).toBeTruthy()
-    expect(screen.getByText('Config')).toBeTruthy()
-    expect(screen.getByText('Storage')).toBeTruthy()
-  })
+    expect(screen.getByText("Workloads")).toBeTruthy();
+    expect(screen.getByText("Networking")).toBeTruthy();
+    expect(screen.getByText("Config")).toBeTruthy();
+    expect(screen.getByText("Storage")).toBeTruthy();
+  });
 
-  it('shows Workloads items expanded by default', () => {
-    render(Sidebar)
+  it("shows Workloads items expanded by default", () => {
+    render(Sidebar);
 
-    expect(screen.getByText('Pods')).toBeTruthy()
-    expect(screen.getByText('Deployments')).toBeTruthy()
-    expect(screen.getByText('StatefulSets')).toBeTruthy()
-  })
+    expect(screen.getByText("Pods")).toBeTruthy();
+    expect(screen.getByText("Deployments")).toBeTruthy();
+    expect(screen.getByText("StatefulSets")).toBeTruthy();
+  });
 
-  it('collapse toggles sidebar state', async () => {
-    sessionStore.sidebarCollapsed = false
+  it("collapse toggles sidebar state", async () => {
+    sessionStore.sidebarCollapsed = false;
 
-    sessionStore.toggleSidebar()
-    expect(sessionStore.sidebarCollapsed).toBe(true)
+    sessionStore.toggleSidebar();
+    expect(sessionStore.sidebarCollapsed).toBe(true);
 
-    sessionStore.toggleSidebar()
-    expect(sessionStore.sidebarCollapsed).toBe(false)
-  })
-})
+    sessionStore.toggleSidebar();
+    expect(sessionStore.sidebarCollapsed).toBe(false);
+  });
+});
 
-describe('Sidebar plugin entries', () => {
+describe("Sidebar plugin entries", () => {
   beforeEach(() => {
-    sessionStore.sidebarCollapsed = false
-  })
+    sessionStore.sidebarCollapsed = false;
+  });
 
-  it('renders plugin sidebar category and label when entries are returned', async () => {
-    const { GetPluginSidebarEntries } = await import(
-      '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
-    )
+  it("renders plugin sidebar category and label when entries are returned", async () => {
+    const {GetPluginSidebarEntries} = await import("../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js");
     vi.mocked(GetPluginSidebarEntries).mockResolvedValue([
-      { category: 'Security', label: 'Certificates', gvr: 'cert-manager.io.v1.certificates', icon: '', plugin: 'cert-manager' },
-    ] as any)
+      {category: "Security", label: "Certificates", gvr: "cert-manager.io.v1.certificates", icon: "", plugin: "cert-manager"},
+    ] as any);
 
-    render(Sidebar)
+    render(Sidebar);
 
     await waitFor(() => {
-      expect(screen.getByText('Security')).toBeTruthy()
-    })
-  })
+      expect(screen.getByText("Security")).toBeTruthy();
+    });
+  });
 
-  it('renders multiple entries under the same category', async () => {
-    const { GetPluginSidebarEntries } = await import(
-      '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
-    )
+  it("renders multiple entries under the same category", async () => {
+    const {GetPluginSidebarEntries} = await import("../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js");
     vi.mocked(GetPluginSidebarEntries).mockResolvedValue([
-      { category: 'Security', label: 'Certificates', gvr: 'cert-manager.io.v1.certificates', icon: '', plugin: 'cert-manager' },
-      { category: 'Security', label: 'Issuers', gvr: 'cert-manager.io.v1.issuers', icon: '', plugin: 'cert-manager' },
-    ] as any)
+      {category: "Security", label: "Certificates", gvr: "cert-manager.io.v1.certificates", icon: "", plugin: "cert-manager"},
+      {category: "Security", label: "Issuers", gvr: "cert-manager.io.v1.issuers", icon: "", plugin: "cert-manager"},
+    ] as any);
 
-    render(Sidebar)
-
-    await waitFor(() => {
-      expect(screen.getByText('Security')).toBeTruthy()
-    })
-  })
-
-  it('shows no plugin sections when entries list is empty', async () => {
-    const { GetPluginSidebarEntries } = await import(
-      '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
-    )
-    vi.mocked(GetPluginSidebarEntries).mockResolvedValue([])
-
-    render(Sidebar)
+    render(Sidebar);
 
     await waitFor(() => {
-      expect(screen.queryByText('Security')).toBeNull()
-    })
-  })
-})
+      expect(screen.getByText("Security")).toBeTruthy();
+    });
+  });
+
+  it("shows no plugin sections when entries list is empty", async () => {
+    const {GetPluginSidebarEntries} = await import("../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js");
+    vi.mocked(GetPluginSidebarEntries).mockResolvedValue([]);
+
+    render(Sidebar);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Security")).toBeNull();
+    });
+  });
+});
