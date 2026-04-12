@@ -46,7 +46,7 @@ const makeResponse = () => ({
     {
       name: "Memory Usage",
       unit: "bytes",
-      series: [{labels: {container: "nginx"}, points: [{t: 1000, v: 134217728}]}],
+      series: [{labels: {container: "nginx"}, points: [{t: 1000, v: 134_217_728}]}],
     },
   ],
   thresholds: [],

@@ -34,7 +34,7 @@
   onMount(() => {
     const id = setInterval(() => {
       now = Date.now();
-    }, 1_000);
+    }, 1000);
     return () => clearInterval(id);
   });
 
@@ -116,7 +116,7 @@
   });
 
   $effect(() => {
-    if (!ctxMenu || !ctxMenuEl) {
+    if (!(ctxMenu && ctxMenuEl)) {
       return;
     }
     const rect = ctxMenuEl.getBoundingClientRect();
@@ -187,8 +187,8 @@
           if (isAge) {
             cmp = a.key.localeCompare(b.key);
           } else {
-            const an = parseFloat(a.key);
-            const bn = parseFloat(b.key);
+            const an = Number.parseFloat(a.key);
+            const bn = Number.parseFloat(b.key);
             cmp = Number.isFinite(an) && Number.isFinite(bn) ? an - bn : a.key.localeCompare(b.key);
           }
           return direction === "asc" ? cmp : -cmp;

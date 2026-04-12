@@ -51,7 +51,7 @@
     ".cm-scroller": {overflow: "auto", lineHeight: "1.6"},
   });
 
-  function initEditor(doc: string = "") {
+  function initEditor(doc = "") {
     view?.destroy();
     view = new EditorView({
       state: EditorState.create({

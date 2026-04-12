@@ -16,16 +16,16 @@
   function parseQuantity(q: string): number | null {
     const s = String(q).trim();
     if (reDecimalOrInt.test(s)) {
-      return parseFloat(s);
+      return Number.parseFloat(s);
     }
     const mMatch = s.match(reMilliCores);
     if (mMatch) {
-      return parseFloat(mMatch[1]) / 1000;
+      return Number.parseFloat(mMatch[1]) / 1000;
     }
     const binMatch = s.match(reBinarySuffix);
     if (binMatch) {
       const mult: Record<string, number> = {Ki: 1024, Mi: 1024 ** 2, Gi: 1024 ** 3, Ti: 1024 ** 4};
-      return parseFloat(binMatch[1]) * mult[binMatch[2]];
+      return Number.parseFloat(binMatch[1]) * mult[binMatch[2]];
     }
     return null;
   }

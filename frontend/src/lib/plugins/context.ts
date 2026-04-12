@@ -52,14 +52,13 @@ export function createPluginContext(manifest: PluginManifest, host: HostServices
 
   if (manifest.permissions?.events) {
     ctx.events = Object.freeze({
-      subscribe: (eventName: string, cb: (payload: unknown) => void) => {
-        return Events.On("plugin:event", (wailsEvent: unknown) => {
+      subscribe: (eventName: string, cb: (payload: unknown) => void) =>
+        Events.On("plugin:event", (wailsEvent: unknown) => {
           const data = (wailsEvent as {data?: unknown})?.data as {eventName: string; payload: unknown} | undefined;
           if (data?.eventName === eventName) {
             cb(data.payload);
           }
-        });
-      },
+        }),
     });
   }
 
@@ -70,7 +69,7 @@ export function createPluginContext(manifest: PluginManifest, host: HostServices
           container,
           follow: opts?.follow ?? false,
           previous: opts?.previous ?? false,
-          tailLines: opts?.tailLines != null ? opts.tailLines : null,
+          tailLines: opts?.tailLines == null ? null : opts.tailLines,
           timestamps: false,
         } as Parameters<typeof StartLogStream>[3]),
       stop: (streamID: string) => StopLogStream(streamID),

@@ -58,7 +58,7 @@ class BottomPanelStore {
   }
 
   setHeight(h: number) {
-    const maxH = typeof window !== "undefined" ? window.innerHeight * MAX_HEIGHT_RATIO : 600;
+    const maxH = typeof window === "undefined" ? 600 : window.innerHeight * MAX_HEIGHT_RATIO;
     this.height = Math.max(MIN_HEIGHT, Math.min(h, maxH));
   }
 

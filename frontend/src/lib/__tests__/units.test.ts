@@ -23,12 +23,12 @@ describe("formatCPU", () => {
 
 describe("formatMemory", () => {
   it("formats GiB", () => {
-    expect(formatMemory(1073741824)).toBe("1 GiB");
-    expect(formatMemory(1073741824 * 4.2)).toBe("4.2 GiB");
+    expect(formatMemory(1_073_741_824)).toBe("1 GiB");
+    expect(formatMemory(1_073_741_824 * 4.2)).toBe("4.2 GiB");
   });
 
   it("formats MiB", () => {
-    expect(formatMemory(134217728)).toBe("128 MiB");
+    expect(formatMemory(134_217_728)).toBe("128 MiB");
   });
 });
 

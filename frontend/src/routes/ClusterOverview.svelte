@@ -58,7 +58,7 @@
 
   $effect(() => {
     const ns = selectedNamespace;
-    if (!ns || !capability?.hasPrometheus) {
+    if (!(ns && capability?.hasPrometheus)) {
       return;
     }
 

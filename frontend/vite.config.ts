@@ -5,6 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 import wails from "@wailsio/runtime/plugins/vite";
 import path from "node:path";
 import type {IncomingMessage, ServerResponse} from "node:http";
+import process from "node:process";
 
 // Public URL used in the import map — both dev and prod serve Svelte here.
 const SHARED_URL = "/plugin-shared/svelte-runtime.js";

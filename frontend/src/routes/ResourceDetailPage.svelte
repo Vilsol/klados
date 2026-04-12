@@ -26,7 +26,7 @@
   let error = $state<string | null>(null);
 
   async function load() {
-    if (!ctxName || !gvr || !name) {
+    if (!(ctxName && gvr && name)) {
       return;
     }
     loading = true;

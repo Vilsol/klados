@@ -71,15 +71,15 @@ function buildSubtree(node: TrieNode, parentSegs: string[], getKind: (gvr: strin
 function enforceMinTopLevel(nodes: CRDTreeNode[]): CRDTreeNode[] {
   const result: CRDTreeNode[] = [];
   for (const node of nodes) {
-    if (!node.label.includes(".")) {
+    if (node.label.includes(".")) {
+      result.push(node);
+    } else {
       for (const child of node.children) {
         result.push({...child, label: `${child.label}.${node.label}`});
       }
       if (node.directGvrs.length > 0) {
         result.push(node);
       }
-    } else {
-      result.push(node);
     }
   }
   return result.sort((a, b) => a.label.localeCompare(b.label));

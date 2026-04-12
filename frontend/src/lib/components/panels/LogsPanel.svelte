@@ -60,7 +60,7 @@
     const _ns = namespace;
     const _name = name;
     const _tail = tailLines;
-    if (!container || !streamingStore.config) {
+    if (!(container && streamingStore.config)) {
       return;
     }
 

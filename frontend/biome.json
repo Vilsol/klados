@@ -21,10 +21,13 @@
     "enabled": true,
     "rules": {
       "recommended": true,
-      "performance": "on",
-      "style": {
-        "useBlockStatements": "error"
-      }
+      "performance": "error",
+      "a11y": "error",
+      "suspicious": "error",
+      "correctness": "error",
+      "style": "error",
+      "complexity": "error",
+      "security": "error"
     }
   },
   "javascript": {
@@ -114,15 +117,55 @@
         "rules": {
           "style": {
             "useConst": "off",
-            "useImportType": "off"
+            "useImportType": "off",
+            "noRestrictedGlobals": "off"
           },
           "correctness": {
             "noUnusedVariables": "off",
-            "noUnusedImports": "off"
+            "noUnusedImports": "off",
+            "noUndeclaredVariables": "off"
           },
           "suspicious": {
             "noAssignInExpressions": "off",
-            "noGlobalAssign": "off"
+            "noGlobalAssign": "off",
+            "noUnassignedVariables": "off"
+          },
+          "complexity": {
+            "noVoid": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noNodejsModules": "off",
+            "useQwikValidLexicalScope": "off"
+          },
+          "style": {
+            "noDefaultExport": "off",
+            "useNamingConvention": "off",
+            "useFilenamingConvention": "off",
+            "useExportsLast": "off",
+            "useDefaultSwitchClause": "off"
+          },
+          "suspicious": {
+            "noBitwiseOperators": "off"
+          },
+          "complexity": {
+            "noExcessiveLinesPerFunction": "off",
+            "useMaxParams": "off",
+            "noExcessiveCognitiveComplexity": "off"
+          },
+          "security": {
+            "noSecrets": {
+              "level": "error",
+              "options": {
+                "entropyThreshold": 50
+              }
+            }
           }
         }
       }

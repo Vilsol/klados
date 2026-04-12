@@ -67,7 +67,7 @@
     if (!capability) {
       return;
     }
-    if (!capability.hasMetricsServer && !capability.hasPrometheus) {
+    if (!(capability.hasMetricsServer || capability.hasPrometheus)) {
       return;
     }
 
@@ -83,7 +83,9 @@
 
         const metricsRes = res as unknown as MetricsResponse;
 
-        if (!capability?.hasPrometheus) {
+        if (capability?.hasPrometheus) {
+          response = metricsRes;
+        } else {
           // Accumulate rolling data for metrics-server live mode
           untrack(() => {
             const nextMap = new Map(rollingData);
@@ -105,8 +107,6 @@
             rollingData = nextMap;
             response = metricsRes;
           });
-        } else {
-          response = metricsRes;
         }
       } catch (err: unknown) {
         fetchError = err instanceof Error ? err.message : String(err);

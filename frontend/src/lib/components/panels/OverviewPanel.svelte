@@ -104,7 +104,7 @@
     const key = t.key || "*";
     const op = t.operator === "Exists" ? "Exists" : `=${t.value ?? ""}`;
     const effect = t.effect || "All";
-    const seconds = t.tolerationSeconds != null ? ` (${t.tolerationSeconds}s)` : "";
+    const seconds = t.tolerationSeconds == null ? "" : ` (${t.tolerationSeconds}s)`;
     return `${key} ${op} — ${effect}${seconds}`;
   }
 

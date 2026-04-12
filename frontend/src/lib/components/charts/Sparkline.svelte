@@ -64,7 +64,7 @@
 
     const ro = new ResizeObserver((entries) => {
       const entry = entries[0];
-      if (!entry || !chart) {
+      if (!(entry && chart)) {
         return;
       }
       const newW = Math.round(entry.contentRect.width);

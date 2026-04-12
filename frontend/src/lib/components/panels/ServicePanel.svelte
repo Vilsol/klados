@@ -19,7 +19,7 @@
   const svcName = $derived<string>(obj.metadata?.name ?? "");
 
   $effect(() => {
-    if (!ctxName || !ns || !svcName) {
+    if (!(ctxName && ns && svcName)) {
       return;
     }
     endpoints = null;

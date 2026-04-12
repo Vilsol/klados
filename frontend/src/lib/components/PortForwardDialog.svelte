@@ -61,13 +61,13 @@
       const kind = isQuickMode ? prefillTargetKind : targetKind;
       const name = isQuickMode ? prefillTarget : targetName;
       const gvr = isQuickMode ? prefillGVR : targetGVR;
-      const remote = isQuickMode ? prefillRemotePort : parseInt(remotePort, 10);
+      const remote = isQuickMode ? prefillRemotePort : Number.parseInt(remotePort, 10);
       const local = isQuickMode
         ? localPortMode === "auto"
           ? 0
-          : parseInt(customLocalPort, 10) || 0
+          : Number.parseInt(customLocalPort, 10) || 0
         : localPort
-          ? parseInt(localPort, 10)
+          ? Number.parseInt(localPort, 10)
           : 0;
 
       if (!name || Number.isNaN(remote) || remote <= 0 || !ns) {

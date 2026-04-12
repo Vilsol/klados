@@ -26,7 +26,7 @@ describe("TimeRangeSelector", () => {
     ["1h", 60],
     ["6h", 360],
     ["24h", 1440],
-    ["7d", 10080],
+    ["7d", 10_080],
   ])("emits %s → %i on click", (label, expected) => {
     const onchange = vi.fn();
     render(TimeRangeSelector, {

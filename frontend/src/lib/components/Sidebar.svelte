@@ -196,7 +196,7 @@
       "authentication.k8s.io.",
       "events.k8s.io.",
     ];
-    customResources = resources.filter((r) => !knownGVRs.has(r.gvr) && !internalPrefixes.some((p) => r.gvr.startsWith(p)));
+    customResources = resources.filter((r) => !(knownGVRs.has(r.gvr) || internalPrefixes.some((p) => r.gvr.startsWith(p))));
   }
 
   let unsub: (() => void) | null = null;

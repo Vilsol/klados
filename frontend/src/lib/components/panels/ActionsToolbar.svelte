@@ -81,7 +81,7 @@
     if (action.disabledWhen && isDisabled(action)) {
       return action.disabledReason;
     }
-    return undefined;
+    return;
   }
 
   const setBusy = (v: boolean) => {

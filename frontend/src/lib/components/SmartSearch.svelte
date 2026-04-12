@@ -25,9 +25,7 @@
   // inputText is the visible text in the <input> — only the trailing (incomplete) token
   let inputText = $state("");
 
-  let terms = $derived.by(() => {
-    return parseSearch(value);
-  });
+  let terms = $derived.by(() => parseSearch(value));
 
   // Chips are completed terms (all except the trailing incomplete token)
   let chips = $derived.by(() => {

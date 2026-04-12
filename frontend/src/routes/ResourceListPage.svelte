@@ -139,7 +139,7 @@
     const ctx = ctxName;
     const g = gvr;
     const ns = watchNamespace;
-    if (!enabled || !ctx || !g || !sparklineGvrs.includes(g)) {
+    if (!(enabled && ctx && g && sparklineGvrs.includes(g))) {
       return;
     }
 

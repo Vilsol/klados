@@ -34,11 +34,11 @@
   let now = $state(Date.now());
   const ticker = setInterval(() => {
     now = Date.now();
-  }, 1_000);
+  }, 1000);
   onDestroy(() => clearInterval(ticker));
 
-  const filtered = $derived.by(() => {
-    return store.items
+  const filtered = $derived.by(() =>
+    store.items
       .filter((e) => {
         const type = e.type ?? "Normal";
         if (type === "Warning" && !showWarning) {
@@ -59,8 +59,8 @@
         const ta = a.lastTimestamp ?? a.eventTime ?? a.metadata?.creationTimestamp ?? "";
         const tb = b.lastTimestamp ?? b.eventTime ?? b.metadata?.creationTimestamp ?? "";
         return tb.localeCompare(ta);
-      });
-  });
+      }),
+  );
 </script>
 
 <div class="flex flex-col h-full">

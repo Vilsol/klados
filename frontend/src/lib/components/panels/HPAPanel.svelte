@@ -124,9 +124,9 @@
       return "<unknown>";
     }
     if (type === "Resource") {
-      return found.resource?.current?.averageUtilization != null
-        ? `${found.resource.current.averageUtilization}%`
-        : (found.resource?.current?.averageValue ?? "<unknown>");
+      return found.resource?.current?.averageUtilization == null
+        ? (found.resource?.current?.averageValue ?? "<unknown>")
+        : `${found.resource.current.averageUtilization}%`;
     }
     if (type === "Pods") {
       return found.pods?.current?.averageValue ?? "<unknown>";

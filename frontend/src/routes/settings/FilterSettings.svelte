@@ -53,7 +53,7 @@
 
   function parseKV(str: string): Record<string, string> | undefined {
     if (!str.trim()) {
-      return undefined;
+      return;
     }
     const result: Record<string, string> = {};
     for (const pair of str.split(",")) {
@@ -108,7 +108,7 @@
   }
 
   async function saveFilter() {
-    if (!editingGVR || !editName.trim()) {
+    if (!(editingGVR && editName.trim())) {
       return;
     }
     const filter: SavedFilter = {

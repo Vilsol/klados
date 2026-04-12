@@ -52,7 +52,7 @@
       filePath = "";
       yamlContent = "";
       const count = (contexts ?? []).length;
-      notificationStore.success(`Imported ${count} context${count !== 1 ? "s" : ""}`);
+      notificationStore.success(`Imported ${count} context${count === 1 ? "" : "s"}`);
       onsuccess(contexts ?? []);
     } catch (e: unknown) {
       error = (e as {message?: string})?.message ?? String(e);

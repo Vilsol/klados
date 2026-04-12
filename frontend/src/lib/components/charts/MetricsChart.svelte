@@ -65,7 +65,7 @@
   });
 
   function toColumnar(series: TimeSeries[]): uPlot.AlignedData {
-    if (!series.length || !series[0].points.length) {
+    if (!(series.length && series[0].points.length)) {
       return [new Float64Array(), ...series.map(() => new Float64Array())];
     }
 
@@ -132,7 +132,7 @@
           ticks: {stroke: borderColor},
           grid: {stroke: borderColor},
           size: 90,
-          values: (_u, vals) => vals.map((v) => (v != null ? fmt(v) : "")),
+          values: (_u, vals) => vals.map((v) => (v == null ? "" : fmt(v))),
         },
       ],
       scales: forceZero
@@ -165,7 +165,7 @@
             // Find which series the cursor is vertically closest to
             const cursorY = u.cursor.top ?? 0;
             let closestSeries = -1;
-            let minDist = Infinity;
+            let minDist = Number.POSITIVE_INFINITY;
             for (let i = 1; i < u.series.length; i++) {
               const s = u.series[i];
               if (!s.show) {
@@ -192,7 +192,7 @@
               }
               visibleSeries.push({i, s, val: u.data[i][idx] as number | null, color: COLORS[(i - 1) % COLORS.length]});
             }
-            visibleSeries.sort((a, b) => (b.val ?? -Infinity) - (a.val ?? -Infinity));
+            visibleSeries.sort((a, b) => (b.val ?? Number.NEGATIVE_INFINITY) - (a.val ?? Number.NEGATIVE_INFINITY));
 
             // Check if cursor is near an annotation marker
             const cursorTime = u.data[0][idx] as number;
@@ -207,7 +207,7 @@
                 html += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>`;
                 html += `<span style="color:${color};font-weight:700">${a.label}</span>`;
                 html += `<span style="color:${mutedColor};font-family:monospace;font-size:10px">${new Date(a.t * 1000).toLocaleTimeString()}</span>`;
-                html += `</div>`;
+                html += "</div>";
               }
             }
             html += `<div style="color:${mutedColor};margin-bottom:6px;font-family:monospace">${new Date(cursorTime * 1000).toLocaleTimeString()}</div>`;
@@ -218,8 +218,8 @@
               html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;opacity:${isClosest ? "1" : "0.75"}">`;
               html += `<span style="display:inline-block;width:12px;height:${isClosest ? "3" : "2"}px;border-radius:2px;background:${color};flex-shrink:0"></span>`;
               html += `<span style="color:${color};font-weight:${isClosest ? "700" : "400"}">${s.label}</span>`;
-              html += `<span style="color:${fgColor};font-family:monospace;margin-left:4px;font-weight:${isClosest ? "700" : "400"}">${val != null ? fmt(val) : "—"}</span>`;
-              html += `</div>`;
+              html += `<span style="color:${fgColor};font-family:monospace;margin-left:4px;font-weight:${isClosest ? "700" : "400"}">${val == null ? "—" : fmt(val)}</span>`;
+              html += "</div>";
             }
 
             if (thresholds.length) {
@@ -243,9 +243,9 @@
                 html += `<span style="display:inline-block;width:12px;border-top:2px dashed ${color};flex-shrink:0"></span>`;
                 html += `<span style="color:${color}">${shortLabel}</span>`;
                 html += `<span style="color:${fgColor};font-family:monospace;margin-left:auto">${fmt(val)}</span>`;
-                html += `</div>`;
+                html += "</div>";
               }
-              html += `</div>`;
+              html += "</div>";
             }
 
             // min/max for visible range
