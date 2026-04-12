@@ -1,7 +1,7 @@
 <script lang="ts">
   import {X} from "lucide-svelte";
   import {Combobox} from "@klados/ui";
-  import * as PortForwardService from "../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js";
+  import {StartForward} from "../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js";
   import {TargetKind} from "../../../bindings/github.com/Vilsol/klados/internal/portforward/models.js";
   import {Browser, Events} from "@wailsio/runtime";
   import {notificationStore} from "$lib/stores/notification.svelte";
@@ -23,7 +23,7 @@
     prefillRemotePort = 0,
   }: {
     onclose: () => void;
-    oncreated?: (spec: any) => void;
+    oncreated?: (spec: unknown) => void;
     prefillContext?: string;
     prefillNamespace?: string;
     prefillTargetKind?: string;
@@ -74,20 +74,20 @@
         return;
       }
 
-      const spec = await PortForwardService.StartForward(ctx, ns, kind as TargetKind, name, gvr, local, remote);
+      const spec = await StartForward(ctx, ns, kind as TargetKind, name, gvr, local, remote);
       log.info("Port forward started", {localPort: local, remotePort: remote});
       oncreated?.(spec);
       if (openInBrowser) {
-        const unsub = Events.On(`portforward:${ctx}:${spec.id}`, (e: any) => {
+        const unsub = Events.On(`portforward:${ctx}:${spec.id}`, (e: {data: {status?: string; localPort?: number}}) => {
           const fw = e.data;
-          if (fw?.status === "active" && fw?.localPort > 0) {
+          if (fw?.status === "active" && fw?.localPort && fw.localPort > 0) {
             unsub();
             Browser.OpenURL(`http://localhost:${fw.localPort}`);
           }
         });
       }
       onclose();
-    } catch (e: any) {
+    } catch (e: unknown) {
       notificationStore.error(unwrapError(e));
     } finally {
       submitting = false;
@@ -100,7 +100,7 @@
   <div class="bg-surface border border-border rounded-lg {isQuickMode ? 'w-80' : 'w-[26rem]'} shadow-xl z-50">
     <div class="flex items-center justify-between px-4 py-3 border-b border-border">
       <h2 class="text-sm font-semibold">{isQuickMode ? 'Forward Port' : 'Start Port Forward'}</h2>
-      <button onclick={onclose} class="p-1 rounded hover:bg-surface-hover transition-colors"><X size={14} /></button>
+      <button type="button" onclick={onclose} class="p-1 rounded hover:bg-surface-hover transition-colors"><X size={14} /></button>
     </div>
 
     <div class="p-4 flex flex-col gap-3">
@@ -204,10 +204,15 @@
     </div>
 
     <div class="flex justify-end gap-2 px-4 py-3 border-t border-border">
-      <button onclick={onclose} class="px-3 py-1.5 text-xs rounded border border-border hover:bg-surface-hover transition-colors">
+      <button
+        type="button"
+        onclick={onclose}
+        class="px-3 py-1.5 text-xs rounded border border-border hover:bg-surface-hover transition-colors"
+      >
         Cancel
       </button>
       <button
+        type="button"
         onclick={submit}
         disabled={submitting || (!isQuickMode && (!targetName || !remotePort))}
         class="px-3 py-1.5 text-xs rounded bg-accent text-white hover:bg-accent/90 transition-colors disabled:opacity-50"

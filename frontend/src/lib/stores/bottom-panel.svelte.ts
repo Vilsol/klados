@@ -9,7 +9,7 @@ export interface PanelTab {
   gvr: string;
   namespace: string;
   name: string;
-  obj: Record<string, any>;
+  obj: Record<string, unknown>;
   poppedOut: boolean;
 }
 

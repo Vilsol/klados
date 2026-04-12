@@ -21,6 +21,7 @@
   >
     {#each suggestions as suggestion, i}
       <button
+        type="button"
         class="w-full flex items-center justify-between gap-4 px-3 py-1.5 text-sm text-left hover:bg-surface-hover {i === selectedIndex ? 'bg-surface-hover' : ''}"
         role="option"
         aria-selected={i === selectedIndex}

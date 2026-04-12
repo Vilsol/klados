@@ -36,7 +36,7 @@ describe("SlotRegistry", () => {
         label: "Status",
         component: "ui/CertStatus.js",
       },
-    ] as any);
+    ] as unknown[]);
 
     await slotRegistry.initFromBackend();
 
@@ -50,7 +50,7 @@ describe("SlotRegistry", () => {
     vi.mocked(GetPluginDetailTabs).mockResolvedValue([
       {pluginName: "p1", gvr: "apps.v1.deployments", id: "tab1", label: "Tab 1", component: "ui.js"},
       {pluginName: "p2", gvr: "core.v1.pods", id: "tab2", label: "Tab 2", component: "ui.js"},
-    ] as any);
+    ] as unknown[]);
 
     await slotRegistry.initFromBackend();
 
@@ -62,7 +62,7 @@ describe("SlotRegistry", () => {
   it("initFromBackend populates commands", async () => {
     vi.mocked(GetPluginCommands).mockResolvedValue([
       {pluginName: "my-plugin", id: "rotate", label: "Rotate Certificate", icon: null},
-    ] as any);
+    ] as unknown[]);
 
     await slotRegistry.initFromBackend();
 
@@ -75,7 +75,7 @@ describe("SlotRegistry", () => {
   it("initFromBackend replaces existing state on reload", async () => {
     vi.mocked(GetPluginDetailTabs).mockResolvedValue([
       {pluginName: "p1", gvr: "apps.v1.deployments", id: "tab1", label: "Old", component: "ui.js"},
-    ] as any);
+    ] as unknown[]);
     await slotRegistry.initFromBackend();
     expect(slotRegistry.getDetailTabs("apps.v1.deployments")).toHaveLength(1);
 

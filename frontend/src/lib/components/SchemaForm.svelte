@@ -1,10 +1,11 @@
 <script lang="ts">
   import {Combobox} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
   interface Props {
-    schema: any;
-    values: Record<string, any>;
-    onchange: (key: string, value: any) => void;
+    schema: KubernetesResource;
+    values: Record<string, unknown>;
+    onchange: (key: string, value: unknown) => void;
   }
 
   let {schema, values, onchange}: Props = $props();

@@ -1,5 +1,5 @@
-import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
-import * as PluginService from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
+import {GetDescriptors} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+import {GetPluginDescriptors} from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
 import {getLogger} from "$lib/logger";
 
 const log = getLogger("registry");
@@ -57,7 +57,7 @@ class DescriptorRegistry {
 
   async load() {
     try {
-      const defs = await ResourceService.GetDescriptors();
+      const defs = await GetDescriptors();
       this.builtins.clear();
       for (const d of defs ?? []) {
         if (!d) {
@@ -72,7 +72,7 @@ class DescriptorRegistry {
           kind: d.kind ?? "",
           gvr,
           clusterScoped: d.clusterScoped ?? false,
-          columns: (d.columns ?? []).map((c: any) => ({
+          columns: (d.columns ?? []).map((c: Record<string, unknown>) => ({
             name: c.name ?? "",
             expr: c.expr ?? "",
             renderType: (c.renderType ?? "text") as RenderType,
@@ -80,13 +80,13 @@ class DescriptorRegistry {
             align: c.align ?? undefined,
             hidden: c.hidden ?? undefined,
           })),
-          overviewFields: (d.overviewFields ?? []).map((f: any) => ({
+          overviewFields: (d.overviewFields ?? []).map((f: Record<string, unknown>) => ({
             label: f.label ?? "",
             expr: f.expr ?? "",
             renderType: (f.renderType ?? "text") as RenderType,
           })),
           detailPanels: d.detailPanels ?? [],
-          actions: (d.actions ?? []).map((a: any) => ({
+          actions: (d.actions ?? []).map((a: Record<string, unknown>) => ({
             name: a.name ?? "",
             label: a.label ?? "",
             disabledWhen: a.disabledWhen ?? undefined,
@@ -112,7 +112,7 @@ class DescriptorRegistry {
 
   private async mergePluginDescriptors() {
     try {
-      const pluginDefs = await PluginService.GetPluginDescriptors();
+      const pluginDefs = await GetPluginDescriptors();
       for (const d of pluginDefs ?? []) {
         if (!d) {
           continue;
@@ -120,8 +120,8 @@ class DescriptorRegistry {
         const gKey = d.group === "" ? "core" : d.group;
         const gvr = `${gKey}.${d.version}.${d.resource}`;
         if (this.descriptors.has(gvr)) {
-          const existing = this.descriptors.get(gvr)!;
-          const pluginColumns = (d.columns ?? []).map((c: any) => ({
+          const existing = this.descriptors.get(gvr) as DescriptorDef;
+          const pluginColumns = (d.columns ?? []).map((c: Record<string, unknown>) => ({
             name: c.name ?? "",
             expr: c.expr ?? "",
             renderType: (c.renderType ?? "text") as RenderType,
@@ -129,7 +129,7 @@ class DescriptorRegistry {
             align: c.align ?? undefined,
             hidden: c.hidden ?? undefined,
           }));
-          const addedOverview = (d.overviewFields ?? []).map((f: any) => ({
+          const addedOverview = (d.overviewFields ?? []).map((f: Record<string, unknown>) => ({
             label: f.label ?? "",
             expr: f.expr ?? "",
             renderType: (f.renderType ?? "text") as RenderType,
@@ -163,7 +163,7 @@ class DescriptorRegistry {
             resource: d.resource ?? "",
             kind: d.kind ?? "",
             gvr,
-            columns: (d.columns ?? []).map((c: any) => ({
+            columns: (d.columns ?? []).map((c: Record<string, unknown>) => ({
               name: c.name ?? "",
               expr: c.expr ?? "",
               renderType: (c.renderType ?? "text") as RenderType,
@@ -171,13 +171,13 @@ class DescriptorRegistry {
               align: c.align ?? undefined,
               hidden: c.hidden ?? undefined,
             })),
-            overviewFields: (d.overviewFields ?? []).map((f: any) => ({
+            overviewFields: (d.overviewFields ?? []).map((f: Record<string, unknown>) => ({
               label: f.label ?? "",
               expr: f.expr ?? "",
               renderType: (f.renderType ?? "text") as RenderType,
             })),
             detailPanels: d.detailPanels ?? [],
-            actions: (d.actions ?? []).map((a: any) => ({
+            actions: (d.actions ?? []).map((a: Record<string, unknown>) => ({
               name: a.name ?? "",
               label: a.label ?? "",
               disabledWhen: a.disabledWhen ?? undefined,
@@ -280,15 +280,15 @@ function resolveExpr(expr: string): string[] | CstNode {
   return cached;
 }
 
-export function evalExpr(expr: string, obj: Record<string, any>): any {
+export function evalExpr(expr: string, obj: Record<string, unknown>): unknown {
   const resolved = resolveExpr(expr);
   if (Array.isArray(resolved)) {
-    let cur: any = obj;
+    let cur: unknown = obj;
     for (const p of resolved) {
       if (cur == null) {
         return "";
       }
-      cur = cur[p];
+      cur = (cur as Record<string, unknown>)[p];
     }
     return cur ?? "";
   }

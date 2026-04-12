@@ -1,6 +1,6 @@
 import {stringify} from "yaml";
 
-export function exportItems(items: Record<string, any>[], gvr: string, format: "yaml" | "json") {
+export function exportItems(items: Record<string, unknown>[], gvr: string, format: "yaml" | "json") {
   if (items.length === 0) {
     return;
   }

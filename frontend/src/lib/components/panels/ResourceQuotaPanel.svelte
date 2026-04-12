@@ -1,7 +1,12 @@
 <script lang="ts">
   import {SectionHeader, StatusBadge} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj}: {obj: Record<string, any>} = $props();
+  const reDecimalOrInt = /^\d+(\.\d+)?$/;
+  const reMilliCores = /^(\d+(?:\.\d+)?)m$/;
+  const reBinarySuffix = /^(\d+(?:\.\d+)?)(Ki|Mi|Gi|Ti)$/;
+
+  let {obj}: {obj: Record<string, KubernetesResource>} = $props();
 
   const hard = $derived<Record<string, string>>(obj.status?.hard ?? {});
   const used = $derived<Record<string, string>>(obj.status?.used ?? {});
@@ -10,14 +15,14 @@
 
   function parseQuantity(q: string): number | null {
     const s = String(q).trim();
-    if (/^\d+(\.\d+)?$/.test(s)) {
+    if (reDecimalOrInt.test(s)) {
       return parseFloat(s);
     }
-    const mMatch = s.match(/^(\d+(?:\.\d+)?)m$/);
+    const mMatch = s.match(reMilliCores);
     if (mMatch) {
       return parseFloat(mMatch[1]) / 1000;
     }
-    const binMatch = s.match(/^(\d+(?:\.\d+)?)(Ki|Mi|Gi|Ti)$/);
+    const binMatch = s.match(reBinarySuffix);
     if (binMatch) {
       const mult: Record<string, number> = {Ki: 1024, Mi: 1024 ** 2, Gi: 1024 ** 3, Ti: 1024 ** 4};
       return parseFloat(binMatch[1]) * mult[binMatch[2]];

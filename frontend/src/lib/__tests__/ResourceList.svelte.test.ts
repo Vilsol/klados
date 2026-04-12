@@ -84,7 +84,7 @@ vi.mock("@klados/ui", () => ({
 // Mock virtualizer to return all items (jsdom has no scroll/layout)
 vi.mock("@tanstack/svelte-virtual", () => ({
   createVirtualizer: ({count}: {count: number}) => ({
-    subscribe: (fn: (v: any) => void) => {
+    subscribe: (fn: (v: unknown) => void) => {
       fn({
         getTotalSize: () => count * 36,
         getVirtualItems: () => Array.from({length: count}, (_, i) => ({index: i, start: i * 36, size: 36})),

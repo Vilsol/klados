@@ -18,7 +18,7 @@ describe("SmartSearch", () => {
   it("calls ontermschange when input changes", async () => {
     const ontermschange = vi.fn();
     const {container} = render(SmartSearch, {props: {items, ontermschange}});
-    const input = container.querySelector("input")!;
+    const input = container.querySelector("input") as HTMLInputElement;
 
     input.value = "nginx";
     await fireEvent.input(input);
@@ -31,7 +31,7 @@ describe("SmartSearch", () => {
 
   it("shows autocomplete when typing a qualifier prefix", async () => {
     const {container} = render(SmartSearch, {props: {items}});
-    const input = container.querySelector("input")!;
+    const input = container.querySelector("input") as HTMLInputElement;
 
     await fireEvent.focus(input);
     input.value = "lab";
@@ -44,13 +44,13 @@ describe("SmartSearch", () => {
 
   it("shows placeholder when input is empty", () => {
     const {container} = render(SmartSearch, {props: {items}});
-    const input = container.querySelector("input")!;
+    const input = container.querySelector("input") as HTMLInputElement;
     expect(input.getAttribute("placeholder")).toContain("Filter resources");
   });
 
   it("clears input text when space creates a chip", async () => {
     const {container} = render(SmartSearch, {props: {items}});
-    const input = container.querySelector("input")!;
+    const input = container.querySelector("input") as HTMLInputElement;
 
     input.value = "nginx ";
     await fireEvent.input(input);
@@ -63,7 +63,7 @@ describe("SmartSearch", () => {
 
   it("does not create duplicate chips from repeated spaces", async () => {
     const {container} = render(SmartSearch, {props: {items}});
-    const input = container.querySelector("input")!;
+    const input = container.querySelector("input") as HTMLInputElement;
 
     input.value = "nginx ";
     await fireEvent.input(input);
@@ -80,7 +80,7 @@ describe("SmartSearch", () => {
 
   it("shows clear button when input has content", async () => {
     const {container} = render(SmartSearch, {props: {items}});
-    const input = container.querySelector("input")!;
+    const input = container.querySelector("input") as HTMLInputElement;
 
     expect(container.querySelector('button[title="Clear filter"]')).toBeNull();
 
@@ -94,13 +94,13 @@ describe("SmartSearch", () => {
   it("clears everything when clear button is clicked", async () => {
     const ontermschange = vi.fn();
     const {container} = render(SmartSearch, {props: {items, ontermschange}});
-    const input = container.querySelector("input")!;
+    const input = container.querySelector("input") as HTMLInputElement;
 
     input.value = "nginx ";
     await fireEvent.input(input);
     await tick();
 
-    const clearBtn = container.querySelector('button[title="Clear filter"]')!;
+    const clearBtn = container.querySelector('button[title="Clear filter"]') as HTMLButtonElement;
     await fireEvent.click(clearBtn);
     await tick();
 

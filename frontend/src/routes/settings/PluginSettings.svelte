@@ -1,6 +1,10 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import * as PluginService from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
+  import {
+    GetPluginSettingsSchema,
+    GetPluginSettings,
+    SetPluginSettings,
+  } from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
   import SchemaForm from "$lib/components/SchemaForm.svelte";
   import {getLogger} from "$lib/logger";
 
@@ -12,20 +16,20 @@
 
   let {pluginName}: Props = $props();
 
-  let schema = $state<any>(null);
-  let values = $state<Record<string, any>>({});
+  let schema = $state<Record<string, unknown> | null>(null);
+  let values = $state<Record<string, unknown>>({});
   let loading = $state<boolean>(true);
 
   onMount(() => {
     (async () => {
       try {
-        const schemaStr = await PluginService.GetPluginSettingsSchema(pluginName);
+        const schemaStr = await GetPluginSettingsSchema(pluginName);
         if (schemaStr) {
-          schema = JSON.parse(schemaStr);
+          schema = JSON.parse(schemaStr) as Record<string, unknown>;
         }
-        const settingsStr = await PluginService.GetPluginSettings(pluginName);
+        const settingsStr = await GetPluginSettings(pluginName);
         if (settingsStr) {
-          values = JSON.parse(settingsStr);
+          values = JSON.parse(settingsStr) as Record<string, unknown>;
         }
       } catch (e) {
         log.error("Failed to load plugin settings", {error: String(e)});
@@ -35,9 +39,9 @@
     })();
   });
 
-  function handleChange(key: string, value: any) {
+  function handleChange(key: string, value: unknown) {
     values = {...values, [key]: value};
-    PluginService.SetPluginSettings(pluginName, JSON.stringify(values));
+    SetPluginSettings(pluginName, JSON.stringify(values));
   }
 </script>
 

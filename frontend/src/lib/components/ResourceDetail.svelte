@@ -6,8 +6,12 @@
   import {createPluginContext} from "$lib/plugins/context.js";
   import {clusterStore} from "$lib/stores/cluster.svelte.js";
   import {streamingStore} from "$lib/stores/streaming.svelte.js";
-  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
-  import * as SchemaService from "../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js";
+  import {
+    ListResources,
+    GetResource,
+    UpdateResource,
+  } from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {GetSchema} from "../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte.js";
   import {unwrapError} from "$lib/utils/async.js";
   import type {ControllerRef} from "$lib/utils/relationships";
@@ -45,8 +49,9 @@
   import ActionsToolbar from "./panels/ActionsToolbar.svelte";
   import MetricsTab from "./charts/MetricsTab.svelte";
   import {YAMLEditor} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  type PanelComponent = Component<any>;
+  type PanelComponent = Component<KubernetesResource>;
 
   const panelComponents: Map<string, PanelComponent> = new Map([
     ["overview", OverviewPanel as PanelComponent],
@@ -125,14 +130,14 @@
     onupdate,
     onopenowner,
   }: {
-    obj: Record<string, any>;
+    obj: Record<string, KubernetesResource>;
     descriptor: DescriptorDef;
     ctxName: string;
     gvr: string;
     namespace: string;
     name: string;
     onrefresh: () => void;
-    onupdate?: (updated: Record<string, any>) => void;
+    onupdate?: (updated: Record<string, KubernetesResource>) => void;
     onopenowner?: (ref: ControllerRef, namespace: string) => void;
   } = $props();
 
@@ -179,7 +184,7 @@
           group: p.group,
           version: p.version,
           resource: p.resource,
-          verbs: p.verbs as any,
+          verbs: p.verbs as string[],
         })),
         logs: tab.perms.logs || undefined,
         exec: tab.perms.exec || undefined,
@@ -191,8 +196,8 @@
       clusterName: ctxName,
       clusterVersion: "",
       namespace: ns,
-      listResources: (g, n) => ResourceService.ListResources(ctxName, g, n ?? ""),
-      getResource: (g, n, name) => ResourceService.GetResource(ctxName, g, n, name),
+      listResources: (g, n) => ListResources(ctxName, g, n ?? ""),
+      getResource: (g, n, name) => GetResource(ctxName, g, n, name),
     });
   }
 
@@ -210,6 +215,7 @@
     {#each visiblePanels as panel}
       <div class="flex items-center border-b-2 {activePanel === panel ? 'border-accent' : 'border-transparent'}">
         <button
+          type="button"
           onclick={() => activePanel = panel}
           class="px-4 py-2 text-xs font-medium whitespace-nowrap transition-colors
             {activePanel === panel
@@ -220,6 +226,7 @@
         </button>
         {#if splittablePanels.has(panel)}
           <button
+            type="button"
             onclick={(e) => { e.stopPropagation(); openInBottomPanel(panel) }}
             class="p-1 mr-1 rounded text-muted hover:text-fg hover:bg-surface-hover transition-colors"
             aria-label="Open in bottom panel"
@@ -232,6 +239,7 @@
     {/each}
     {#each pluginTabs as pt}
       <button
+        type="button"
         onclick={() => activePanel = pt.id}
         class="px-4 py-2 text-xs font-medium whitespace-nowrap transition-colors border-b-2
           {activePanel === pt.id
@@ -263,11 +271,11 @@
     {/each}
     {#each visiblePanels as panel}
       {#if activePanel === panel}
-        {@const PanelCmp = panelComponents.get(panel)!}
+        {@const PanelCmp = panelComponents.get(panel) as PanelComponent}
         {#if panel === 'overview'}
           <PanelCmp
             {obj}
-            onupdate={(updated: Record<string, any>) => { obj = updated; onupdate?.(updated) }}
+            onupdate={(updated: Record<string, unknown>) => { obj = updated; onupdate?.(updated) }}
             {descriptor}
             {gvr}
             {ctxName}
@@ -279,20 +287,20 @@
           {#key uid}
             <PanelCmp
               {obj}
-              onupdate={(updated: Record<string, any>) => { obj = updated; onupdate?.(updated) }}
+              onupdate={(updated: Record<string, unknown>) => { obj = updated; onupdate?.(updated) }}
               {ctxName}
               {gvr}
               {namespace}
               {name}
               kind={descriptor.kind ?? ''}
               {onrefresh}
-              onSave={(ctx: string, g: string, ns: string, parsed: Record<string, any>) => ResourceService.UpdateResource(ctx, g, ns, parsed)}
-              onGetResource={(ctx: string, g: string, ns: string, n: string) => ResourceService.GetResource(ctx, g, ns, n)}
-              onGetSchema={(ctx: string, g: string, k: string) => SchemaService.GetSchema(ctx, g, k)}
+              onSave={(ctx: string, g: string, ns: string, parsed: Record<string, unknown>) => UpdateResource(ctx, g, ns, parsed)}
+              onGetResource={(ctx: string, g: string, ns: string, n: string) => GetResource(ctx, g, ns, n)}
+              onGetSchema={(ctx: string, g: string, k: string) => GetSchema(ctx, g, k)}
               onNotify={(msg: string, type: 'info' | 'success' | 'error') => {
-                if (type === 'success') notificationStore.success(msg)
-                else if (type === 'error') notificationStore.error(unwrapError(msg))
-                else notificationStore.push(msg, type)
+                if (type === 'success') { notificationStore.success(msg); }
+                else if (type === 'error') { notificationStore.error(unwrapError(msg)); }
+                else { notificationStore.push(msg, type); }
               }}
             />
           {/key}
@@ -302,7 +310,7 @@
           <div class="overflow-auto h-full">
             <PanelCmp
               {obj}
-              onupdate={(updated: Record<string, any>) => { obj = updated; onupdate?.(updated) }}
+              onupdate={(updated: Record<string, unknown>) => { obj = updated; onupdate?.(updated) }}
               {ctxName}
               {gvr}
               {namespace}

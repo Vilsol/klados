@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 import {buildCRDTree, extractGroup} from "$lib/utils/crdTree";
 
-const kindOf = (gvr: string) => gvr.split(".").at(-1)!;
+const kindOf = (gvr: string) => gvr.split(".").at(-1) ?? "";
 
 describe("extractGroup", () => {
   it("returns empty string for core GVRs", () => {

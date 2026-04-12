@@ -1,7 +1,7 @@
 @import "tailwindcss";
-@source "../../packages/ui/src";
 @import "@xterm/xterm/css/xterm.css";
 @import "@klados/ui/theme.css";
+@source "../../packages/ui/src";
 
 :root {
   --log-color-1: #2563eb;

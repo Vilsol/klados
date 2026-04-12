@@ -1,11 +1,12 @@
 <script lang="ts">
   import {Browser} from "@wailsio/runtime";
   import {SectionHeader, EmptyState} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj}: {obj: Record<string, any>} = $props();
+  let {obj}: {obj: Record<string, KubernetesResource>} = $props();
 
-  const rules = $derived<any[]>(obj.spec?.rules ?? []);
-  const tls = $derived<any[]>(obj.spec?.tls ?? []);
+  const rules = $derived<KubernetesResource[]>(obj.spec?.rules ?? []);
+  const tls = $derived<KubernetesResource[]>(obj.spec?.tls ?? []);
 
   function openURL(host: string) {
     Browser.OpenURL(`https://${host}`);
@@ -26,7 +27,7 @@
             <div class="flex items-center justify-between px-3 py-2 border-b border-border bg-surface-hover">
               <span class="text-sm font-medium font-mono">{host}</span>
               {#if rule.host}
-                <button onclick={() => openURL(rule.host)} class="text-xs text-accent hover:underline">Open ↗</button>
+                <button type="button" onclick={() => openURL(rule.host)} class="text-xs text-accent hover:underline">Open ↗</button>
               {/if}
             </div>
             {#if rule.http?.paths?.length > 0}

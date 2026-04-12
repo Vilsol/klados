@@ -4,7 +4,7 @@
   import {selectionStore} from "$lib/stores/selection.svelte";
   import {notificationStore} from "$lib/stores/notification.svelte";
   import {Check, X, Loader2} from "lucide-svelte";
-  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {UpdateResource} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 
   let {
     open = $bindable(false),
@@ -64,7 +64,7 @@
     }
   });
 
-  function itemKey(obj: Record<string, any>): string {
+  function itemKey(obj: Record<string, unknown>): string {
     const ns = obj.metadata?.namespace ?? "";
     const name = obj.metadata?.name ?? "";
     return ns ? `${ns}/${name}` : name;
@@ -114,11 +114,12 @@
           }
         }
 
-        await ResourceService.UpdateResource(contextName, gvr, ns, updated);
+        // biome-ignore lint/performance/noAwaitInLoops: sequential for per-item status updates
+        await UpdateResource(contextName, gvr, ns, updated);
         statuses = new Map(statuses).set(key, {status: "success"});
         succeeded.push(key);
-      } catch (e: any) {
-        statuses = new Map(statuses).set(key, {status: "error", error: e?.message ?? String(e)});
+      } catch (e: unknown) {
+        statuses = new Map(statuses).set(key, {status: "error", error: (e as {message?: string})?.message ?? String(e)});
         failCount++;
       }
     }
@@ -159,6 +160,7 @@
               {#each allKeys as key}
                 {@const marked = removeKeys.includes(key)}
                 <button
+                  type="button"
                   onclick={() => toggleRemoveKey(key)}
                   class="text-xs px-2 py-0.5 rounded border transition-colors {marked
                     ? 'bg-destructive/10 text-destructive border-destructive/30 line-through'
@@ -204,6 +206,7 @@
           >Cancel</Dialog.Close
         >
         <button
+          type="button"
           onclick={apply}
           disabled={running || !hasChanges}
           class="px-3 py-1.5 text-sm rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"

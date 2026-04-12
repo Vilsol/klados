@@ -3,26 +3,27 @@
   import PortButton from "$lib/components/PortButton.svelte";
   import {SectionHeader, StatusBadge, DataTable} from "@klados/ui";
   import {toggleSet} from "$lib/utils/collections";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj, ctxName = ""}: {obj: Record<string, any>; ctxName?: string} = $props();
+  let {obj, ctxName = ""}: {obj: Record<string, KubernetesResource>; ctxName?: string} = $props();
 
   let pfPort = $state<number | null>(null);
 
-  const containers = $derived<any[]>(obj.spec?.containers ?? []);
-  const initContainers = $derived<any[]>(obj.spec?.initContainers ?? []);
-  const conditions = $derived<any[]>(obj.status?.conditions ?? []);
+  const containers = $derived<KubernetesResource[]>(obj.spec?.containers ?? []);
+  const initContainers = $derived<KubernetesResource[]>(obj.spec?.initContainers ?? []);
+  const conditions = $derived<KubernetesResource[]>(obj.status?.conditions ?? []);
 
-  function containerStatus(name: string): any {
-    const statuses: any[] = obj.status?.containerStatuses ?? [];
-    return statuses.find((s: any) => s.name === name);
+  function containerStatus(name: string): KubernetesResource {
+    const statuses: KubernetesResource[] = obj.status?.containerStatuses ?? [];
+    return statuses.find((s: KubernetesResource) => s.name === name);
   }
 
-  function initContainerStatus(name: string): any {
-    const statuses: any[] = obj.status?.initContainerStatuses ?? [];
-    return statuses.find((s: any) => s.name === name);
+  function initContainerStatus(name: string): KubernetesResource {
+    const statuses: KubernetesResource[] = obj.status?.initContainerStatuses ?? [];
+    return statuses.find((s: KubernetesResource) => s.name === name);
   }
 
-  function stateLabel(status: any): string {
+  function stateLabel(status: KubernetesResource): string {
     if (!status) {
       return "Unknown";
     }
@@ -83,7 +84,11 @@
           {/if}
 
           {#if c.env?.length}
-            <button onclick={() => expandedEnv = toggleSet(expandedEnv, c.name)} class="text-xs text-accent hover:underline mt-1">
+            <button
+              type="button"
+              onclick={() => expandedEnv = toggleSet(expandedEnv, c.name)}
+              class="text-xs text-accent hover:underline mt-1"
+            >
               {expandedEnv.has(c.name) ? '▾' : '▸'} {c.env.length} env var{c.env.length !== 1 ? 's' : ''}
             </button>
             {#if expandedEnv.has(c.name)}
@@ -97,7 +102,7 @@
           {/if}
 
           {#if c.volumeMounts?.length}
-            <div class="mt-1.5 text-xs text-muted">Mounts: {c.volumeMounts.map((m: any) => m.mountPath).join(', ')}</div>
+            <div class="mt-1.5 text-xs text-muted">Mounts: {c.volumeMounts.map((m: KubernetesResource) => m.mountPath).join(', ')}</div>
           {/if}
         </div>
       {/each}
@@ -108,6 +113,7 @@
   {#if initContainers.length > 0}
     <section>
       <button
+        type="button"
         onclick={() => showInitContainers = !showInitContainers}
         class="text-xs font-semibold text-muted uppercase tracking-wide mb-2 flex items-center gap-1"
       >

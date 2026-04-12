@@ -1,12 +1,17 @@
 <script lang="ts">
   import {untrack} from "svelte";
-  import * as MetricsService from "../../../../bindings/github.com/Vilsol/klados/internal/services/metricsservice.js";
+  import {
+    GetCapabilities,
+    GetResourceMetrics,
+    GetPluginMetrics,
+  } from "../../../../bindings/github.com/Vilsol/klados/internal/services/metricsservice.js";
   import type {MetricsCapability, MetricsResponse, TimeSeries, TimeSeriesPoint} from "./types";
   import MetricsChart from "./MetricsChart.svelte";
   import TimeRangeSelector from "./TimeRangeSelector.svelte";
+  import type {KubernetesResource} from "$lib/types";
 
   interface Props {
-    obj: any;
+    obj: KubernetesResource;
     ctxName: string;
     gvr: string;
     namespace: string;
@@ -32,7 +37,7 @@
   $effect(() => {
     capabilityLoading = true;
     capabilityError = null;
-    MetricsService.GetCapabilities(ctxName)
+    GetCapabilities(ctxName)
       .then((cap) => {
         capability = cap as unknown as MetricsCapability;
       })
@@ -70,7 +75,7 @@
 
     async function fetchMetrics() {
       try {
-        const res = await MetricsService.GetResourceMetrics(ctxName, gvr, namespace, name, rangeMinutes);
+        const res = await GetResourceMetrics(ctxName, gvr, namespace, name, rangeMinutes);
         fetchError = null;
         if (!res) {
           return;
@@ -123,7 +128,7 @@
 
     async function fetchPluginMetrics() {
       try {
-        const res = await MetricsService.GetPluginMetrics(ctxName, gvr, namespace, name, rangeMinutes);
+        const res = await GetPluginMetrics(ctxName, gvr, namespace, name, rangeMinutes);
         if (res) {
           pluginMetrics = res as unknown as Record<string, import("./types").MetricResult[]>;
         } else {
@@ -210,6 +215,7 @@
       <div class="flex items-center gap-2">
         <TimeRangeSelector value={rangeMinutes} hasPrometheus={capability.hasPrometheus} onchange={(v) => (rangeMinutes = v)} />
         <button
+          type="button"
           class="px-2 py-0.5 text-xs rounded transition-colors {forceZero
             ? 'bg-accent text-white'
             : 'bg-surface text-muted hover:bg-surface-hover hover:text-fg'}"

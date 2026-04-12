@@ -5,7 +5,7 @@
   import {notificationStore} from "$lib/stores/notification.svelte";
   import {evalExpr, defaultAlign, type ColumnDef, type RenderType} from "$lib/registry/index";
   import {getControllerRef, type ControllerRef} from "$lib/utils/relationships";
-  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {DeleteResource} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {formatAge} from "$lib/utils/age";
   import {onMount} from "svelte";
   import {slotRegistry} from "$lib/plugins/slots.svelte.js";
@@ -22,8 +22,9 @@
   import {filterItems} from "$lib/search/filter";
   import type {SearchTerm} from "$lib/search/parser";
   import {exportItems} from "$lib/utils/export";
+  import type {KubernetesResource} from "$lib/types";
 
-  function itemKey(obj: Record<string, any>): string {
+  function itemKey(obj: Record<string, KubernetesResource>): string {
     const ns = obj.metadata?.namespace ?? "";
     const name = obj.metadata?.name ?? "";
     return ns ? `${ns}/${name}` : name;
@@ -55,7 +56,7 @@
     onSparklineToggle,
     rowActions,
   }: {
-    items: Record<string, any>[];
+    items: Record<string, KubernetesResource>[];
     contextName: string;
     gvr: string;
     selectedNamespaces?: string[];
@@ -64,22 +65,22 @@
     selectedName?: string | null;
     scrollContainer?: HTMLDivElement;
     onrefresh?: () => void;
-    onselect?: (item: Record<string, any>) => void;
+    onselect?: (item: Record<string, KubernetesResource>) => void;
     onopenowner?: (ref: ControllerRef, namespace: string) => void;
     sparklineGvrs?: string[];
     sparklineData?: Record<string, MetricResult[]>;
     sparklineColumns?: string[];
     onSparklineToggle?: (columns: string[]) => void;
     rowActions?: (
-      item: Record<string, any>,
-    ) => Array<{label: string; icon?: any; onClick: () => void; variant?: "default" | "destructive"}>;
+      item: Record<string, KubernetesResource>,
+    ) => Array<{label: string; icon?: KubernetesResource; onClick: () => void; variant?: "default" | "destructive"}>;
   } = $props();
 
   let searchTerms = $state<SearchTerm[]>([]);
   let searchQuery = $state("");
   let deleteTarget = $state<{namespace: string; name: string} | null>(null);
   let confirmOpen = $state(false);
-  let ctxMenu = $state<{x: number; y: number; item: Record<string, any>} | null>(null);
+  let ctxMenu = $state<{x: number; y: number; item: Record<string, KubernetesResource>} | null>(null);
   let ctxMenuEl = $state<HTMLDivElement | null>(null);
   let columnMenuOpen = $state(false);
   let exportMenuOpen = $state(false);
@@ -200,7 +201,7 @@
 
   const filteredKeys = $derived(filtered.map((item) => itemKey(item)));
   const filteredItemsByKey = $derived.by(() => {
-    const map = new Map<string, Record<string, any>>();
+    const map = new Map<string, Record<string, KubernetesResource>>();
     for (const item of filtered) {
       map.set(itemKey(item), item);
     }
@@ -238,11 +239,11 @@
     }
   }
 
-  function renderCell(col: ColumnDef, item: Record<string, any>) {
+  function renderCell(col: ColumnDef, item: Record<string, KubernetesResource>) {
     return evalExpr(col.expr, item);
   }
 
-  function renderValue(value: any, renderType: RenderType): string {
+  function renderValue(value: KubernetesResource, renderType: RenderType): string {
     if (value == null) {
       return "";
     }
@@ -252,7 +253,7 @@
     return String(value);
   }
 
-  function badgeClass(value: any): string {
+  function badgeClass(value: KubernetesResource): string {
     const v = String(value ?? "").toLowerCase();
     if (["running", "active", "bound", "available", "true"].includes(v)) {
       return "bg-accent/20 text-accent border-accent/30";
@@ -277,15 +278,15 @@
     }
     const {namespace, name} = deleteTarget;
     try {
-      await ResourceService.DeleteResource(contextName, gvr, namespace, name);
+      await DeleteResource(contextName, gvr, namespace, name);
       notificationStore.push(`Deleted ${name}`, "success");
-    } catch (e: any) {
-      notificationStore.push(`Failed to delete: ${e?.message ?? e}`, "error");
+    } catch (e: unknown) {
+      notificationStore.push(`Failed to delete: ${(e as {message?: string})?.message ?? String(e)}`, "error");
     }
     deleteTarget = null;
   }
 
-  function requestDelete(item: Record<string, any>) {
+  function requestDelete(item: Record<string, KubernetesResource>) {
     deleteTarget = {
       namespace: item.metadata?.namespace ?? "",
       name: item.metadata?.name ?? "",
@@ -317,7 +318,7 @@
       return;
     }
     for (const cell of headerCells) {
-      const name = cell.dataset.headerCol!;
+      const name = cell.dataset.headerCol ?? "";
       const col = columnStore.visibleColumns.find((c) => c.name === name);
       if (col && !col.width) {
         columnStore.resizeColumn(name, cell.getBoundingClientRect().width);
@@ -369,6 +370,7 @@
     <span class="text-xs text-muted">{filtered.length} items</span>
     <div class="relative">
       <button
+        type="button"
         onclick={() => exportMenuOpen = !exportMenuOpen}
         class="p-1 rounded hover:bg-surface-hover transition-colors"
         title="Export visible"
@@ -379,12 +381,14 @@
       {#if exportMenuOpen}
         <div class="absolute top-full mt-1 right-0 z-50 bg-surface border border-border rounded shadow-lg py-1 min-w-24">
           <button
+            type="button"
             class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover"
             onclick={() => { exportItems(filtered, gvr, 'yaml'); exportMenuOpen = false }}
           >
             YAML
           </button>
           <button
+            type="button"
             class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover"
             onclick={() => { exportItems(filtered, gvr, 'json'); exportMenuOpen = false }}
           >
@@ -395,6 +399,7 @@
     </div>
     <div class="relative">
       <button
+        type="button"
         onclick={() => columnMenuOpen = !columnMenuOpen}
         class="p-1 rounded hover:bg-surface-hover transition-colors"
         title="Manage columns"
@@ -407,7 +412,13 @@
       {/if}
     </div>
     {#if onrefresh}
-      <button onclick={onrefresh} class="p-1 rounded hover:bg-surface-hover transition-colors" title="Refresh" aria-label="Refresh">
+      <button
+        type="button"
+        onclick={onrefresh}
+        class="p-1 rounded hover:bg-surface-hover transition-colors"
+        title="Refresh"
+        aria-label="Refresh"
+      >
         <RefreshCw size={14} class={loading ? 'animate-spin' : ''} />
       </button>
     {/if}
@@ -424,6 +435,7 @@
         {#if canMutate}
           <div class="flex items-center justify-center {columnStore.compact ? 'py-1' : 'py-2'}">
             <button
+              type="button"
               onclick={() => {
                 if (allVisibleSelected) {
                   selectionStore.deselectAll()
@@ -446,6 +458,7 @@
         {#each columnStore.visibleColumns as col, i}
           <div class="relative" data-header-col={col.name}>
             <button
+              type="button"
               onclick={() => toggleSort(col.name)}
               class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {columnStore.compact ? 'py-1' : 'py-2'}"
             >
@@ -495,7 +508,7 @@
               style="transform: translateY({row.start}px); height: {rowHeight}px;"
               tabindex={onselect ? 0 : undefined}
               onclick={() => onselect?.(item)}
-              onkeydown={(e) => { if (e.key === 'Enter') onselect?.(item) }}
+              onkeydown={(e) => { if (e.key === 'Enter') { onselect?.(item); } }}
               oncontextmenu={(e) => { e.preventDefault(); e.stopPropagation(); ctxMenu = { x: e.clientX, y: e.clientY, item } }}
             >
               <div class="grid flex-1" style="grid-template-columns: {gridTemplateCols}">
@@ -503,6 +516,7 @@
                   {@const key = itemKey(item)}
                   <div class="flex items-center justify-center" onclick={(e) => e.stopPropagation()} role="none">
                     <button
+                      type="button"
                       onclick={(e) => {
                         e.stopPropagation()
                         if (e.shiftKey) {
@@ -534,9 +548,10 @@
                       {#if ref}
                         {#if onopenowner && clusterStore.resolveOwnerGVR(ref.apiVersion, ref.kind)}
                           <button
+                            type="button"
                             class="text-accent hover:underline cursor-pointer"
                             title="{ref.kind}/{ref.name}"
-                            onclick={(e) => { e.stopPropagation(); onopenowner!(ref, item.metadata?.namespace ?? '') }}
+                            onclick={(e) => { e.stopPropagation(); onopenowner?.(ref, item.metadata?.namespace ?? '') }}
                           >
                             {ref.kind}
                           </button>
@@ -584,6 +599,7 @@
                   {#if rowActions}
                     {#each rowActions(item) as action}
                       <button
+                        type="button"
                         onclick={(e) => { e.stopPropagation(); action.onClick() }}
                         class="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-all {action.variant === 'destructive' ? 'hover:text-destructive' : 'hover:text-fg'}"
                         title={action.label}
@@ -598,6 +614,7 @@
                     {/each}
                   {:else if canMutate}
                     <button
+                      type="button"
                       onclick={(e) => { e.stopPropagation(); requestDelete(item) }}
                       class="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-destructive transition-all"
                       title="Delete"
@@ -637,8 +654,9 @@
     {/each}
     {#if canMutate}
       <button
+        type="button"
         class="w-full text-left px-3 py-1.5 text-sm text-destructive hover:bg-surface-hover"
-        onclick={() => { requestDelete(ctxMenu!.item); ctxMenu = null }}
+        onclick={() => { if (ctxMenu) { requestDelete(ctxMenu.item); ctxMenu = null } }}
       >
         Delete
       </button>

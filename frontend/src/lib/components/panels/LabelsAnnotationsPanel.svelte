@@ -1,7 +1,8 @@
 <script lang="ts">
-  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {UpdateResource} from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte";
   import {SectionHeader, KeyValueBadge, EmptyState, KeyValuePairEditor} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
   let {
     obj,
@@ -11,8 +12,8 @@
     namespace,
     name,
   }: {
-    obj: Record<string, any>;
-    onupdate?: (updated: Record<string, any>) => void;
+    obj: Record<string, KubernetesResource>;
+    onupdate?: (updated: Record<string, KubernetesResource>) => void;
     ctxName: string;
     gvr: string;
     namespace: string;
@@ -41,14 +42,14 @@
       const updated = JSON.parse(JSON.stringify(obj));
       updated.metadata.labels = Object.fromEntries(editLabels.filter(([k]) => k.trim()));
       updated.metadata.annotations = Object.fromEntries(editAnnotations.filter(([k]) => k.trim()));
-      const result = await ResourceService.UpdateResource(ctxName, gvr, namespace, updated);
+      const result = await UpdateResource(ctxName, gvr, namespace, updated);
       if (result) {
         onupdate?.(result);
       }
       editing = false;
       notificationStore.push("Labels and annotations saved.", "success");
-    } catch (e: any) {
-      notificationStore.push(e?.message ?? "Save failed", "error");
+    } catch (e: unknown) {
+      notificationStore.push(e instanceof Error ? e.message : "Save failed", "error");
     } finally {
       saving = false;
     }
@@ -62,15 +63,24 @@
   <div class="flex items-center justify-between">
     <SectionHeader class="">Labels & Annotations</SectionHeader>
     {#if !editing}
-      <button onclick={startEdit} class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors">
+      <button
+        type="button"
+        onclick={startEdit}
+        class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
+      >
         Edit
       </button>
     {:else}
       <div class="flex gap-2">
-        <button onclick={cancelEdit} class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors">
+        <button
+          type="button"
+          onclick={cancelEdit}
+          class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
+        >
           Cancel
         </button>
         <button
+          type="button"
           onclick={save}
           disabled={saving}
           class="text-xs px-2.5 py-1 rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"

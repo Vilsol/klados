@@ -1,11 +1,12 @@
 <script lang="ts">
   import {push} from "svelte-spa-router";
   import {SectionHeader, EmptyState} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj, ctxName}: {obj: Record<string, any>; ctxName: string} = $props();
+  let {obj, ctxName}: {obj: Record<string, KubernetesResource>; ctxName: string} = $props();
 
   const roleRef = $derived(obj.roleRef ?? {});
-  const subjects = $derived<any[]>(obj.subjects ?? []);
+  const subjects = $derived<KubernetesResource[]>(obj.subjects ?? []);
 
   function roleRefURL(): string {
     if (roleRef.kind === "ClusterRole") {
@@ -20,7 +21,9 @@
     <SectionHeader>Role Reference</SectionHeader>
     <div class="flex items-center gap-2">
       <span class="px-1.5 py-0.5 rounded text-xs font-medium bg-surface border border-border text-muted"> {roleRef.kind ?? ''} </span>
-      <button onclick={() => push(roleRefURL())} class="text-xs text-accent hover:underline font-medium">{roleRef.name ?? ''}</button>
+      <button type="button" onclick={() => push(roleRefURL())} class="text-xs text-accent hover:underline font-medium">
+        {roleRef.name ?? ''}
+      </button>
     </div>
   </section>
 
@@ -45,6 +48,7 @@
                 <td class="px-3 py-2 font-medium">
                   {#if subj.kind === 'ServiceAccount'}
                     <button
+                      type="button"
                       onclick={() => push(`/c/${ctxName}/core.v1.serviceaccounts/${subj.namespace}/${subj.name}`)}
                       class="text-accent hover:underline"
                     >

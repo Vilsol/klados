@@ -35,7 +35,7 @@ describe("TabBar", () => {
 
     render(TabBar);
 
-    const tabB = screen.getByText("tab-b").closest('[role="tab"]')!;
+    const tabB = screen.getByText("tab-b").closest('[role="tab"]') as HTMLElement;
     await fireEvent.click(tabB);
 
     expect(sessionStore.activeTabIndex).toBe(1);
@@ -46,7 +46,11 @@ describe("TabBar", () => {
 
     render(TabBar);
 
-    const closeBtn = screen.getByText("only-tab").parentElement?.querySelector("button")!;
+    const closeBtn =
+      screen.getByText("only-tab").parentElement?.querySelector("button") ??
+      (() => {
+        throw new Error("close button not found");
+      })();
     await fireEvent.click(closeBtn);
 
     expect(sessionStore.tabs).toHaveLength(0);

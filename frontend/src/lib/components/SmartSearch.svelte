@@ -5,13 +5,14 @@
   import {filterItems} from "$lib/search/filter";
   import {preferencesStore} from "$lib/stores/preferences.svelte";
   import SmartSearchAutocomplete from "./SmartSearchAutocomplete.svelte";
+  import type {KubernetesResource} from "$lib/types";
 
   let {
     items = [],
     value = $bindable(""),
     ontermschange,
   }: {
-    items: Record<string, any>[];
+    items: Record<string, KubernetesResource>[];
     value?: string;
     ontermschange?: (terms: SearchTerm[]) => void;
   } = $props();
@@ -235,7 +236,7 @@
         class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-xs font-mono {chipColor(chip.type)} {chip.negated ? 'line-through opacity-75' : ''}"
       >
         {chipLabel(chip)}
-        <button class="ml-0.5 hover:text-fg" onclick={() => removeChip(i)} tabindex={-1}>&times;</button>
+        <button type="button" class="ml-0.5 hover:text-fg" onclick={() => removeChip(i)} tabindex={-1}>&times;</button>
       </span>
     {/each}
     <input
@@ -250,6 +251,7 @@
     >
     {#if value.trim()}
       <button
+        type="button"
         class="shrink-0 p-0.5 rounded text-muted hover:text-fg hover:bg-surface-hover transition-colors"
         onclick={clearAll}
         tabindex={-1}

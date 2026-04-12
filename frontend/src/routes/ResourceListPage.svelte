@@ -4,8 +4,8 @@
   import ResourceList from "$lib/components/ResourceList.svelte";
   import ResourceDetail from "$lib/components/ResourceDetail.svelte";
   import {DetailDrawer} from "@klados/ui";
-  import * as ResourceService from "../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
-  import * as MetricsService from "../../bindings/github.com/Vilsol/klados/internal/services/metricsservice.js";
+  import {GetResource} from "../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {GetListMetrics} from "../../bindings/github.com/Vilsol/klados/internal/services/metricsservice.js";
   import {createResourceStore} from "$lib/stores/resource.svelte";
   import {createResourceStore as globalCreateStore} from "$lib/stores/createResource.svelte";
   import {descriptorRegistry} from "$lib/registry/index";
@@ -97,7 +97,12 @@
     selectedGVR = gvr;
   });
 
-  let selectedItem = $state<Record<string, any> | null>(null);
+  interface K8sObject {
+    metadata?: {name?: string; namespace?: string; [k: string]: unknown};
+    [k: string]: unknown;
+  }
+
+  let selectedItem = $state<K8sObject | null>(null);
   const selectedName = $derived<string | null>(
     selectedItem ? `${selectedItem.metadata?.name ?? ""}/${selectedItem.metadata?.namespace ?? ""}` : null,
   );
@@ -109,7 +114,9 @@
     }
     const name = selectedItem.metadata?.name;
     const ns = selectedItem.metadata?.namespace;
-    const fresh = store.items.find((i) => i.metadata?.name === name && i.metadata?.namespace === ns);
+    const fresh = store.items.find(
+      (i) => (i.metadata as K8sObject["metadata"])?.name === name && (i.metadata as K8sObject["metadata"])?.namespace === ns,
+    );
     if (fresh) {
       selectedItem = fresh;
     }
@@ -138,7 +145,7 @@
 
     async function poll() {
       try {
-        const result = await MetricsService.GetListMetrics(ctx, g, ns);
+        const result = await GetListMetrics(ctx, g, ns);
         untrack(() => {
           const data: Record<string, MetricResult[]> = {};
           if (result) {
@@ -168,9 +175,9 @@
       return;
     }
     try {
-      const owner = await ResourceService.GetResource(ctxName, ownerGVR, namespace, ref.name);
+      const owner = await GetResource(ctxName, ownerGVR, namespace, ref.name);
       if (owner) {
-        selectedItem = owner as Record<string, any>;
+        selectedItem = owner as K8sObject;
         selectedGVR = ownerGVR;
       }
     } catch {
@@ -200,6 +207,7 @@
     {/if}
     <div class="flex-1"></div>
     <button
+      type="button"
       onclick={() => globalCreateStore.openDialog({ gvr, onsuccess: refresh })}
       class="flex items-center gap-1 text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
       title="Create resource"
@@ -236,14 +244,14 @@
           gvr={selectedGVR}
           onclose={() => { selectedItem = null; selectedGVR = gvr }}
           onFetchResource={async (ctx, g, ns, n) => {
-            try { return await ResourceService.GetResource(ctx, g, ns, n) } catch { return null }
+            try { return await GetResource(ctx, g, ns, n) } catch { return null }
           }}
         >
           {#snippet children({ obj, onrefresh, onupdate })}
             <ResourceDetail
               {obj}
               {onupdate}
-              descriptor={selectedDescriptor ?? descriptor!}
+              descriptor={selectedDescriptor ?? descriptor}
               {ctxName}
               gvr={selectedGVR}
               namespace={obj.metadata?.namespace ?? ''}

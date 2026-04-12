@@ -20,6 +20,7 @@
   <div class="flex gap-1">
     {#each presets as preset}
       <button
+        type="button"
         class="px-2 py-0.5 text-xs rounded transition-colors {value === preset.value
           ? 'bg-accent text-white'
           : 'bg-surface text-muted hover:bg-surface-hover hover:text-fg'}"

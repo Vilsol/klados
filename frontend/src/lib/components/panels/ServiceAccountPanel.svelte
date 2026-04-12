@@ -1,14 +1,15 @@
 <script lang="ts">
-  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {ListResources} from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {SectionHeader, EmptyState, StatusBadge} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj, ctxName}: {obj: Record<string, any>; ctxName: string} = $props();
+  let {obj, ctxName}: {obj: Record<string, KubernetesResource>; ctxName: string} = $props();
 
   const saName = $derived<string>(obj.metadata?.name ?? "");
   const saNamespace = $derived<string>(obj.metadata?.namespace ?? "");
   const automount = $derived<boolean>(obj.automountServiceAccountToken ?? true);
-  const secrets = $derived<any[]>(obj.secrets ?? []);
-  const imagePullSecrets = $derived<any[]>(obj.imagePullSecrets ?? []);
+  const secrets = $derived<KubernetesResource[]>(obj.secrets ?? []);
+  const imagePullSecrets = $derived<KubernetesResource[]>(obj.imagePullSecrets ?? []);
 
   interface BindingRef {
     kind: string;
@@ -23,13 +24,15 @@
     (async () => {
       try {
         const [rbList, crbList] = await Promise.all([
-          ResourceService.ListResources(ctx, "rbac.authorization.k8s.io.v1.rolebindings", ns),
-          ResourceService.ListResources(ctx, "rbac.authorization.k8s.io.v1.clusterrolebindings", ""),
+          ListResources(ctx, "rbac.authorization.k8s.io.v1.rolebindings", ns),
+          ListResources(ctx, "rbac.authorization.k8s.io.v1.clusterrolebindings", ""),
         ]);
         const results: BindingRef[] = [];
         for (const binding of [...(rbList ?? []), ...(crbList ?? [])]) {
-          const b = binding as any;
-          const matched = (b.subjects ?? []).some((s: any) => s.kind === "ServiceAccount" && s.name === name && s.namespace === ns);
+          const b = binding as KubernetesResource;
+          const matched = (b.subjects ?? []).some(
+            (s: KubernetesResource) => s.kind === "ServiceAccount" && s.name === name && s.namespace === ns,
+          );
           if (matched) {
             results.push({kind: b.kind ?? "", name: b.metadata?.name ?? ""});
           }

@@ -34,7 +34,7 @@
 >
   <div class="flex items-center justify-between px-3 pb-1.5 mb-1 border-b border-border">
     <span class="text-xs font-semibold uppercase tracking-wider text-muted">Columns</span>
-    <button onclick={() => columnStore.reset()} class="text-xs text-muted hover:text-fg transition-colors">Reset</button>
+    <button type="button" onclick={() => columnStore.reset()} class="text-xs text-muted hover:text-fg transition-colors">Reset</button>
   </div>
 
   {#each visibleEntries as entry, i (entry.col.name)}
@@ -49,6 +49,7 @@
       <span class="flex-1 text-sm truncate">{entry.col.name}</span>
       <div class="flex gap-0.5 shrink-0">
         <button
+          type="button"
           onclick={() => columnStore.moveColumn(entry.col.name, 'up')}
           disabled={i <= 1}
           class="p-0.5 rounded text-muted hover:text-fg disabled:opacity-30 disabled:cursor-not-allowed"
@@ -57,6 +58,7 @@
           <ArrowUp size={12} />
         </button>
         <button
+          type="button"
           onclick={() => columnStore.moveColumn(entry.col.name, 'down')}
           disabled={entry.col.name === 'Name' || i === visibleEntries.length - 1}
           class="p-0.5 rounded text-muted hover:text-fg disabled:opacity-30 disabled:cursor-not-allowed"

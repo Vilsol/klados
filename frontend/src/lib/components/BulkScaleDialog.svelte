@@ -3,7 +3,7 @@
   import {selectionStore} from "$lib/stores/selection.svelte";
   import {notificationStore} from "$lib/stores/notification.svelte";
   import {Check, X, Loader2} from "lucide-svelte";
-  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {ScaleResource} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 
   let {
     open = $bindable(false),
@@ -33,17 +33,17 @@
     }
   });
 
-  function itemKey(obj: Record<string, any>): string {
+  function itemKey(obj: Record<string, unknown>): string {
     const ns = obj.metadata?.namespace ?? "";
     const name = obj.metadata?.name ?? "";
     return ns ? `${ns}/${name}` : name;
   }
 
-  function currentReplicas(item: Record<string, any>): number {
+  function currentReplicas(item: Record<string, unknown>): number {
     return item.spec?.replicas ?? 0;
   }
 
-  function targetReplicas(item: Record<string, any>): number {
+  function targetReplicas(item: Record<string, unknown>): number {
     const current = currentReplicas(item);
     switch (mode) {
       case "set":
@@ -72,11 +72,12 @@
       statuses = new Map(statuses).set(key, {status: "scaling"});
 
       try {
-        await ResourceService.ScaleResource(contextName, gvr, ns, name, target);
+        // biome-ignore lint/performance/noAwaitInLoops: sequential for per-item status updates
+        await ScaleResource(contextName, gvr, ns, name, target);
         statuses = new Map(statuses).set(key, {status: "success"});
         succeeded.push(key);
-      } catch (e: any) {
-        statuses = new Map(statuses).set(key, {status: "error", error: e?.message ?? String(e)});
+      } catch (e: unknown) {
+        statuses = new Map(statuses).set(key, {status: "error", error: (e as {message?: string})?.message ?? String(e)});
         failCount++;
       }
     }
@@ -104,6 +105,7 @@
       <div class="flex gap-0 mb-4 rounded border border-border overflow-hidden">
         {#each (['set', 'increase', 'decrease'] as Mode[]) as m}
           <button
+            type="button"
             onclick={() => (mode = m)}
             class="flex-1 px-3 py-1.5 text-sm border-r border-border last:border-r-0 transition-colors capitalize {mode === m ? 'bg-accent text-accent-fg border-accent' : 'hover:bg-surface-hover'}"
           >
@@ -158,6 +160,7 @@
           >Cancel</Dialog.Close
         >
         <button
+          type="button"
           onclick={run}
           disabled={running}
           class="px-3 py-1.5 text-sm rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"

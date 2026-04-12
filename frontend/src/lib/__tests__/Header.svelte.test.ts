@@ -14,6 +14,8 @@ vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/clusterser
   GetStatus: vi.fn().mockResolvedValue(0),
 }));
 
+const THEME_REGEX = /Theme:/;
+
 describe("Header", () => {
   beforeEach(() => {
     clusterStore.activeContext = null;
@@ -48,7 +50,7 @@ describe("Header", () => {
   it("theme toggle cycles through themes", async () => {
     render(Header);
 
-    const themeBtn = screen.getByTitle(/Theme:/);
+    const themeBtn = screen.getByTitle(THEME_REGEX);
     expect(getTheme()).toBe("system");
 
     await fireEvent.click(themeBtn);

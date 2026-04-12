@@ -50,6 +50,7 @@
     </span>
 
     <button
+      type="button"
       class="ml-1 p-1 rounded hover:bg-surface-hover text-muted-foreground"
       onclick={() => selectionStore.deselectAll()}
       title="Clear selection"
@@ -60,6 +61,7 @@
     <div class="w-px h-5 bg-border mx-1"></div>
 
     <button
+      type="button"
       class="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-sm font-medium hover:bg-surface-hover text-destructive"
       onclick={() => (deleteOpen = true)}
       title="Delete selected"
@@ -69,6 +71,7 @@
     </button>
 
     <button
+      type="button"
       class="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-sm font-medium hover:bg-surface-hover text-fg"
       onclick={() => (labelOpen = true)}
       title="Edit labels"
@@ -78,6 +81,7 @@
     </button>
 
     <button
+      type="button"
       class="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-sm font-medium hover:bg-surface-hover text-fg"
       onclick={() => (annotateOpen = true)}
       title="Edit annotations"
@@ -88,6 +92,7 @@
 
     {#if canScale}
       <button
+        type="button"
         class="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-sm font-medium hover:bg-surface-hover text-fg"
         onclick={() => (scaleOpen = true)}
         title="Scale"
@@ -99,6 +104,7 @@
 
     <div class="relative">
       <button
+        type="button"
         class="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-sm font-medium hover:bg-surface-hover text-fg"
         onclick={() => (exportMenuOpen = !exportMenuOpen)}
         title="Export"
@@ -108,10 +114,18 @@
       </button>
       {#if exportMenuOpen}
         <div class="absolute bottom-full mb-1 left-0 rounded-md border border-border bg-surface shadow-lg py-1 min-w-[100px]">
-          <button class="block w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover text-fg" onclick={() => doExport('yaml')}>
+          <button
+            type="button"
+            class="block w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover text-fg"
+            onclick={() => doExport('yaml')}
+          >
             YAML
           </button>
-          <button class="block w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover text-fg" onclick={() => doExport('json')}>
+          <button
+            type="button"
+            class="block w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover text-fg"
+            onclick={() => doExport('json')}
+          >
             JSON
           </button>
         </div>

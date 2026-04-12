@@ -1,17 +1,19 @@
 <script lang="ts">
   import {push} from "svelte-spa-router";
   import {SectionHeader, StatusBadge} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  const {obj, ctxName}: {obj: any; ctxName: string} = $props();
+  const {obj, ctxName}: {obj: KubernetesResource; ctxName: string} = $props();
 
   const storageGVR = $derived(obj.status?.storageGVR as string | undefined);
-  const versions = $derived((obj.spec?.versions ?? []) as any[]);
+  const versions = $derived((obj.spec?.versions ?? []) as KubernetesResource[]);
 </script>
 
 <div class="p-4 flex flex-col gap-6">
   {#if storageGVR}
     <div>
       <button
+        type="button"
         class="px-3 py-1.5 text-sm rounded border bg-accent/20 text-accent border-accent/30 hover:bg-accent/30 transition-colors"
         onclick={() => push(`/c/${ctxName}/${storageGVR}`)}
       >

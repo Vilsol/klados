@@ -5,10 +5,11 @@
   import {syntaxHighlighting, foldGutter, foldKeymap} from "@codemirror/language";
   import {oneDarkHighlightStyle} from "@codemirror/theme-one-dark";
   import {json as jsonLang} from "@codemirror/lang-json";
+  import type {KubernetesResource} from "$lib/types";
 
-  const {obj}: {obj: any} = $props();
+  const {obj}: {obj: KubernetesResource} = $props();
 
-  const servedVersions = $derived(((obj.spec?.versions ?? []) as any[]).filter((v) => v.served !== false));
+  const servedVersions = $derived(((obj.spec?.versions ?? []) as KubernetesResource[]).filter((v) => v.served !== false));
 
   let selectedVersion = $state("");
   let container: HTMLDivElement;

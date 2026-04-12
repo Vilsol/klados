@@ -13,7 +13,7 @@ vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/logservice
 
 vi.mock("../../../bindings/github.com/Vilsol/klados/internal/logs/models.js", () => ({
   LogOptions: class LogOptions {
-    constructor(opts: any) {
+    constructor(opts: unknown) {
       Object.assign(this, opts);
     }
   },

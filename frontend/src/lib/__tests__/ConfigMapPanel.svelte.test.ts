@@ -11,6 +11,8 @@ const obj = {
   },
 };
 
+const KEY_COUNT_REGEX = /3 keys/;
+
 describe("ConfigMapPanel", () => {
   it("renders all data keys", () => {
     render(ConfigMapPanel, {props: {obj}});
@@ -26,7 +28,7 @@ describe("ConfigMapPanel", () => {
 
   it("shows key count", () => {
     render(ConfigMapPanel, {props: {obj}});
-    expect(screen.getByText(/3 keys/)).toBeTruthy();
+    expect(screen.getByText(KEY_COUNT_REGEX)).toBeTruthy();
   });
 
   it("detects json language", () => {

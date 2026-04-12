@@ -49,6 +49,7 @@
     {dragging ? 'bg-accent/40' : 'hover:bg-accent/30'}"
   role="separator"
   aria-orientation="horizontal"
+  aria-valuenow={0}
   onmousedown={onResizeStart}
 >
   <div class="h-px mx-auto bg-border group-hover:bg-accent/60 {dragging ? 'bg-accent/60' : ''}"></div>

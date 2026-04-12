@@ -1,10 +1,11 @@
 <script lang="ts">
   import {SectionHeader, StatusBadge} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj, ctxName}: {obj: Record<string, any>; ctxName: string} = $props();
+  let {obj, ctxName}: {obj: Record<string, KubernetesResource>; ctxName: string} = $props();
 
-  const endpoints = $derived<any[]>(obj.endpoints ?? []);
-  const ports = $derived<any[]>(obj.ports ?? []);
+  const endpoints = $derived<KubernetesResource[]>(obj.endpoints ?? []);
+  const ports = $derived<KubernetesResource[]>(obj.ports ?? []);
   const addressType = $derived<string>(obj.addressType ?? "—");
   const ns = $derived<string>(obj.metadata?.namespace ?? "");
 </script>

@@ -25,8 +25,8 @@ function extractCurrentToken(input: string, cursor: number): string {
 }
 
 function collectDistinct(
-  items: Record<string, any>[],
-  extractor: (item: Record<string, any>) => Record<string, string> | undefined,
+  items: Record<string, unknown>[],
+  extractor: (item: Record<string, unknown>) => Record<string, string> | undefined,
 ): Map<string, number> {
   const counts = new Map<string, number>();
   for (const item of items) {
@@ -41,8 +41,8 @@ function collectDistinct(
 }
 
 function collectValues(
-  items: Record<string, any>[],
-  extractor: (item: Record<string, any>) => Record<string, string> | undefined,
+  items: Record<string, unknown>[],
+  extractor: (item: Record<string, unknown>) => Record<string, string> | undefined,
   key: string,
 ): Map<string, number> {
   const counts = new Map<string, number>();
@@ -56,10 +56,10 @@ function collectValues(
   return counts;
 }
 
-function collectNamespaces(items: Record<string, any>[]): Map<string, number> {
+function collectNamespaces(items: Record<string, unknown>[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const item of items) {
-    const ns = item.metadata?.namespace ?? "";
+    const ns = ((item.metadata as Record<string, unknown> | undefined)?.namespace ?? "") as string;
     if (ns) {
       counts.set(ns, (counts.get(ns) ?? 0) + 1);
     }
@@ -74,7 +74,7 @@ function mapToSuggestions(counts: Map<string, number>, prefix: string): Suggesti
     .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
 }
 
-export function getSuggestions(input: string, cursor: number, items: Record<string, any>[]): Suggestion[] {
+export function getSuggestions(input: string, cursor: number, items: Record<string, unknown>[]): Suggestion[] {
   const token = extractCurrentToken(input, cursor);
   const stripped = token.startsWith("-") ? token.substring(1) : token;
   const colonIdx = stripped.indexOf(":");
@@ -97,7 +97,8 @@ export function getSuggestions(input: string, cursor: number, items: Record<stri
   const eqIdx = afterColon.indexOf("=");
 
   if (qualifier === "label:") {
-    const extractor = (item: Record<string, any>) => item.metadata?.labels;
+    const extractor = (item: Record<string, unknown>) =>
+      (item.metadata as Record<string, unknown> | undefined)?.labels as Record<string, string> | undefined;
     if (eqIdx === -1) {
       return mapToSuggestions(collectDistinct(items, extractor), afterColon);
     }
@@ -107,7 +108,8 @@ export function getSuggestions(input: string, cursor: number, items: Record<stri
   }
 
   if (qualifier === "annotation:") {
-    const extractor = (item: Record<string, any>) => item.metadata?.annotations;
+    const extractor = (item: Record<string, unknown>) =>
+      (item.metadata as Record<string, unknown> | undefined)?.annotations as Record<string, string> | undefined;
     if (eqIdx === -1) {
       return mapToSuggestions(collectDistinct(items, extractor), afterColon);
     }

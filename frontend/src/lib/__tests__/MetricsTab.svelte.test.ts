@@ -12,9 +12,9 @@ vi.mock("uplot", () => {
     cursor = {idx: null, left: 0, top: 0};
     scales = {x: {min: 0, max: 0}};
     series = [];
-    data: any[] = [];
-    constructor(_opts: any, _data: any, el: HTMLElement) {
-      this.data = _data;
+    data: unknown[] = [];
+    constructor(_opts: unknown, _data: unknown, el: HTMLElement) {
+      this.data = _data as unknown[];
       const canvas = document.createElement("canvas");
       el?.appendChild(canvas);
     }

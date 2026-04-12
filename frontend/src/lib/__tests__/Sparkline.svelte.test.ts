@@ -4,19 +4,19 @@ import {render} from "@testing-library/svelte";
 const mockSetData = vi.hoisted(() => vi.fn());
 const mockDestroy = vi.hoisted(() => vi.fn());
 const mockSetSize = vi.hoisted(() => vi.fn());
-const mockInstances = vi.hoisted(() => [] as any[]);
+const mockInstances = vi.hoisted(() => [] as unknown[]);
 
 vi.mock("uplot", () => {
   class UPlot {
     setData = mockSetData;
     destroy = mockDestroy;
     setSize = mockSetSize;
-    data: any;
-    series: any[];
+    data: unknown;
+    series: unknown[];
 
-    constructor(_opts: any, _data: any, el: HTMLElement) {
+    constructor(_opts: unknown, _data: unknown, el: HTMLElement) {
       this.data = _data;
-      this.series = _opts?.series ?? [];
+      this.series = (_opts as {series?: unknown[]})?.series ?? [];
       const canvas = document.createElement("canvas");
       el?.appendChild(canvas);
       mockInstances.push(this);

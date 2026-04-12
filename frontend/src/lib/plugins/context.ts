@@ -2,10 +2,14 @@ import {Events} from "@wailsio/runtime";
 import type {PluginManifest} from "./types/manifest.js";
 import type {PluginContext} from "./types/context.js";
 import {assertGVRPermission} from "./permissions.js";
-import * as LogService from "../../../bindings/github.com/Vilsol/klados/internal/services/logservice.js";
-import * as ExecService from "../../../bindings/github.com/Vilsol/klados/internal/services/execservice.js";
-import * as PluginService from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
-import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+import {StartLogStream, StopLogStream} from "../../../bindings/github.com/Vilsol/klados/internal/services/logservice.js";
+import {OpenExecSession, CloseExecSession} from "../../../bindings/github.com/Vilsol/klados/internal/services/execservice.js";
+import {
+  GetPluginStorageKey,
+  SetPluginStorageKey,
+  DeletePluginStorageKey,
+} from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
+import {StartWatch, StopWatch} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 
 export interface HostServices {
   clusterName: string;
@@ -35,12 +39,12 @@ export function createPluginContext(manifest: PluginManifest, host: HostServices
         assertGVRPermission(manifest, gvr, "watch");
         const clusterName = host.clusterName;
         const watchNs = ns ?? "";
-        ResourceService.StartWatch(clusterName, gvr, watchNs);
+        StartWatch(clusterName, gvr, watchNs);
         const eventName = `watch:${clusterName}:${gvr}:${watchNs}`;
-        const unsub = Events.On(eventName, (wailsEvent: any) => callback(wailsEvent.data));
+        const unsub = Events.On(eventName, (wailsEvent: unknown) => callback((wailsEvent as {data: unknown}).data));
         return () => {
           unsub();
-          ResourceService.StopWatch(clusterName, gvr, watchNs);
+          StopWatch(clusterName, gvr, watchNs);
         };
       },
     });
@@ -49,8 +53,8 @@ export function createPluginContext(manifest: PluginManifest, host: HostServices
   if (manifest.permissions?.events) {
     ctx.events = Object.freeze({
       subscribe: (eventName: string, cb: (payload: unknown) => void) => {
-        return Events.On("plugin:event", (wailsEvent: any) => {
-          const data = wailsEvent.data as {eventName: string; payload: unknown} | undefined;
+        return Events.On("plugin:event", (wailsEvent: unknown) => {
+          const data = (wailsEvent as {data?: unknown})?.data as {eventName: string; payload: unknown} | undefined;
           if (data?.eventName === eventName) {
             cb(data.payload);
           }
@@ -62,31 +66,31 @@ export function createPluginContext(manifest: PluginManifest, host: HostServices
   if (manifest.permissions?.logs) {
     ctx.logs = Object.freeze({
       stream: (pod: string, ns: string, container: string, opts?: {follow?: boolean; previous?: boolean; tailLines?: number}) =>
-        LogService.StartLogStream(host.clusterName, ns, pod, {
+        StartLogStream(host.clusterName, ns, pod, {
           container,
           follow: opts?.follow ?? false,
           previous: opts?.previous ?? false,
           tailLines: opts?.tailLines != null ? opts.tailLines : null,
           timestamps: false,
-        } as any),
-      stop: (streamID: string) => LogService.StopLogStream(streamID),
+        } as Parameters<typeof StartLogStream>[3]),
+      stop: (streamID: string) => StopLogStream(streamID),
     });
   }
 
   if (manifest.permissions?.exec) {
     ctx.exec = Object.freeze({
       open: (pod: string, ns: string, container: string, shell?: string) =>
-        ExecService.OpenExecSession(host.clusterName, ns, pod, container, shell ?? "/bin/sh"),
-      close: (sessionID: string) => ExecService.CloseExecSession(sessionID),
+        OpenExecSession(host.clusterName, ns, pod, container, shell ?? "/bin/sh"),
+      close: (sessionID: string) => CloseExecSession(sessionID),
     });
   }
 
   if (manifest.permissions?.storage) {
     const pluginName = manifest.name;
     ctx.storage = Object.freeze({
-      get: (key: string) => PluginService.GetPluginStorageKey(pluginName, key),
-      set: (key: string, value: string) => PluginService.SetPluginStorageKey(pluginName, key, value),
-      delete: (key: string) => PluginService.DeletePluginStorageKey(pluginName, key),
+      get: (key: string) => GetPluginStorageKey(pluginName, key),
+      set: (key: string, value: string) => SetPluginStorageKey(pluginName, key, value),
+      delete: (key: string) => DeletePluginStorageKey(pluginName, key),
     });
   }
 

@@ -1,17 +1,18 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {GetResource} from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import PortForwardDialog from "$lib/components/PortForwardDialog.svelte";
   import {SectionHeader, KeyValueBadge, EmptyState} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj, ctxName}: {obj: Record<string, any>; ctxName: string} = $props();
+  let {obj, ctxName}: {obj: Record<string, KubernetesResource>; ctxName: string} = $props();
 
   let pfPort = $state<number | null>(null);
 
   const selector = $derived<Record<string, string>>(obj.spec?.selector ?? {});
-  const ports = $derived<any[]>(obj.spec?.ports ?? []);
+  const ports = $derived<KubernetesResource[]>(obj.spec?.ports ?? []);
 
-  let endpoints = $state<any | null>(null);
+  let endpoints = $state<KubernetesResource | null>(null);
   let endpointError = $state("");
 
   const ns = $derived<string>(obj.metadata?.namespace ?? "");
@@ -23,16 +24,16 @@
     }
     endpoints = null;
     endpointError = "";
-    ResourceService.GetResource(ctxName, "core.v1.endpoints", ns, svcName)
-      .then((r: any) => {
+    GetResource(ctxName, "core.v1.endpoints", ns, svcName)
+      .then((r: unknown) => {
         endpoints = r;
       })
-      .catch((e: any) => {
+      .catch((e: unknown) => {
         endpointError = String(e);
       });
   });
 
-  const subsets = $derived<any[]>(endpoints?.subsets ?? []);
+  const subsets = $derived<KubernetesResource[]>(endpoints?.subsets ?? []);
 
   interface BackingPod {
     name: string;
@@ -40,8 +41,8 @@
   }
 
   const backingPods = $derived<BackingPod[]>(
-    subsets.flatMap((s: any) =>
-      (s.addresses ?? []).map((a: any) => ({
+    subsets.flatMap((s: KubernetesResource) =>
+      (s.addresses ?? []).map((a: KubernetesResource) => ({
         name: a.targetRef?.name ?? a.ip,
         ip: a.ip,
       })),
@@ -83,6 +84,7 @@
               <td class="py-1.5 pr-4 font-mono">{p.targetPort ?? '—'}</td>
               <td class="py-1.5">
                 <button
+                  type="button"
                   onclick={() => pfPort = p.port}
                   class="text-xs font-mono text-accent hover:underline"
                   title="Forward port {p.port}"

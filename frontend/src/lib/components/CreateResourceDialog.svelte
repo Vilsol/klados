@@ -10,11 +10,18 @@
   import {syntaxHighlighting, foldGutter, foldKeymap} from "@codemirror/language";
   import {oneDarkHighlightStyle} from "@codemirror/theme-one-dark";
   import {parse} from "yaml";
-  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {
+    GetAllTemplateGVRs,
+    GetTemplates,
+    CreateResource,
+  } from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte";
   import {getLogger} from "$lib/logger";
 
   const log = getLogger("resources");
+
+  const NAME_LINE_RE = /^( +)name:/m;
+  const NAME_NS_INJECT_RE = /^( +name:[^\n]*\n)/m;
 
   type TemplateItem = {
     gvr: string;
@@ -46,6 +53,7 @@
   let allGvrs = $state<string[]>([]);
   let templates = $state<TemplateItem[]>([]);
   let selectedTemplateName = $state("");
+  let prevSelectedTemplateName = $state("");
   let editorDirty = $state(false);
 
   const editorTheme = EditorView.theme({
@@ -88,7 +96,7 @@
           }),
         ],
       }),
-      parent: container!,
+      parent: container as HTMLDivElement,
     });
     editorDirty = false;
   }
@@ -97,7 +105,7 @@
 
   $effect(() => {
     if (open && ctxName) {
-      ResourceService.GetAllTemplateGVRs(ctxName)
+      GetAllTemplateGVRs(ctxName)
         .then((gvrs: string[]) => {
           allGvrs = gvrs;
         })
@@ -114,7 +122,7 @@
   $effect(() => {
     if (selectedGvr && ctxName) {
       const gvr = selectedGvr;
-      ResourceService.GetTemplates(ctxName, gvr)
+      GetTemplates(ctxName, gvr)
         .then((t: TemplateItem[]) => {
           if (selectedGvr !== gvr) {
             return;
@@ -141,12 +149,12 @@
     if (!ns || content.includes("namespace:")) {
       return content;
     }
-    const nameMatch = content.match(/^( +)name:/m);
+    const nameMatch = content.match(NAME_LINE_RE);
     if (!nameMatch) {
       return content;
     }
     const indent = nameMatch[1];
-    return content.replace(/^( +name:[^\n]*\n)/m, `$1${indent}namespace: ${ns}\n`);
+    return content.replace(NAME_NS_INJECT_RE, `$1${indent}namespace: ${ns}\n`);
   }
 
   function loadTemplateContent(tmpl: TemplateItem) {
@@ -162,6 +170,7 @@
   // Used by the GVR-change $effect to auto-load the first template (also sets selectedTemplateName).
   function loadTemplate(tmpl: TemplateItem) {
     selectedTemplateName = tmpl.name;
+    prevSelectedTemplateName = tmpl.name;
     loadTemplateContent(tmpl);
   }
 
@@ -171,10 +180,10 @@
       return;
     }
     if (editorDirty && !confirm("Replace current YAML with selected template?")) {
-      // Revert the Combobox binding back to the previous selection
-      selectedTemplateName = selectedTemplateName;
+      selectedTemplateName = prevSelectedTemplateName;
       return;
     }
+    prevSelectedTemplateName = name;
     loadTemplateContent(tmpl);
   }
 
@@ -197,19 +206,19 @@
     saving = true;
     try {
       const yamlText = view.state.doc.toString();
-      const parsed = parse(yamlText) as Record<string, any>;
+      const parsed = parse(yamlText) as Record<string, unknown>;
       if (!parsed) {
         notificationStore.push("Invalid YAML", "error");
         return;
       }
       const ns = parsed.metadata?.namespace || defaultNamespace;
       const gvrToUse = selectedGvr || "";
-      await ResourceService.CreateResource(ctxName, gvrToUse, ns, parsed);
+      await CreateResource(ctxName, gvrToUse, ns, parsed);
       notificationStore.push(`Created ${parsed.metadata?.name ?? "resource"}`, "success");
       open = false;
       onsuccess?.();
-    } catch (e: any) {
-      notificationStore.push(e?.message ?? "Create failed", "error");
+    } catch (e: unknown) {
+      notificationStore.push((e as {message?: string})?.message ?? "Create failed", "error");
     } finally {
       saving = false;
     }
@@ -226,6 +235,7 @@
       <div class="flex items-center gap-2 px-4 py-3 border-b border-border shrink-0">
         <Dialog.Title class="text-sm font-semibold flex-1">Create Resource</Dialog.Title>
         <button
+          type="button"
           onclick={importFromClipboard}
           class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
         >
@@ -235,6 +245,7 @@
           >Cancel</Dialog.Close
         >
         <button
+          type="button"
           onclick={apply}
           disabled={saving}
           class="text-xs px-2.5 py-1 rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"

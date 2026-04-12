@@ -1,6 +1,7 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import * as ConfigService from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
+  import {GetClusterPrefs, SetClusterPrefs} from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
+  import type {ClusterPrefs} from "../../../bindings/github.com/Vilsol/klados/internal/config/models.js";
 
   interface Props {
     ctxName: string;
@@ -19,28 +20,27 @@
 
   onMount(() => {
     (async () => {
-      const prefs = await ConfigService.GetClusterPrefs(ctxName);
+      const prefs = await GetClusterPrefs(ctxName);
       if (prefs) {
-        const p = prefs as any;
-        displayName = p.displayName ?? "";
-        accentColor = p.accentColor ?? "";
-        readOnlyOverride = p.readOnly != null;
-        readOnlyValue = p.readOnly ?? false;
-        compactOverride = p.compactRows != null;
-        compactValue = p.compactRows ?? false;
-        favoriteNamespaces = p.favoriteNamespaces ?? [];
+        displayName = prefs.displayName ?? "";
+        accentColor = prefs.accentColor ?? "";
+        readOnlyOverride = prefs.readOnly != null;
+        readOnlyValue = prefs.readOnly ?? false;
+        compactOverride = prefs.compactRows != null;
+        compactValue = prefs.compactRows ?? false;
+        favoriteNamespaces = prefs.favoriteNamespaces ?? [];
       }
     })();
   });
 
   function save() {
-    ConfigService.SetClusterPrefs(ctxName, {
+    SetClusterPrefs(ctxName, {
       displayName: displayName || undefined,
       accentColor: accentColor || undefined,
       readOnly: readOnlyOverride ? readOnlyValue : undefined,
       compactRows: compactOverride ? compactValue : undefined,
       favoriteNamespaces: favoriteNamespaces.length > 0 ? favoriteNamespaces : undefined,
-    } as any);
+    } as ClusterPrefs);
   }
 
   function setDisplayName(value: string) {
@@ -121,7 +121,7 @@
         class="w-8 h-8 rounded cursor-pointer border border-border"
       >
       {#if accentColor}
-        <button class="text-sm text-muted-foreground hover:text-fg underline" onclick={() => setAccent('')}>Reset</button>
+        <button type="button" class="text-sm text-muted-foreground hover:text-fg underline" onclick={() => setAccent('')}>Reset</button>
       {/if}
     </div>
   </div>
@@ -192,14 +192,16 @@
         class="flex-1 px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
         onkeydown={(e) => e.key === 'Enter' && addNamespace()}
       >
-      <button class="px-3 py-1.5 rounded bg-accent text-accent-foreground text-sm hover:opacity-90" onclick={addNamespace}>Add</button>
+      <button type="button" class="px-3 py-1.5 rounded bg-accent text-accent-foreground text-sm hover:opacity-90" onclick={addNamespace}>
+        Add
+      </button>
     </div>
     {#if favoriteNamespaces.length > 0}
       <div class="flex flex-wrap gap-2">
         {#each favoriteNamespaces as ns}
           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface border border-border text-sm text-fg">
             {ns}
-            <button class="text-muted-foreground hover:text-fg ml-1" onclick={() => removeNamespace(ns)}>&times;</button>
+            <button type="button" class="text-muted-foreground hover:text-fg ml-1" onclick={() => removeNamespace(ns)}>&times;</button>
           </span>
         {/each}
       </div>

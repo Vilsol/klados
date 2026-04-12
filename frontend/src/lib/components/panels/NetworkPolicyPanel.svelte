@@ -1,18 +1,19 @@
 <script lang="ts">
   import {SectionHeader, KeyValueBadge, EmptyState} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj}: {obj: Record<string, any>} = $props();
+  let {obj}: {obj: Record<string, KubernetesResource>} = $props();
 
   const podSelector = $derived<Record<string, string>>(obj.spec?.podSelector?.matchLabels ?? {});
   const policyTypes = $derived<string[]>(obj.spec?.policyTypes ?? []);
-  const ingressRules = $derived<any[] | undefined>(obj.spec?.ingress);
-  const egressRules = $derived<any[] | undefined>(obj.spec?.egress);
+  const ingressRules = $derived<KubernetesResource[] | undefined>(obj.spec?.ingress);
+  const egressRules = $derived<KubernetesResource[] | undefined>(obj.spec?.egress);
 
-  function formatPorts(ports: any[]): string {
+  function formatPorts(ports: KubernetesResource[]): string {
     if (!ports || ports.length === 0) {
       return "All ports";
     }
-    return ports.map((p: any) => `${p.port ?? "*"}/${p.protocol ?? "TCP"}`).join(", ");
+    return ports.map((p: KubernetesResource) => `${p.port ?? "*"}/${p.protocol ?? "TCP"}`).join(", ");
   }
 </script>
 

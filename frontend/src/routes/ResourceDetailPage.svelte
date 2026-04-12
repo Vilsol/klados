@@ -1,6 +1,6 @@
 <script lang="ts">
   import {push} from "svelte-spa-router";
-  import * as ResourceService from "../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {GetResource} from "../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {descriptorRegistry} from "$lib/registry/index";
   import {registryLoaded} from "$lib/registry/loaded.svelte";
   import ResourceDetail from "$lib/components/ResourceDetail.svelte";
@@ -21,7 +21,7 @@
 
   const resourceLabel = $derived(gvr.split(".").at(-1) ?? gvr);
 
-  let obj = $state<Record<string, any> | null>(null);
+  let obj = $state<Record<string, unknown> | null>(null);
   let loading = $state(true);
   let error = $state<string | null>(null);
 
@@ -32,9 +32,9 @@
     loading = true;
     error = null;
     try {
-      obj = await ResourceService.GetResource(ctxName, gvr, ns, name);
-    } catch (e: any) {
-      error = e?.message ?? String(e);
+      obj = (await GetResource(ctxName, gvr, ns, name)) as Record<string, unknown> | null;
+    } catch (e: unknown) {
+      error = e instanceof Error ? e.message : String(e);
     } finally {
       loading = false;
     }
@@ -54,9 +54,11 @@
 <div class="flex flex-col h-full overflow-hidden">
   <!-- Breadcrumb -->
   <div class="shrink-0 px-4 py-2 border-b border-border flex items-center gap-1.5 text-xs text-muted overflow-x-auto">
-    <button onclick={() => push(`/c/${ctxName}`)} class="hover:text-fg transition-colors whitespace-nowrap">{ctxName}</button>
+    <button type="button" onclick={() => push(`/c/${ctxName}`)} class="hover:text-fg transition-colors whitespace-nowrap">{ctxName}</button>
     <span>/</span>
-    <button onclick={() => push(`/c/${ctxName}/${gvr}`)} class="hover:text-fg transition-colors whitespace-nowrap">{resourceLabel}</button>
+    <button type="button" onclick={() => push(`/c/${ctxName}/${gvr}`)} class="hover:text-fg transition-colors whitespace-nowrap">
+      {resourceLabel}
+    </button>
     {#if ns}
       <span>/</span>
       <span class="whitespace-nowrap">{ns}</span>

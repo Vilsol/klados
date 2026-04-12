@@ -1,6 +1,7 @@
 <script lang="ts">
-  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {GetEvents} from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {formatAge} from "$lib/utils/age";
+  import type {KubernetesResource} from "$lib/types";
 
   let {
     ctxName,
@@ -12,7 +13,7 @@
     uid: string;
   } = $props();
 
-  let events = $state<Record<string, any>[]>([]);
+  let events = $state<Record<string, KubernetesResource>[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
 
@@ -23,16 +24,16 @@
     let cancelled = false;
     loading = true;
     error = null;
-    ResourceService.GetEvents(currentCtx, currentNs, currentUid)
+    GetEvents(currentCtx, currentNs, currentUid)
       .then((result) => {
         if (!cancelled) {
           events = result ?? [];
           loading = false;
         }
       })
-      .catch((e: any) => {
+      .catch((e: unknown) => {
         if (!cancelled) {
-          error = e?.message ?? String(e);
+          error = e instanceof Error ? e.message : String(e);
           loading = false;
         }
       });

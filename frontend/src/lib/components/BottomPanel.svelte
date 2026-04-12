@@ -7,9 +7,9 @@
   import TerminalPanel from "./panels/TerminalPanel.svelte";
   import AggregateLogsPanel from "./panels/AggregateLogsPanel.svelte";
   import {YAMLEditor} from "@klados/ui";
-  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
-  import * as SchemaService from "../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js";
-  import * as WindowService from "../../../bindings/github.com/Vilsol/klados/internal/services/windowservice.js";
+  import {UpdateResource, GetResource} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {GetSchema} from "../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js";
+  import {OpenPanelWindow} from "../../../bindings/github.com/Vilsol/klados/internal/services/windowservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte.js";
   import {unwrapError} from "$lib/utils/async.js";
 
@@ -29,7 +29,7 @@
     }
     const title = `${kindLabel[tab.kind]}: ${tab.resourceName}`;
     bottomPanelStore.popOut(id);
-    await WindowService.OpenPanelWindow(id, title);
+    await OpenPanelWindow(id, title);
   }
 
   onMount(() => {
@@ -83,7 +83,7 @@
             tabindex="0"
             aria-selected={tab.id === bottomPanelStore.activeTabId}
             onclick={() => bottomPanelStore.setActive(tab.id)}
-            onkeydown={(e) => { if (e.key === 'Enter') bottomPanelStore.setActive(tab.id) }}
+            onkeydown={(e) => { if (e.key === 'Enter') { bottomPanelStore.setActive(tab.id); } }}
           >
             {#if tab.kind === 'logs'}
               <ScrollText size={13} />
@@ -96,6 +96,7 @@
             {/if}
             <span class="truncate max-w-32">{kindLabel[tab.kind]}: {tab.resourceName}</span>
             <button
+              type="button"
               onclick={(e) => { e.stopPropagation(); popOutTab(tab.id) }}
               class="p-0.5 rounded hover:bg-border transition-colors"
               aria-label="Pop out to window"
@@ -104,6 +105,7 @@
               <PanelTopOpen size={11} />
             </button>
             <button
+              type="button"
               onclick={(e) => { e.stopPropagation(); bottomPanelStore.closeTab(tab.id) }}
               class="p-0.5 rounded hover:bg-border transition-colors"
               aria-label="Close tab"
@@ -114,6 +116,7 @@
         {/each}
       </div>
       <button
+        type="button"
         onclick={() => bottomPanelStore.toggleCollapsed()}
         class="p-1.5 mx-1 rounded hover:bg-surface-hover text-muted hover:text-fg transition-colors shrink-0"
         aria-label={bottomPanelStore.collapsed ? 'Expand panel' : 'Collapse panel'}
@@ -145,13 +148,13 @@
                 namespace={tab.namespace}
                 name={tab.name}
                 kind={tab.resourceKind}
-                onSave={(ctx: string, g: string, ns: string, parsed: Record<string, any>) => ResourceService.UpdateResource(ctx, g, ns, parsed)}
-                onGetResource={(ctx: string, g: string, ns: string, n: string) => ResourceService.GetResource(ctx, g, ns, n)}
-                onGetSchema={(ctx: string, g: string, k: string) => SchemaService.GetSchema(ctx, g, k)}
+                onSave={(ctx: string, g: string, ns: string, parsed: Record<string, unknown>) => UpdateResource(ctx, g, ns, parsed)}
+                onGetResource={(ctx: string, g: string, ns: string, n: string) => GetResource(ctx, g, ns, n)}
+                onGetSchema={(ctx: string, g: string, k: string) => GetSchema(ctx, g, k)}
                 onNotify={(msg: string, type: 'info' | 'success' | 'error') => {
-                  if (type === 'success') notificationStore.success(msg)
-                  else if (type === 'error') notificationStore.error(unwrapError(msg))
-                  else notificationStore.push(msg, type)
+                  if (type === 'success') { notificationStore.success(msg); }
+                  else if (type === 'error') { notificationStore.error(unwrapError(msg)); }
+                  else { notificationStore.push(msg, type); }
                 }}
               />
             {/if}

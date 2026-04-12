@@ -28,6 +28,8 @@ vi.mock("../registry/index.js", () => ({
 import {columnStore} from "$lib/stores/columns.svelte";
 import ColumnMenu from "$lib/components/ColumnMenu.svelte";
 
+const RESET_REGEX = /^reset$/i;
+
 const col = (name: string) => ({name, expr: `metadata.${name.toLowerCase()}`, renderType: "text" as const});
 
 const fiveColumns = [
@@ -88,7 +90,7 @@ describe("ColumnMenu", () => {
   it("reset button calls columnStore.reset", async () => {
     const spy = vi.spyOn(columnStore, "reset");
     render(ColumnMenu, {props: {gvr: "core.v1.pods"}});
-    const resetBtn = screen.getByRole("button", {name: /^reset$/i});
+    const resetBtn = screen.getByRole("button", {name: RESET_REGEX});
     await fireEvent.click(resetBtn);
     expect(spy).toHaveBeenCalled();
   });

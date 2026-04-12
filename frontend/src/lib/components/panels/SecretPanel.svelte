@@ -2,8 +2,9 @@
   import {Eye, EyeOff, Copy, Check} from "lucide-svelte";
   import {SectionHeader} from "@klados/ui";
   import {toggleSet} from "$lib/utils/collections";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj}: {obj: Record<string, any>} = $props();
+  let {obj}: {obj: Record<string, KubernetesResource>} = $props();
 
   const secretType = $derived<string>(obj.type ?? "Opaque");
   const data = $derived<Record<string, string>>(obj.data ?? {});
@@ -57,6 +58,7 @@
               <span class="text-xs font-medium font-mono">{key}</span>
               <div class="flex items-center gap-1">
                 <button
+                  type="button"
                   onclick={() => copyDecoded(key, value)}
                   class="p-1 rounded hover:bg-surface transition-colors text-muted hover:text-fg"
                   title="Copy decoded value"
@@ -69,6 +71,7 @@
                   {/if}
                 </button>
                 <button
+                  type="button"
                   onclick={() => revealed = toggleSet(revealed, key)}
                   class="p-1 rounded hover:bg-surface transition-colors text-muted hover:text-fg"
                   title={isRevealed ? 'Hide value' : 'Reveal value'}

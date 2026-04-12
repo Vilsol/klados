@@ -3,8 +3,8 @@
   import {Events} from "@wailsio/runtime";
   import {onDestroy} from "svelte";
   import {clusterStore} from "$lib/stores/cluster.svelte";
-  import * as MetricsService from "../../bindings/github.com/Vilsol/klados/internal/services/metricsservice.js";
-  import * as AppService from "../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
+  import {GetCapabilities, GetNamespaceMetrics} from "../../bindings/github.com/Vilsol/klados/internal/services/metricsservice.js";
+  import {GetClusterHealth} from "../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
   import MetricsChart from "$lib/components/charts/MetricsChart.svelte";
   import TimeRangeSelector from "$lib/components/charts/TimeRangeSelector.svelte";
   import {Combobox} from "@klados/ui";
@@ -39,7 +39,7 @@
   let fetchError: string | null = $state(null);
 
   $effect(() => {
-    MetricsService.GetCapabilities(ctxName)
+    GetCapabilities(ctxName)
       .then((cap) => {
         capability = cap as unknown as MetricsCapability;
       })
@@ -66,7 +66,7 @@
 
     async function fetchMetrics() {
       try {
-        const res = await MetricsService.GetNamespaceMetrics(ctxName, ns!, rangeMinutes);
+        const res = await GetNamespaceMetrics(ctxName, ns, rangeMinutes);
         fetchError = null;
         if (res) {
           response = res as unknown as MetricsResponse;
@@ -138,13 +138,13 @@
     }
     (async () => {
       try {
-        const h = await AppService.GetClusterHealth(ctxName);
+        const h = await GetClusterHealth(ctxName);
         if (h) {
           health = h as unknown as ClusterHealth;
         }
       } catch {}
     })();
-    healthUnsub = Events.On(`cluster:${ctxName}:health`, (wailsEvent: any) => {
+    healthUnsub = Events.On(`cluster:${ctxName}:health`, (wailsEvent: {data?: ClusterHealth}) => {
       health = (wailsEvent.data ?? wailsEvent) as ClusterHealth;
     });
     return () => {

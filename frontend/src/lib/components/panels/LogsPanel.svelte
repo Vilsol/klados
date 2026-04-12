@@ -1,11 +1,12 @@
 <script lang="ts">
   import {onDestroy, untrack} from "svelte";
-  import * as LogService from "../../../../bindings/github.com/Vilsol/klados/internal/services/logservice.js";
+  import {StartLogStream, StopLogStream} from "../../../../bindings/github.com/Vilsol/klados/internal/services/logservice.js";
   import {LogOptions} from "../../../../bindings/github.com/Vilsol/klados/internal/logs/models.js";
   import {streamingStore} from "$lib/stores/streaming.svelte";
   import {sessionStore} from "$lib/stores/session.svelte";
   import {LogViewer, Combobox} from "@klados/ui";
   import {getLogger} from "$lib/logger";
+  import type {KubernetesResource} from "$lib/types";
 
   const log = getLogger("logs");
 
@@ -15,15 +16,15 @@
     namespace,
     name,
   }: {
-    obj: Record<string, any>;
+    obj: Record<string, KubernetesResource>;
     ctxName: string;
     namespace: string;
     name: string;
   } = $props();
 
-  const containers = $derived<any[]>([
-    ...(obj.spec?.containers ?? []).map((c: any) => ({name: c.name, init: false})),
-    ...(obj.spec?.initContainers ?? []).map((c: any) => ({name: c.name, init: true})),
+  const containers = $derived<KubernetesResource[]>([
+    ...(obj.spec?.containers ?? []).map((c: KubernetesResource) => ({name: c.name, init: false})),
+    ...(obj.spec?.initContainers ?? []).map((c: KubernetesResource) => ({name: c.name, init: true})),
   ]);
 
   let selectedContainer = $state("");
@@ -67,7 +68,7 @@
     let myID: string | null = null;
     starting = true;
 
-    LogService.StartLogStream(
+    StartLogStream(
       _ctx,
       _ns,
       _name,
@@ -81,7 +82,7 @@
     )
       .then((id) => {
         if (cancelled) {
-          LogService.StopLogStream(id);
+          StopLogStream(id);
           return;
         }
         myID = id;
@@ -98,7 +99,7 @@
       starting = false;
       streamID = null;
       if (myID) {
-        LogService.StopLogStream(myID);
+        StopLogStream(myID);
       }
     };
   });
@@ -120,7 +121,7 @@
     }
     downloading = true;
     try {
-      const id = await LogService.StartLogStream(
+      const id = await StartLogStream(
         ctxName,
         namespace,
         name,
@@ -162,7 +163,7 @@
       a.download = `${filename}.log`;
       a.click();
       URL.revokeObjectURL(a.href);
-      LogService.StopLogStream(id);
+      StopLogStream(id);
     } finally {
       downloading = false;
     }
@@ -178,7 +179,7 @@
 
   onDestroy(() => {
     if (streamID) {
-      LogService.StopLogStream(streamID);
+      StopLogStream(streamID);
     }
   });
 </script>
@@ -203,6 +204,7 @@
       </label>
 
       <button
+        type="button"
         onclick={() => { tailLines = undefined; scrollToTopOnLoad = true }}
         class="text-xs text-muted hover:text-fg border border-border rounded px-2 py-1 transition-colors"
         title="Load full history and jump to beginning"
@@ -212,6 +214,7 @@
 
       <div class="flex items-center gap-1">
         <button
+          type="button"
           onclick={() => sessionStore.terminalFontSize = Math.max(8, sessionStore.terminalFontSize - 1)}
           class="text-xs text-muted hover:text-fg border border-border rounded px-1.5 py-0.5 transition-colors"
           title="Decrease font size"
@@ -220,6 +223,7 @@
         </button>
         <span class="text-xs text-muted w-6 text-center">{sessionStore.terminalFontSize}</span>
         <button
+          type="button"
           onclick={() => sessionStore.terminalFontSize = Math.min(24, sessionStore.terminalFontSize + 1)}
           class="text-xs text-muted hover:text-fg border border-border rounded px-1.5 py-0.5 transition-colors"
           title="Increase font size"
@@ -230,6 +234,7 @@
 
       <div class="relative ml-auto" data-download-dropdown>
         <button
+          type="button"
           onclick={() => (downloadDropdownOpen = !downloadDropdownOpen)}
           class="flex items-center gap-1 text-xs text-muted hover:text-fg border border-border rounded px-2 py-1 transition-colors"
         >
@@ -238,12 +243,14 @@
         {#if downloadDropdownOpen}
           <div class="absolute top-full right-0 mt-1 min-w-[5rem] rounded border border-border bg-bg shadow-lg z-50">
             <button
+              type="button"
               onclick={() => { logViewer?.downloadVisible(); downloadDropdownOpen = false }}
               class="w-full text-left px-3 py-1.5 text-xs text-muted hover:bg-surface-hover transition-colors"
             >
               Visible
             </button>
             <button
+              type="button"
               onclick={() => { downloadAll(); downloadDropdownOpen = false }}
               class="w-full text-left px-3 py-1.5 text-xs text-muted hover:bg-surface-hover transition-colors"
             >

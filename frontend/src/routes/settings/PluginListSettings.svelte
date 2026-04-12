@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from "svelte";
   import {push} from "svelte-spa-router";
-  import * as PluginService from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
+  import {ListPlugins, GetPluginSettingsSchema} from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
   import {getLogger} from "$lib/logger";
 
   const log = getLogger("settings");
@@ -18,20 +18,20 @@
   onMount(() => {
     (async () => {
       try {
-        const list = await PluginService.ListPlugins();
+        const list = await ListPlugins();
         const entries: PluginEntry[] = [];
         for (const p of list ?? []) {
-          const pi = p as any;
           let hasSettings = false;
           try {
-            const schema = await PluginService.GetPluginSettingsSchema(pi.name);
+            // biome-ignore lint/performance/noAwaitInLoops: sequential schema fetch with per-plugin error isolation
+            const schema = await GetPluginSettingsSchema(p.name);
             hasSettings = !!schema && schema !== "" && schema !== "{}";
           } catch {
             // no settings schema
           }
           entries.push({
-            name: pi.name,
-            displayName: pi.displayName || pi.name,
+            name: p.name,
+            displayName: p.displayName || p.name,
             hasSettings,
           });
         }
@@ -58,11 +58,12 @@
     <div class="border border-border rounded overflow-hidden divide-y divide-border">
       {#each pluginsWithSettings as plugin}
         <button
+          type="button"
           class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-surface-hover transition-colors"
           onclick={() => push(`/settings/plugins/${encodeURIComponent(plugin.name)}`)}
         >
           <span class="text-sm text-fg">{plugin.displayName}</span>
-          <svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </button>

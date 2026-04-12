@@ -1,5 +1,5 @@
 <script lang="ts">
-  import * as ConfigService from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
+  import {SetKeybinding, ResetKeybindings} from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
   import {shortcutStore, type ShortcutDef} from "$lib/stores/shortcuts.svelte";
 
   let listeningId = $state<string | null>(null);
@@ -27,7 +27,9 @@
     const conflictIds = new Set<string>();
     for (const ids of comboCounts.values()) {
       if (ids.length > 1) {
-        ids.forEach((id) => conflictIds.add(id));
+        ids.forEach((id) => {
+          conflictIds.add(id);
+        });
       }
     }
     return conflictIds;
@@ -74,16 +76,16 @@
     parts.push(e.key);
     const combo = parts.join("+");
 
-    ConfigService.SetKeybinding(listeningId, combo);
+    SetKeybinding(listeningId, combo);
     listeningId = null;
   }
 
   function resetBinding(id: string) {
-    ConfigService.SetKeybinding(id, "");
+    SetKeybinding(id, "");
   }
 
   function resetAll() {
-    ConfigService.ResetKeybindings();
+    ResetKeybindings();
   }
 
   function isOverridden(def: ShortcutDef): boolean {
@@ -97,7 +99,7 @@
 <div class="max-w-3xl space-y-6">
   <div class="flex items-center justify-between">
     <h2 class="text-base font-medium text-fg">Keyboard Shortcuts</h2>
-    <button class="px-3 py-1.5 rounded border border-border text-fg text-sm hover:bg-surface-hover" onclick={resetAll}>
+    <button type="button" class="px-3 py-1.5 rounded border border-border text-fg text-sm hover:bg-surface-hover" onclick={resetAll}>
       Reset all to defaults
     </button>
   </div>
@@ -120,6 +122,7 @@
             <td class="px-3 py-2 text-fg">{def.description}</td>
             <td class="px-3 py-2">
               <button
+                type="button"
                 class="px-2 py-0.5 rounded text-xs font-mono {listeningId === def.id ? 'bg-accent text-accent-foreground animate-pulse' : hasConflict ? 'bg-destructive/20 text-destructive border border-destructive/50' : 'bg-surface border border-border text-fg hover:bg-surface-hover'}"
                 onclick={() => startListening(def.id)}
               >
@@ -129,7 +132,9 @@
             <td class="px-3 py-2 text-muted-foreground font-mono text-xs">{def.keys}</td>
             <td class="px-3 py-2">
               {#if isOverridden(def)}
-                <button class="text-xs text-muted-foreground hover:text-fg underline" onclick={() => resetBinding(def.id)}>Reset</button>
+                <button type="button" class="text-xs text-muted-foreground hover:text-fg underline" onclick={() => resetBinding(def.id)}>
+                  Reset
+                </button>
               {/if}
             </td>
           </tr>

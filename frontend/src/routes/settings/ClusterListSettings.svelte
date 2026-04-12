@@ -12,11 +12,12 @@
     <div class="border border-border rounded overflow-hidden divide-y divide-border">
       {#each clusterStore.contexts as ctx}
         <button
+          type="button"
           class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-surface-hover transition-colors"
           onclick={() => push(`/settings/clusters/${encodeURIComponent(ctx.name)}`)}
         >
           <span class="text-sm text-fg">{ctx.name}</span>
-          <svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </button>

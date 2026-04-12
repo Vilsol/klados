@@ -50,26 +50,26 @@ describe("createPluginContext", () => {
   it("returns a frozen context", () => {
     const ctx = createPluginContext(manifestWithResources, makeHost());
     expect(() => {
-      (ctx as any).newProp = "bad";
+      (ctx as unknown as Record<string, unknown>).newProp = "bad";
     }).toThrow();
   });
 
   it("k8s.list delegates to host after permission check", async () => {
     const host = makeHost();
     const ctx = createPluginContext(manifestWithResources, host);
-    await ctx.k8s?.list("apps.v1.deployments" as any);
+    await ctx.k8s?.list("apps.v1.deployments" as Parameters<typeof ctx.k8s.list>[0]);
     expect(host.listResources).toHaveBeenCalledWith("apps.v1.deployments", undefined);
   });
 
   it("k8s.list throws for unpermitted GVR", () => {
     const ctx = createPluginContext(manifestWithResources, makeHost());
-    expect(() => (ctx.k8s?.list as any)("core.v1.pods")).toThrow();
+    expect(() => (ctx.k8s?.list as (gvr: string) => unknown)("core.v1.pods")).toThrow();
   });
 
   it("k8s context is frozen", () => {
     const ctx = createPluginContext(manifestWithResources, makeHost());
     expect(() => {
-      (ctx.k8s as any).newProp = "bad";
+      (ctx.k8s as unknown as Record<string, unknown>).newProp = "bad";
     }).toThrow();
   });
 });

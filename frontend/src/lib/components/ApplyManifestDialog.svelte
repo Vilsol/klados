@@ -8,8 +8,8 @@
   import {search, searchKeymap} from "@codemirror/search";
   import {syntaxHighlighting, foldGutter, foldKeymap} from "@codemirror/language";
   import {oneDarkHighlightStyle} from "@codemirror/theme-one-dark";
-  import * as AppService from "../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
-  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {BrowseManifestFile} from "../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
+  import {ApplyManifest} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte";
 
   type ApplyResult = {
@@ -75,7 +75,7 @@
           }),
         ],
       }),
-      parent: container!,
+      parent: container as HTMLDivElement,
     });
   }
 
@@ -105,12 +105,12 @@
 
   async function openFile() {
     try {
-      const content = await AppService.BrowseManifestFile();
+      const content = await BrowseManifestFile();
       if (content) {
         loadContent(content);
       }
-    } catch (e: any) {
-      notificationStore.push(e?.message ?? "Could not open file", "error");
+    } catch (e: unknown) {
+      notificationStore.push((e as {message?: string})?.message ?? "Could not open file", "error");
     }
   }
 
@@ -139,11 +139,11 @@
     hasApplied = false;
     try {
       const yaml = view.state.doc.toString();
-      const res = await ResourceService.ApplyManifest(ctxName, yaml);
+      const res = await ApplyManifest(ctxName, yaml);
       results = (res ?? []) as ApplyResult[];
       hasApplied = true;
-    } catch (e: any) {
-      notificationStore.push(e?.message ?? "Apply failed", "error");
+    } catch (e: unknown) {
+      notificationStore.push((e as {message?: string})?.message ?? "Apply failed", "error");
     } finally {
       applying = false;
     }
@@ -172,10 +172,15 @@
     >
       <div class="flex items-center gap-2 px-4 py-3 border-b border-border shrink-0">
         <Dialog.Title class="text-sm font-semibold flex-1">Apply Manifest</Dialog.Title>
-        <button onclick={openFile} class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors">
+        <button
+          type="button"
+          onclick={openFile}
+          class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
+        >
           Open File…
         </button>
         <button
+          type="button"
           onclick={pasteFromClipboard}
           class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
         >
@@ -185,6 +190,7 @@
           >Cancel</Dialog.Close
         >
         <button
+          type="button"
           onclick={applyManifest}
           disabled={applying || editorEmpty}
           class="text-xs px-2.5 py-1 rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"

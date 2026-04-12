@@ -11,6 +11,8 @@ const obj = {
   },
 };
 
+const KEY_COUNT_REGEX = /2 keys/;
+
 describe("SecretPanel", () => {
   it("shows secret type badge", () => {
     render(SecretPanel, {props: {obj}});
@@ -49,7 +51,7 @@ describe("SecretPanel", () => {
 
   it("shows key count", () => {
     render(SecretPanel, {props: {obj}});
-    expect(screen.getByText(/2 keys/)).toBeTruthy();
+    expect(screen.getByText(KEY_COUNT_REGEX)).toBeTruthy();
   });
 
   it("renders empty state for no data", () => {

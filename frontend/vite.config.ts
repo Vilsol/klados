@@ -1,15 +1,17 @@
 import {defineConfig} from "vite";
+import type {Plugin, ResolvedConfig, ViteDevServer} from "vite";
 import {svelte} from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
 import wails from "@wailsio/runtime/plugins/vite";
 import path from "node:path";
+import type {IncomingMessage, ServerResponse} from "node:http";
 
 // Public URL used in the import map — both dev and prod serve Svelte here.
 const SHARED_URL = "/plugin-shared/svelte-runtime.js";
 // Source file Vite transforms in dev to produce the shared runtime content.
 const RUNTIME_SRC = "/src/plugin-shared/svelte-runtime.ts";
 
-const svelteSharedRuntime = () => {
+const svelteSharedRuntime = (): Plugin => {
   let isBuild = false;
   let runtimePath = "";
 
@@ -17,7 +19,7 @@ const svelteSharedRuntime = () => {
     name: "svelte-shared-runtime",
     enforce: "pre" as const,
 
-    configResolved(config: any) {
+    configResolved(config: ResolvedConfig) {
       isBuild = config.command === "build";
       runtimePath = path.resolve(config.root, "src/plugin-shared/svelte-runtime.ts");
     },
@@ -38,8 +40,8 @@ const svelteSharedRuntime = () => {
     // file through Vite's pipeline. Vite rewrites bare 'svelte/internal/client'
     // to its pre-bundled dep URL (/.vite/deps/...) — the same URL the host's
     // compiled components reference — so both share one browser-cached module.
-    configureServer(server: any) {
-      server.middlewares.use(async (req: any, res: any, next: any) => {
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
         if (req.url === SHARED_URL) {
           const result = await server.transformRequest(RUNTIME_SRC);
           if (result?.code) {

@@ -8,7 +8,17 @@
   import {columnStore} from "$lib/stores/columns.svelte";
   import {clusterStore} from "$lib/stores/cluster.svelte";
   import {notificationStore} from "$lib/stores/notification.svelte";
-  import * as PortForwardService from "../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js";
+  import {
+    ListSavedPortForwards,
+    ListForwards,
+    ConnectSavedForward,
+    StartForward,
+    StopForward,
+    SetPortForwardEnabled,
+    RemoveSavedPortForward,
+  } from "../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js";
+  import {TargetKind} from "../../../bindings/github.com/Vilsol/klados/internal/portforward/models.js";
+  import type {KubernetesResource} from "$lib/types";
 
   const PF_GVR = "_internal.v1.portforwards";
 
@@ -43,7 +53,24 @@
     }
   });
 
-  let items = $state<Record<string, any>[]>([]);
+  interface PortForwardItem {
+    id: string;
+    resource: string;
+    namespace: string;
+    localPort: number;
+    remotePort: number;
+    enabled: boolean;
+    targetKind: TargetKind;
+    targetName: string;
+    targetGVR: string;
+    status: string;
+    error: string;
+    podName: string;
+    isSaved: boolean;
+    metadata: {name: string; namespace: string};
+  }
+
+  let items = $state<PortForwardItem[]>([]);
   let loading = $state(false);
   let dialogOpen = $state(false);
 
@@ -53,20 +80,17 @@
     }
     loading = true;
     try {
-      const [saved, active] = await Promise.all([
-        PortForwardService.ListSavedPortForwards(ctxName),
-        PortForwardService.ListForwards(ctxName),
-      ]);
+      const [saved, active] = await Promise.all([ListSavedPortForwards(ctxName), ListForwards(ctxName)]);
 
-      const savedIds = new Set((saved ?? []).map((s: any) => s?.id).filter(Boolean));
-      const activeMap = new Map<string, any>();
+      const savedIds = new Set((saved ?? []).map((s) => s?.id).filter(Boolean));
+      const activeMap = new Map<string, (typeof active)[number]>();
       for (const f of active ?? []) {
         if (f?.id) {
           activeMap.set(f.id, f);
         }
       }
 
-      const savedItems = (saved ?? []).map((s: any) => {
+      const savedItems = (saved ?? []).map((s) => {
         const live = activeMap.get(s?.id);
         return {
           id: s?.id ?? "",
@@ -75,7 +99,7 @@
           localPort: live?.localPort || s?.localPort || 0,
           remotePort: s?.remotePort ?? 0,
           enabled: s?.enabled ?? false,
-          targetKind: s?.targetKind ?? "",
+          targetKind: (s?.targetKind ?? "") as TargetKind,
           targetName: s?.targetName ?? "",
           targetGVR: s?.targetGVR ?? "",
           status: live?.status ?? "stopped",
@@ -88,15 +112,15 @@
 
       // Include active forwards not yet in saved list (e.g. created before auto-save)
       const unsavedActive = (active ?? [])
-        .filter((f: any) => f?.id && !savedIds.has(f.id))
-        .map((f: any) => ({
+        .filter((f) => f?.id && !savedIds.has(f.id))
+        .map((f) => ({
           id: f.id,
           resource: f.targetName ?? "",
           namespace: f.namespace ?? "",
           localPort: f.localPort ?? 0,
           remotePort: f.remotePort ?? 0,
           enabled: false,
-          targetKind: f.targetKind ?? "",
+          targetKind: (f.targetKind ?? "") as TargetKind,
           targetName: f.targetName ?? "",
           targetGVR: f.targetGVR ?? "",
           status: f.status ?? "active",
@@ -112,12 +136,12 @@
     }
   }
 
-  async function handleCreated(_spec: any) {
+  async function handleCreated(_spec: unknown) {
     // StartForward auto-saves; just refresh
     await refresh();
   }
 
-  function rowActions(item: Record<string, any>) {
+  function rowActions(item: PortForwardItem) {
     const isActive = item.status === "active" || item.status === "reconnecting";
     return [
       {
@@ -126,12 +150,12 @@
         onClick: async () => {
           try {
             if (isActive) {
-              await PortForwardService.StopForward(item.id);
+              await StopForward(item.id);
             } else if (item.isSaved) {
               // Saved forward — reconnect using existing ID to avoid duplicate entry
-              await PortForwardService.ConnectSavedForward(ctxName, item.id);
+              await ConnectSavedForward(ctxName, item.id);
             } else {
-              await PortForwardService.StartForward(
+              await StartForward(
                 ctxName,
                 item.namespace,
                 item.targetKind,
@@ -141,8 +165,8 @@
                 item.remotePort,
               );
             }
-          } catch (e: any) {
-            notificationStore.error(e?.message ?? String(e));
+          } catch (e: unknown) {
+            notificationStore.error(e instanceof Error ? e.message : String(e));
           }
           await refresh();
         },
@@ -152,9 +176,9 @@
         icon: item.enabled ? ToggleRight : ToggleLeft,
         onClick: async () => {
           try {
-            await PortForwardService.SetPortForwardEnabled(ctxName, item.id, !item.enabled);
-          } catch (e: any) {
-            notificationStore.error(e?.message ?? String(e));
+            await SetPortForwardEnabled(ctxName, item.id, !item.enabled);
+          } catch (e: unknown) {
+            notificationStore.error(e instanceof Error ? e.message : String(e));
           }
           await refresh();
         },
@@ -175,17 +199,19 @@
           try {
             // Stop the tunnel first if running, then remove from config
             if (isActive) {
-              await PortForwardService.StopForward(item.id).catch(() => {});
+              await StopForward(item.id).catch(() => {});
             }
-            await PortForwardService.RemoveSavedPortForward(ctxName, item.id);
-          } catch (e: any) {
-            notificationStore.error(e?.message ?? String(e));
+            await RemoveSavedPortForward(ctxName, item.id);
+          } catch (e: unknown) {
+            notificationStore.error(e instanceof Error ? e.message : String(e));
           }
           items = items.filter((i) => i.id !== item.id);
         },
       },
     ];
   }
+
+  const rowActionsForList = rowActions as (item: Record<string, KubernetesResource>) => ReturnType<typeof rowActions>;
 
   let unsub: (() => void) | undefined;
 
@@ -216,6 +242,7 @@
   <div class="flex items-center justify-between px-4 py-2 border-b border-border shrink-0">
     <h1 class="text-sm font-semibold">Port Forwards</h1>
     <button
+      type="button"
       onclick={() => { dialogOpen = true }}
       class="flex items-center gap-1 px-2 py-1 text-xs rounded bg-accent text-white hover:bg-accent/80 transition-colors"
     >
@@ -224,7 +251,9 @@
     </button>
   </div>
 
-  <div class="flex-1 overflow-hidden"><ResourceList {items} contextName={ctxName} gvr={PF_GVR} {loading} {rowActions} /></div>
+  <div class="flex-1 overflow-hidden">
+    <ResourceList {items} contextName={ctxName} gvr={PF_GVR} {loading} rowActions={rowActionsForList} />
+  </div>
 </div>
 
 {#if dialogOpen}

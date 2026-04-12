@@ -1,9 +1,10 @@
 <script lang="ts">
   import {SectionHeader, KeyValueBadge, DataTable} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj}: {obj: Record<string, any>} = $props();
+  let {obj}: {obj: Record<string, KubernetesResource>} = $props();
 
-  const webhooks = $derived<any[]>(obj.webhooks ?? []);
+  const webhooks = $derived<KubernetesResource[]>(obj.webhooks ?? []);
   let expanded = $state<boolean[]>([]);
 
   $effect(() => {
@@ -31,6 +32,7 @@
       <div class="border border-border rounded-lg overflow-hidden">
         <!-- Header -->
         <button
+          type="button"
           onclick={() => (expanded[i] = !expanded[i])}
           class="w-full flex items-center gap-3 px-4 py-2.5 bg-surface hover:bg-surface-hover transition-colors text-left"
         >

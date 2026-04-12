@@ -17,6 +17,7 @@
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-semibold">Clusters</h1>
     <button
+      type="button"
       onclick={() => showImportDialog = true}
       class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors"
     >
@@ -54,6 +55,7 @@
           <div class="mt-3">
             {#if status === 'connected'}
               <button
+                type="button"
                 onclick={() => clusterStore.disconnect(ctx.name)}
                 class="px-3 py-1.5 text-sm rounded bg-destructive text-white hover:opacity-90 transition-opacity"
               >
@@ -61,6 +63,7 @@
               </button>
             {:else}
               <button
+                type="button"
                 onclick={() => clusterStore.connect(ctx.name)}
                 disabled={status === 'connecting'}
                 class="px-3 py-1.5 text-sm rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"

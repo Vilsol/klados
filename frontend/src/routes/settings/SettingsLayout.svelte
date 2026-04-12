@@ -15,6 +15,7 @@
 <div class="flex flex-col h-full bg-bg">
   <div class="flex items-center gap-2 px-4 py-3 border-b border-border shrink-0">
     <button
+      type="button"
       onclick={() => push('/')}
       class="p-1 rounded hover:bg-surface-hover transition-colors text-muted hover:text-fg"
       aria-label="Back"

@@ -1,5 +1,5 @@
 import {Events} from "@wailsio/runtime";
-import * as ConfigService from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
+import {GetResolvedPrefs} from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
 import {getLogger} from "$lib/logger";
 
 const log = getLogger("preferences");
@@ -44,7 +44,7 @@ class PreferencesStore {
   async load(ctxName: string) {
     this.activeContext = ctxName;
     try {
-      const resolved = await ConfigService.GetResolvedPrefs(ctxName);
+      const resolved = await GetResolvedPrefs(ctxName);
       if (resolved) {
         this.prefs = resolved as ResolvedPrefs;
       }

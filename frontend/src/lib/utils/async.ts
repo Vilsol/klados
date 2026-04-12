@@ -1,7 +1,7 @@
 import {notificationStore} from "$lib/stores/notification.svelte";
 
-export function unwrapError(e: any, fallback = "Operation failed"): string {
-  const raw: string = typeof e === "string" ? e : (e?.message ?? String(e ?? fallback));
+export function unwrapError(e: unknown, fallback = "Operation failed"): string {
+  const raw: string = typeof e === "string" ? e : ((e instanceof Error ? e.message : null) ?? String(e ?? fallback));
   try {
     const parsed = JSON.parse(raw);
     if (typeof parsed?.message === "string") {
@@ -25,7 +25,7 @@ export async function withBusy(
     await fn();
     notificationStore.push(successMsg, "success");
     onSuccess?.();
-  } catch (e: any) {
+  } catch (e) {
     notificationStore.push(unwrapError(e, errorFallback), "error");
   } finally {
     setBusy(false);

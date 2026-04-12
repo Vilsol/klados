@@ -1,18 +1,19 @@
 <script lang="ts">
   import {push} from "svelte-spa-router";
   import {SectionHeader, StatusBadge, DataTable} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj, ctxName}: {obj: Record<string, any>; ctxName: string} = $props();
+  let {obj, ctxName}: {obj: Record<string, KubernetesResource>; ctxName: string} = $props();
 
   const scaleTargetRef = $derived(obj.spec?.scaleTargetRef ?? {});
   const minReplicas = $derived<number>(obj.spec?.minReplicas ?? 1);
   const maxReplicas = $derived<number>(obj.spec?.maxReplicas ?? 1);
   const currentReplicas = $derived<number>(obj.status?.currentReplicas ?? 0);
   const desiredReplicas = $derived<number>(obj.status?.desiredReplicas ?? 0);
-  const specMetrics = $derived<any[]>(obj.spec?.metrics ?? []);
-  const currentMetrics = $derived<any[]>(obj.status?.currentMetrics ?? []);
+  const specMetrics = $derived<KubernetesResource[]>(obj.spec?.metrics ?? []);
+  const currentMetrics = $derived<KubernetesResource[]>(obj.status?.currentMetrics ?? []);
   const behavior = $derived(obj.spec?.behavior);
-  const conditions = $derived<any[]>(obj.status?.conditions ?? []);
+  const conditions = $derived<KubernetesResource[]>(obj.status?.conditions ?? []);
 
   const kindPluralMap: Record<string, string> = {
     Deployment: "deployments",
@@ -48,7 +49,7 @@
     return Math.min(100, Math.max(0, ((desiredReplicas - minReplicas) / range) * 100));
   });
 
-  function getMetricName(m: any): string {
+  function getMetricName(m: KubernetesResource): string {
     const type: string = m.type ?? "";
     if (type === "Resource") {
       return m.resource?.name ?? "—";
@@ -65,7 +66,7 @@
     return "—";
   }
 
-  function getMetricTarget(m: any): string {
+  function getMetricTarget(m: KubernetesResource): string {
     const type: string = m.type ?? "";
     if (type === "Resource") {
       const t = m.resource?.target;
@@ -107,13 +108,13 @@
     return "—";
   }
 
-  function getCurrentMetric(m: any): string {
+  function getCurrentMetric(m: KubernetesResource): string {
     if (currentMetrics.length === 0) {
       return "<unknown>";
     }
     const type: string = m.type ?? "";
     const name = getMetricName(m);
-    const found = currentMetrics.find((c: any) => {
+    const found = currentMetrics.find((c: KubernetesResource) => {
       if (c.type !== type) {
         return false;
       }
@@ -147,7 +148,9 @@
       <SectionHeader>Scale Target</SectionHeader>
       <div class="flex items-center gap-2 text-xs">
         <span class="px-1.5 py-0.5 rounded bg-surface border border-border text-muted font-medium"> {scaleTargetRef.kind ?? ''} </span>
-        <button onclick={() => push(scaleTargetURL())} class="text-accent hover:underline font-medium">{scaleTargetRef.name}</button>
+        <button type="button" onclick={() => push(scaleTargetURL())} class="text-accent hover:underline font-medium">
+          {scaleTargetRef.name}
+        </button>
       </div>
     </section>
   {/if}

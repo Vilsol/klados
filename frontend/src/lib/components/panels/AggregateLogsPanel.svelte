@@ -1,20 +1,21 @@
 <script lang="ts">
   import {onDestroy, untrack} from "svelte";
-  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
-  import * as LogService from "../../../../bindings/github.com/Vilsol/klados/internal/services/logservice.js";
+  import {ListResources} from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {StartLogStream, StopLogStream} from "../../../../bindings/github.com/Vilsol/klados/internal/services/logservice.js";
   import {LogOptions} from "../../../../bindings/github.com/Vilsol/klados/internal/logs/models.js";
   import {streamingStore} from "$lib/stores/streaming.svelte";
   import {sessionStore} from "$lib/stores/session.svelte";
   import {AggregateLogStore} from "$lib/stores/aggregate-logs.svelte";
   import {createVirtualizer} from "@tanstack/svelte-virtual";
   import type {SvelteVirtualizer} from "@tanstack/svelte-virtual";
+  import type {KubernetesResource} from "$lib/types";
 
   let {
     obj,
     ctxName,
     namespace,
   }: {
-    obj: Record<string, any>;
+    obj: Record<string, KubernetesResource>;
     ctxName: string;
     namespace: string;
     name: string;
@@ -79,9 +80,11 @@
     loading = true;
     error = null;
     try {
-      const pods = await ResourceService.ListResources(ctxName, "core.v1.pods", namespace);
+      const pods = await ListResources(ctxName, "core.v1.pods", namespace);
       const selector: Record<string, string> = obj.spec?.selector?.matchLabels ?? {};
-      const matched = (pods ?? []).filter((pod: any) => Object.entries(selector).every(([k, v]) => pod.metadata?.labels?.[k] === v));
+      const matched = (pods ?? []).filter((pod: KubernetesResource) =>
+        Object.entries(selector).every(([k, v]) => pod.metadata?.labels?.[k] === v),
+      );
 
       podCount = matched.length;
       if (matched.length === 0) {
@@ -96,7 +99,8 @@
           continue;
         }
 
-        const id = await LogService.StartLogStream(
+        // biome-ignore lint/performance/noAwaitInLoops: streams must start sequentially to track IDs per pod
+        const id = await StartLogStream(
           ctxName,
           namespace,
           podName,
@@ -141,8 +145,8 @@
         };
         ws.onerror = () => store.markEnded(podName);
       }
-    } catch (e: any) {
-      error = e?.message ?? String(e);
+    } catch (e: unknown) {
+      error = e instanceof Error ? e.message : String(e);
     } finally {
       loading = false;
     }
@@ -156,7 +160,7 @@
 
   onDestroy(() => {
     for (const id of streamIds) {
-      LogService.StopLogStream(id);
+      StopLogStream(id);
     }
     store.destroy();
   });
@@ -180,6 +184,7 @@
       </span>
 
       <button
+        type="button"
         onclick={() => store.showPodPrefix = !store.showPodPrefix}
         class="px-2 py-0.5 text-xs border rounded transition-colors
           {store.showPodPrefix
@@ -191,6 +196,7 @@
 
       <div class="flex items-center gap-1 ml-auto">
         <button
+          type="button"
           onclick={() => sessionStore.terminalFontSize = Math.max(8, sessionStore.terminalFontSize - 1)}
           class="text-xs text-muted hover:text-fg border border-border rounded px-1.5 py-0.5 transition-colors"
           title="Decrease font size"
@@ -199,6 +205,7 @@
         </button>
         <span class="text-xs text-muted w-6 text-center">{sessionStore.terminalFontSize}</span>
         <button
+          type="button"
           onclick={() => sessionStore.terminalFontSize = Math.min(24, sessionStore.terminalFontSize + 1)}
           class="text-xs text-muted hover:text-fg border border-border rounded px-1.5 py-0.5 transition-colors"
           title="Increase font size"

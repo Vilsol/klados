@@ -6,8 +6,8 @@
   import TerminalPanel from "./panels/TerminalPanel.svelte";
   import AggregateLogsPanel from "./panels/AggregateLogsPanel.svelte";
   import {YAMLEditor} from "@klados/ui";
-  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
-  import * as SchemaService from "../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js";
+  import {UpdateResource, GetResource} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {GetSchema} from "../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte.js";
   import {unwrapError} from "$lib/utils/async.js";
   import type {PanelKind} from "$lib/stores/bottom-panel.svelte";
@@ -22,7 +22,7 @@
     gvr: string;
     namespace: string;
     name: string;
-    obj: Record<string, any>;
+    obj: Record<string, unknown>;
   }
 
   let panelData = $state<PanelData | null>(null);
@@ -46,6 +46,7 @@
   <!-- Mini toolbar -->
   <div class="flex items-center gap-2 px-2 py-1 border-b border-border bg-surface shrink-0">
     <button
+      type="button"
       onclick={popIn}
       class="flex items-center gap-1 px-2 py-1 text-xs rounded hover:bg-surface-hover text-muted hover:text-fg transition-colors"
       title="Return to bottom panel"
@@ -75,13 +76,13 @@
           namespace={panelData.namespace}
           name={panelData.name}
           kind={panelData.resourceKind}
-          onSave={(ctx: string, g: string, ns: string, parsed: Record<string, any>) => ResourceService.UpdateResource(ctx, g, ns, parsed)}
-          onGetResource={(ctx: string, g: string, ns: string, n: string) => ResourceService.GetResource(ctx, g, ns, n)}
-          onGetSchema={(ctx: string, g: string, k: string) => SchemaService.GetSchema(ctx, g, k)}
+          onSave={(ctx: string, g: string, ns: string, parsed: Record<string, unknown>) => UpdateResource(ctx, g, ns, parsed)}
+          onGetResource={(ctx: string, g: string, ns: string, n: string) => GetResource(ctx, g, ns, n)}
+          onGetSchema={(ctx: string, g: string, k: string) => GetSchema(ctx, g, k)}
           onNotify={(msg: string, type: 'info' | 'success' | 'error') => {
-            if (type === 'success') notificationStore.success(msg)
-            else if (type === 'error') notificationStore.error(unwrapError(msg))
-            else notificationStore.push(msg, type)
+            if (type === 'success') { notificationStore.success(msg); }
+            else if (type === 'error') { notificationStore.error(unwrapError(msg)); }
+            else { notificationStore.push(msg, type); }
           }}
         />
       {/if}

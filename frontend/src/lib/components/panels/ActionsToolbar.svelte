@@ -1,7 +1,22 @@
 <script lang="ts">
   import {Dialog} from "bits-ui";
-  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
-  import * as DrainService from "../../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js";
+  import {
+    DeleteResource,
+    ForceDeleteResource,
+    ScaleResource,
+    RestartResource,
+    PauseRollout,
+    ResumeRollout,
+    DeleteJobCascade,
+    DeleteJobOrphan,
+    TriggerCronJob,
+    SuspendCronJob,
+    ResumeCronJob,
+    GetResource,
+    ExpandPVC,
+    RollbackToRevision,
+  } from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {CordonNode, UncordonNode, StartDrain} from "../../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js";
   import {ConfirmDialog, Tooltip} from "@klados/ui";
   import {withBusy} from "$lib/utils/async";
   import {push} from "svelte-spa-router";
@@ -18,7 +33,7 @@
     actions,
     onrefresh,
   }: {
-    obj: Record<string, any>;
+    obj: Record<string, unknown>;
     ctxName: string;
     gvr: string;
     namespace: string;
@@ -76,7 +91,7 @@
   const doDelete = () =>
     withBusy(
       setBusy,
-      () => ResourceService.DeleteResource(ctxName, gvr, namespace, name),
+      () => DeleteResource(ctxName, gvr, namespace, name),
       `Deleted ${name}`,
       "Delete failed",
       () => push(`/c/${ctxName}/${gvr}`),
@@ -85,7 +100,7 @@
   const doForceDelete = () =>
     withBusy(
       setBusy,
-      () => ResourceService.ForceDeleteResource(ctxName, gvr, namespace, name),
+      () => ForceDeleteResource(ctxName, gvr, namespace, name),
       `Force deleted ${name}`,
       "Force delete failed",
       () => push(`/c/${ctxName}/${gvr}`),
@@ -94,7 +109,7 @@
   const doScale = () =>
     withBusy(
       setBusy,
-      () => ResourceService.ScaleResource(ctxName, gvr, namespace, name, scaleReplicas),
+      () => ScaleResource(ctxName, gvr, namespace, name, scaleReplicas),
       `Scaled ${name} to ${scaleReplicas}`,
       "Scale failed",
       () => {
@@ -104,31 +119,22 @@
     );
 
   const doRestart = () =>
-    withBusy(
-      setBusy,
-      () => ResourceService.RestartResource(ctxName, gvr, namespace, name),
-      `Restarted ${name}`,
-      "Restart failed",
-      onrefresh,
-    );
+    withBusy(setBusy, () => RestartResource(ctxName, gvr, namespace, name), `Restarted ${name}`, "Restart failed", onrefresh);
 
-  const doPause = () =>
-    withBusy(setBusy, () => ResourceService.PauseRollout(ctxName, namespace, name), `Paused ${name}`, "Pause failed", onrefresh);
+  const doPause = () => withBusy(setBusy, () => PauseRollout(ctxName, namespace, name), `Paused ${name}`, "Pause failed", onrefresh);
 
-  const doResume = () =>
-    withBusy(setBusy, () => ResourceService.ResumeRollout(ctxName, namespace, name), `Resumed ${name}`, "Resume failed", onrefresh);
+  const doResume = () => withBusy(setBusy, () => ResumeRollout(ctxName, namespace, name), `Resumed ${name}`, "Resume failed", onrefresh);
 
-  const doCordon = () => withBusy(setBusy, () => DrainService.CordonNode(ctxName, name), `Cordoned ${name}`, "Cordon failed", onrefresh);
+  const doCordon = () => withBusy(setBusy, () => CordonNode(ctxName, name), `Cordoned ${name}`, "Cordon failed", onrefresh);
 
-  const doUncordon = () =>
-    withBusy(setBusy, () => DrainService.UncordonNode(ctxName, name), `Uncordoned ${name}`, "Uncordon failed", onrefresh);
+  const doUncordon = () => withBusy(setBusy, () => UncordonNode(ctxName, name), `Uncordoned ${name}`, "Uncordon failed", onrefresh);
 
-  const doDrain = () => withBusy(setBusy, () => DrainService.StartDrain(ctxName, name), `Drain started for ${name}`, "Drain failed");
+  const doDrain = () => withBusy(setBusy, () => StartDrain(ctxName, name), `Drain started for ${name}`, "Drain failed");
 
   const doDeleteJobCascade = () =>
     withBusy(
       setBusy,
-      () => ResourceService.DeleteJobCascade(ctxName, namespace, name),
+      () => DeleteJobCascade(ctxName, namespace, name),
       `Deleted ${name} (cascade)`,
       "Delete failed",
       () => push(`/c/${ctxName}/${gvr}`),
@@ -137,20 +143,19 @@
   const doDeleteJobOrphan = () =>
     withBusy(
       setBusy,
-      () => ResourceService.DeleteJobOrphan(ctxName, namespace, name),
+      () => DeleteJobOrphan(ctxName, namespace, name),
       `Deleted ${name} (orphan)`,
       "Delete failed",
       () => push(`/c/${ctxName}/${gvr}`),
     );
 
-  const doTriggerCronJob = () =>
-    withBusy(setBusy, () => ResourceService.TriggerCronJob(ctxName, namespace, name), `Triggered ${name}`, "Trigger failed");
+  const doTriggerCronJob = () => withBusy(setBusy, () => TriggerCronJob(ctxName, namespace, name), `Triggered ${name}`, "Trigger failed");
 
   const doSuspendCronJob = () =>
-    withBusy(setBusy, () => ResourceService.SuspendCronJob(ctxName, namespace, name), `Suspended ${name}`, "Suspend failed", onrefresh);
+    withBusy(setBusy, () => SuspendCronJob(ctxName, namespace, name), `Suspended ${name}`, "Suspend failed", onrefresh);
 
   const doResumeCronJob = () =>
-    withBusy(setBusy, () => ResourceService.ResumeCronJob(ctxName, namespace, name), `Resumed ${name}`, "Resume failed", onrefresh);
+    withBusy(setBusy, () => ResumeCronJob(ctxName, namespace, name), `Resumed ${name}`, "Resume failed", onrefresh);
 
   async function openExpand() {
     expandOpen = true;
@@ -165,7 +170,7 @@
         expandCurrentSize = obj.status?.capacity?.storage ?? obj.spec?.resources?.requests?.storage ?? "";
         return;
       }
-      const sc = await ResourceService.GetResource(ctxName, "storage.k8s.io.v1.storageclasses", "", scName);
+      const sc = await GetResource(ctxName, "storage.k8s.io.v1.storageclasses", "", scName);
       expandAllowed = sc?.spec?.allowVolumeExpansion !== false;
       if (!expandAllowed) {
         expandError = "This StorageClass does not allow volume expansion";
@@ -182,7 +187,7 @@
   const doExpand = () =>
     withBusy(
       setBusy,
-      () => ResourceService.ExpandPVC(ctxName, namespace, name, expandSize),
+      () => ExpandPVC(ctxName, namespace, name, expandSize),
       `Expanded ${name} to ${expandSize}`,
       "Expand failed",
       () => {
@@ -240,6 +245,7 @@
         <Tooltip content={reason}>
           {#snippet trigger(props)}
             <button
+              type="button"
               {...props}
               onclick={handler}
               {disabled}
@@ -251,6 +257,7 @@
         </Tooltip>
       {:else}
         <button
+          type="button"
           onclick={handler}
           {disabled}
           class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -273,6 +280,7 @@
           {#snippet trigger(props)}
             {#if action.name === 'delete'}
               <button
+                type="button"
                 {...props}
                 onclick={handler}
                 {disabled}
@@ -282,6 +290,7 @@
               </button>
             {:else}
               <button
+                type="button"
                 {...props}
                 onclick={handler}
                 {disabled}
@@ -294,6 +303,7 @@
         </Tooltip>
       {:else if action.name === 'delete'}
         <button
+          type="button"
           onclick={handler}
           {disabled}
           class="text-xs px-2.5 py-1 rounded bg-destructive text-destructive-fg hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -302,6 +312,7 @@
         </button>
       {:else}
         <button
+          type="button"
           onclick={handler}
           {disabled}
           class="text-xs px-2.5 py-1 rounded border border-destructive text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
@@ -343,7 +354,7 @@
   message="Roll back to the previous revision? This will patch the workload's pod template."
   confirmLabel="Rollback"
   onconfirm={() => withBusy(setBusy,
-    () => ResourceService.RollbackToRevision(ctxName, gvr, namespace, name, 0),
+    () => RollbackToRevision(ctxName, gvr, namespace, name, 0),
     `Rolled back ${name}`, 'Rollback failed', () => { rollbackOpen = false; onrefresh() })}
 />
 
@@ -368,6 +379,7 @@
           >Cancel</Dialog.Close
         >
         <button
+          type="button"
           onclick={doScale}
           disabled={busy}
           class="px-3 py-1.5 text-sm rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -410,6 +422,7 @@
         >
         {#if !expandChecking && !expandError}
           <button
+            type="button"
             onclick={doExpand}
             disabled={busy || !expandSize}
             class="px-3 py-1.5 text-sm rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"

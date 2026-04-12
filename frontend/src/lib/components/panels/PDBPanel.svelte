@@ -1,10 +1,11 @@
 <script lang="ts">
   import {SectionHeader, KeyValueBadge, StatusBadge, DataTable} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj}: {obj: Record<string, any>} = $props();
+  let {obj}: {obj: Record<string, KubernetesResource>} = $props();
 
   const selector = $derived<Record<string, string>>(obj.spec?.selector?.matchLabels ?? {});
-  const conditions = $derived<any[]>(obj.status?.conditions ?? []);
+  const conditions = $derived<KubernetesResource[]>(obj.status?.conditions ?? []);
   const disruptionsAllowed = $derived<number>(obj.status?.disruptionsAllowed ?? 0);
   const expectedPods = $derived<number>(obj.status?.expectedPods ?? 0);
   const currentHealthy = $derived<number>(obj.status?.currentHealthy ?? 0);

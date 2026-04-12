@@ -1,6 +1,15 @@
 import {Events} from "@wailsio/runtime";
 import {mount} from "svelte";
-import * as PluginService from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
+import {
+  GetPluginDetailTabs,
+  GetPluginCommands,
+  GetPluginOverviewFields,
+  GetPluginListColumns,
+  GetPluginContextMenuItems,
+  GetPluginHeaderWidgets,
+  GetPluginStatusBarWidgets,
+  InvokeCommand,
+} from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
 import {getLogger} from "$lib/logger";
 
 const log = getLogger("plugins");
@@ -9,7 +18,7 @@ import {notificationStore} from "$lib/stores/notification.svelte.js";
 import {streamingStore} from "$lib/stores/streaming.svelte.js";
 import {clusterStore} from "$lib/stores/cluster.svelte.js";
 import {createPluginContext} from "$lib/plugins/context.js";
-import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+import {ListResources, GetResource} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 
 export type {PermsSummary};
 
@@ -129,13 +138,13 @@ class SlotRegistry {
   async initFromBackend(): Promise<void> {
     try {
       const [tabs, cmds, overviewFields, listColumns, contextMenuItems, headerWidgets, statusBarWidgets] = await Promise.all([
-        PluginService.GetPluginDetailTabs(),
-        PluginService.GetPluginCommands(),
-        PluginService.GetPluginOverviewFields(""),
-        PluginService.GetPluginListColumns(""),
-        PluginService.GetPluginContextMenuItems(""),
-        PluginService.GetPluginHeaderWidgets(),
-        PluginService.GetPluginStatusBarWidgets(),
+        GetPluginDetailTabs(),
+        GetPluginCommands(),
+        GetPluginOverviewFields(""),
+        GetPluginListColumns(""),
+        GetPluginContextMenuItems(""),
+        GetPluginHeaderWidgets(),
+        GetPluginStatusBarWidgets(),
       ]);
       this.detailTabs = (tabs ?? []).map((t) => ({
         pluginName: t.pluginName ?? "",
@@ -154,7 +163,7 @@ class SlotRegistry {
         perms: c.perms ?? {},
         action: c.component
           ? () => {
-              invokeComponentCommand(c.pluginName ?? "", c.component!, c.perms ?? {}, getBasePluginURL()).catch((e) =>
+              invokeComponentCommand(c.pluginName ?? "", c.component as string, c.perms ?? {}, getBasePluginURL()).catch((e) =>
                 notificationStore.error(`Plugin "${c.pluginName}" failed`, String(e)),
               );
             }
@@ -162,7 +171,7 @@ class SlotRegistry {
               const pluginName = c.pluginName ?? "";
               const id = c.id ?? "";
               log.info("Calling InvokeCommand", {pluginName, id});
-              PluginService.InvokeCommand(pluginName, id)
+              InvokeCommand(pluginName, id)
                 .then(() => log.info("InvokeCommand resolved ok"))
                 .catch((e) => {
                   log.error("InvokeCommand rejected", {error: String(e)});
@@ -235,7 +244,7 @@ function buildCommandContext(pluginName: string, perms: PermsSummary) {
     displayName: "",
     minHostVersion: "",
     permissions: {
-      resources: perms.resources?.map((p) => ({...p, verbs: p.verbs as any})),
+      resources: perms.resources?.map((p) => ({...p, verbs: p.verbs as string[]})),
       logs: perms.logs || undefined,
       exec: perms.exec || undefined,
       storage: perms.storage || undefined,
@@ -247,8 +256,8 @@ function buildCommandContext(pluginName: string, perms: PermsSummary) {
     clusterName: ctx,
     clusterVersion: "",
     namespace: clusterStore.getSelectedNamespaces(ctx)[0] ?? "",
-    listResources: (g, n) => ResourceService.ListResources(ctx, g, n ?? ""),
-    getResource: (g, n, name) => ResourceService.GetResource(ctx, g, n, name),
+    listResources: (g, n) => ListResources(ctx, g, n ?? ""),
+    getResource: (g, n, name) => GetResource(ctx, g, n, name),
   });
 }
 
@@ -257,24 +266,27 @@ if (typeof window !== "undefined") {
     slotRegistry.initFromBackend();
   });
 
-  Events.On("plugin:reloading", (wailsEvent: any) => {
-    const name = wailsEvent?.data?.name ?? wailsEvent?.name;
+  Events.On("plugin:reloading", (wailsEvent: unknown) => {
+    const ev = wailsEvent as {data?: {name?: string}; name?: string} | undefined;
+    const name = ev?.data?.name ?? ev?.name;
     if (name) {
       slotRegistry.unregisterPlugin(name);
       notificationStore.push(`Reloading plugin "${name}"...`, "info");
     }
   });
 
-  Events.On("plugin:loaded", (wailsEvent: any) => {
-    const name = wailsEvent?.data?.name ?? wailsEvent?.name;
+  Events.On("plugin:loaded", (wailsEvent: unknown) => {
+    const ev = wailsEvent as {data?: {name?: string}; name?: string} | undefined;
+    const name = ev?.data?.name ?? ev?.name;
     slotRegistry.initFromBackend();
     if (name) {
       notificationStore.push(`Plugin "${name}" reloaded`, "success");
     }
   });
 
-  Events.On("plugin:error", (wailsEvent: any) => {
-    const data = wailsEvent?.data ?? wailsEvent;
+  Events.On("plugin:error", (wailsEvent: unknown) => {
+    const ev = wailsEvent as {data?: {name?: string; error?: string}} | undefined;
+    const data = ev?.data;
     const name = data?.name;
     const error = data?.error;
     if (name) {

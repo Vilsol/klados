@@ -1,6 +1,12 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import * as ConfigService from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
+  import {
+    GetConfig,
+    SetTheme,
+    SetFontSize,
+    SetStartupBehavior,
+    SetTerminalWebGL,
+  } from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
   import {preferencesStore} from "$lib/stores/preferences.svelte";
 
   let theme = $state<string>("system");
@@ -11,40 +17,40 @@
 
   onMount(() => {
     (async () => {
-      const config = await ConfigService.GetConfig();
+      const config = await GetConfig();
       if (config) {
-        theme = (config as any).theme || "system";
-        fontSize = (config as any).fontSize || 14;
-        startupBehavior = (config as any).startupBehavior || "last";
-        startupCluster = (config as any).startupCluster || "";
-        terminalWebGL = (config as any).terminalWebGL ?? false;
+        theme = config.theme || "system";
+        fontSize = config.fontSize || 14;
+        startupBehavior = config.startupBehavior || "last";
+        startupCluster = config.startupCluster || "";
+        terminalWebGL = config.terminalWebGL ?? false;
       }
     })();
   });
 
   function setTheme(value: string) {
     theme = value;
-    ConfigService.SetTheme(value);
+    SetTheme(value);
   }
 
   function setFontSize(value: number) {
     fontSize = value;
-    ConfigService.SetFontSize(value);
+    SetFontSize(value);
   }
 
   function setStartup(behavior: string) {
     startupBehavior = behavior;
-    ConfigService.SetStartupBehavior(behavior, startupCluster);
+    SetStartupBehavior(behavior, startupCluster);
   }
 
   function setStartupCluster(cluster: string) {
     startupCluster = cluster;
-    ConfigService.SetStartupBehavior(startupBehavior, cluster);
+    SetStartupBehavior(startupBehavior, cluster);
   }
 
   function setTerminalWebGL(enabled: boolean) {
     terminalWebGL = enabled;
-    ConfigService.SetTerminalWebGL(enabled);
+    SetTerminalWebGL(enabled);
   }
 </script>
 
@@ -54,6 +60,7 @@
     <div class="flex gap-2">
       {#each [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']] as [ value, label ]}
         <button
+          type="button"
           class="px-3 py-1.5 rounded text-sm {theme === value ? 'bg-accent text-accent-foreground' : 'border border-border text-fg hover:bg-surface-hover'}"
           onclick={() => setTheme(value)}
         >

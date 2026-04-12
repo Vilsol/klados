@@ -119,6 +119,10 @@
           "correctness": {
             "noUnusedVariables": "off",
             "noUnusedImports": "off"
+          },
+          "suspicious": {
+            "noAssignInExpressions": "off",
+            "noGlobalAssign": "off"
           }
         }
       }

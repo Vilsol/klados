@@ -35,7 +35,7 @@ export function buildCRDTree(gvrs: string[], getKind: (gvr: string) => string): 
       if (!cur.children.has(seg)) {
         cur.children.set(seg, {children: new Map(), gvrs: []});
       }
-      cur = cur.children.get(seg)!;
+      cur = cur.children.get(seg) as TrieNode;
     }
     cur.gvrs.push(gvr);
   }

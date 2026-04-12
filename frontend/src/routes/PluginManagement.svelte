@@ -2,10 +2,21 @@
   import {onDestroy} from "svelte";
   import {Events} from "@wailsio/runtime";
   import {RefreshCw, Trash2, ChevronDown, ChevronRight, FolderOpen} from "lucide-svelte";
-  import * as PluginService from "../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
-  import * as AppService from "../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
+  import {
+    ListPlugins,
+    EnablePlugin,
+    DisablePlugin,
+    ReloadPluginManual,
+    UninstallPlugin,
+    InstallPlugin,
+    SaveRegistryCredentials,
+    AddInsecureRegistry,
+  } from "../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
+  import {BrowsePluginFile} from "../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
   import {ConfirmDialog} from "@klados/ui";
   import {notificationStore} from "$lib/stores/notification.svelte.js";
+
+  const OCI_PREFIX_RE = /^oci:\/\//;
 
   interface ResourcePerm {
     group: string;
@@ -52,7 +63,7 @@
 
   async function loadPlugins() {
     try {
-      const result = await PluginService.ListPlugins();
+      const result = await ListPlugins();
       plugins = (result ?? []) as PluginInfo[];
     } catch {
       plugins = [];
@@ -91,9 +102,9 @@
   async function togglePlugin(p: PluginInfo) {
     await withLoading(p.name, async () => {
       if (p.status === "disabled") {
-        await PluginService.EnablePlugin(p.name);
+        await EnablePlugin(p.name);
       } else {
-        await PluginService.DisablePlugin(p.name);
+        await DisablePlugin(p.name);
       }
       await loadPlugins();
     });
@@ -101,7 +112,7 @@
 
   async function reloadPlugin(name: string) {
     await withLoading(name, async () => {
-      await PluginService.ReloadPluginManual(name);
+      await ReloadPluginManual(name);
     });
   }
 
@@ -112,7 +123,7 @@
     const name = uninstallTarget;
     uninstallTarget = null;
     await withLoading(name, async () => {
-      await PluginService.UninstallPlugin(name);
+      await UninstallPlugin(name);
       await loadPlugins();
     });
   }
@@ -122,17 +133,17 @@
     registryLoading = true;
     registryError = "";
     try {
-      await PluginService.InstallPlugin(ref);
+      await InstallPlugin(ref);
       registryRef = "";
       showAuthForm = false;
       notificationStore.success("Plugin installed", ref.split("/").pop() ?? ref);
       await loadPlugins();
-    } catch (err: any) {
-      if (err?.message?.includes("authentication required")) {
-        authHost = ref.replace(/^oci:\/\//, "").split("/")[0];
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes("authentication required")) {
+        authHost = ref.replace(OCI_PREFIX_RE, "").split("/")[0];
         showAuthForm = true;
       } else {
-        registryError = err?.message ?? String(err);
+        registryError = err instanceof Error ? err.message : String(err);
       }
     } finally {
       registryLoading = false;
@@ -143,11 +154,11 @@
     const ref = registryRef.startsWith("oci://") ? registryRef : `oci://${registryRef}`;
     registryLoading = true;
     try {
-      await PluginService.SaveRegistryCredentials(authHost, authUsername, authPassword);
+      await SaveRegistryCredentials(authHost, authUsername, authPassword);
       if (authInsecure) {
-        await PluginService.AddInsecureRegistry(authHost);
+        await AddInsecureRegistry(authHost);
       }
-      await PluginService.InstallPlugin(ref);
+      await InstallPlugin(ref);
       showAuthForm = false;
       authUsername = "";
       authPassword = "";
@@ -155,11 +166,11 @@
       registryRef = "";
       notificationStore.success("Plugin installed", ref.split("/").pop() ?? ref);
       await loadPlugins();
-    } catch (err: any) {
-      if (err?.message?.includes("authentication required")) {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes("authentication required")) {
         registryError = "Credentials rejected — verify and try again";
       } else {
-        registryError = err?.message ?? String(err);
+        registryError = err instanceof Error ? err.message : String(err);
       }
     } finally {
       registryLoading = false;
@@ -169,11 +180,11 @@
   async function installPlugin() {
     installing = true;
     try {
-      const path = await AppService.BrowsePluginFile();
+      const path = await BrowsePluginFile();
       if (!path) {
         return;
       }
-      await PluginService.InstallPlugin(path);
+      await InstallPlugin(path);
       notificationStore.success("Plugin installed", path.split("/").pop() ?? path);
     } catch (err) {
       notificationStore.error("Install failed", err instanceof Error ? err.message : String(err));
@@ -191,6 +202,7 @@
     {/if}
     <div class="ml-auto">
       <button
+        type="button"
         onclick={installPlugin}
         disabled={installing}
         class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-border hover:bg-surface-hover transition-colors disabled:opacity-50"
@@ -214,6 +226,7 @@
         onkeydown={(e) => e.key === 'Enter' && installFromRegistry()}
       >
       <button
+        type="button"
         onclick={installFromRegistry}
         disabled={registryLoading || !registryRef}
         class="text-xs px-3 py-1.5 rounded border border-border hover:bg-surface-hover transition-colors disabled:opacity-50"
@@ -246,6 +259,7 @@
           Insecure (HTTP)
         </label>
         <button
+          type="button"
           onclick={submitCredentials}
           disabled={registryLoading}
           class="self-start px-3 py-1 rounded border border-border hover:bg-surface-hover transition-colors disabled:opacity-50"
@@ -293,6 +307,7 @@
               <div class="flex items-center gap-1 shrink-0">
                 <!-- Enable/Disable toggle -->
                 <button
+                  type="button"
                   onclick={() => togglePlugin(plugin)}
                   disabled={loadingActions[plugin.name]}
                   class="text-xs px-2 py-1 rounded border border-border hover:bg-surface-hover transition-colors disabled:opacity-50"
@@ -303,6 +318,7 @@
 
                 <!-- Reload button -->
                 <button
+                  type="button"
                   onclick={() => reloadPlugin(plugin.name)}
                   disabled={loadingActions[plugin.name]}
                   class="p-1.5 rounded hover:bg-surface-hover transition-colors text-muted hover:text-fg disabled:opacity-50"
@@ -314,6 +330,7 @@
 
                 <!-- Uninstall button -->
                 <button
+                  type="button"
                   onclick={() => { uninstallTarget = plugin.name; confirmOpen = true }}
                   disabled={loadingActions[plugin.name]}
                   class="p-1.5 rounded hover:bg-surface-hover transition-colors text-muted hover:text-destructive disabled:opacity-50"
@@ -328,6 +345,7 @@
             <!-- Permission summary (expandable) -->
             <div class="border-t border-border">
               <button
+                type="button"
                 onclick={() => (expandedPerms[plugin.name] = !expandedPerms[plugin.name])}
                 class="w-full flex items-center gap-1 px-4 py-1.5 text-xs text-muted hover:bg-surface-hover transition-colors text-left"
               >

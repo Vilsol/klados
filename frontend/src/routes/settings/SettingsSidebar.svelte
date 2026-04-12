@@ -1,6 +1,6 @@
 <script lang="ts">
   import {push} from "svelte-spa-router";
-  import * as PluginService from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
+  import {ListPlugins, GetPluginSettingsSchema} from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
 
   interface Props {
     active: string;
@@ -22,11 +22,12 @@
   $effect(() => {
     (async () => {
       try {
-        const all = (await PluginService.ListPlugins()) ?? [];
+        const all = (await ListPlugins()) ?? [];
         const withSettings: Array<{name: string}> = [];
-        for (const p of all as Array<{name: string}>) {
+        for (const p of all) {
           try {
-            const schema = await PluginService.GetPluginSettingsSchema(p.name);
+            // biome-ignore lint/performance/noAwaitInLoops: sequential schema fetch with per-plugin error isolation
+            const schema = await GetPluginSettingsSchema(p.name);
             if (schema) {
               withSettings.push(p);
             }
@@ -51,6 +52,7 @@
 
   {#each mainSections as section}
     <button
+      type="button"
       onclick={() => navTo(section.id)}
       class="w-full text-left px-3 py-1.5 text-sm transition-colors rounded-none
         {isActive(section.id)
@@ -64,6 +66,7 @@
   {#if plugins.length > 0}
     <div class="px-3 pt-3 pb-1"><span class="text-xs font-semibold uppercase tracking-wider text-muted">Plugins</span></div>
     <button
+      type="button"
       onclick={() => push('/settings/plugins')}
       class="w-full text-left px-3 py-1.5 text-sm transition-colors rounded-none
         {isActive('plugins')
@@ -74,6 +77,7 @@
     </button>
     {#each plugins as plugin}
       <button
+        type="button"
         onclick={() => push(`/settings/plugins/${plugin.name}`)}
         class="w-full text-left px-3 py-1.5 text-sm transition-colors rounded-none pl-6
           {isActive(`plugins/${plugin.name}`)

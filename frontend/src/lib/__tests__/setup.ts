@@ -60,14 +60,14 @@ vi.mock("@wailsio/runtime", () => ({
   },
   CancellablePromise: Promise,
   Create: {
-    Array: (fn: any) => (arr: any[]) => arr?.map(fn) ?? [],
-    Any: (v: any) => v,
-    Nullable: (fn: any) => (v: any) => (v == null ? null : fn(v)),
-    Map: (_kfn: any, vfn: any) => (obj: any) => {
+    Array: (fn: (v: unknown) => unknown) => (arr: unknown[]) => arr?.map(fn) ?? [],
+    Any: (v: unknown) => v,
+    Nullable: (fn: (v: unknown) => unknown) => (v: unknown) => (v == null ? null : fn(v)),
+    Map: (_kfn: unknown, vfn: (v: unknown) => unknown) => (obj: Record<string, unknown>) => {
       if (obj == null) {
         return {};
       }
-      const result: any = {};
+      const result: Record<string, unknown> = {};
       for (const k of Object.keys(obj)) {
         result[k] = vfn(obj[k]);
       }

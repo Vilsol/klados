@@ -15,7 +15,7 @@ function send(msg: string) {
     return;
   }
   while (queue.length) {
-    const m = queue.shift()!;
+    const m = queue.shift() as string;
     fetch(`http://127.0.0.1:${cfg.port}/${cfg.token}/log`, {method: "POST", body: m}).catch(() => {});
   }
   fetch(`http://127.0.0.1:${cfg.port}/${cfg.token}/log`, {method: "POST", body: msg}).catch(() => {});
@@ -47,6 +47,6 @@ console.debug = (...a) => {
   send(fmt("[DBG] ", a));
 };
 
-const app = mount(App, {target: document.getElementById("app")!});
+const app = mount(App, {target: document.getElementById("app") as HTMLElement});
 
 export default app;

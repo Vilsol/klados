@@ -1,9 +1,10 @@
 <script lang="ts">
   import {SectionHeader, EmptyState} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj}: {obj: Record<string, any>} = $props();
+  let {obj}: {obj: Record<string, KubernetesResource>} = $props();
 
-  const rules = $derived<any[]>(obj.rules ?? []);
+  const rules = $derived<KubernetesResource[]>(obj.rules ?? []);
 </script>
 
 <div class="p-4 space-y-6">

@@ -1,7 +1,12 @@
 <script lang="ts">
   import {CodeBlock, SectionHeader} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj}: {obj: Record<string, any>} = $props();
+  const reShebangOrShell = /^(if|for|while|case|function|export|source|set -)\b/m;
+  const reToml = /^\[[a-zA-Z]/m;
+  const reYaml = /^[a-zA-Z_-]+:/m;
+
+  let {obj}: {obj: Record<string, KubernetesResource>} = $props();
 
   const data = $derived<Record<string, string>>(obj.data ?? {});
   const binaryData = $derived<Record<string, string>>(obj.binaryData ?? {});
@@ -14,13 +19,13 @@
     if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
       return "json";
     }
-    if (trimmed.startsWith("#!") || trimmed.match(/^(if|for|while|case|function|export|source|set -)\b/m)) {
+    if (trimmed.startsWith("#!") || reShebangOrShell.test(trimmed)) {
       return "shell";
     }
-    if (trimmed.match(/^\[[a-zA-Z]/m)) {
+    if (reToml.test(trimmed)) {
       return "toml";
     }
-    if (trimmed.match(/^[a-zA-Z_-]+:/m)) {
+    if (reYaml.test(trimmed)) {
       return "yaml";
     }
     return "plain";

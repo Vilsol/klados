@@ -1,7 +1,8 @@
 <script lang="ts">
   import {Events} from "@wailsio/runtime";
-  import * as DrainService from "../../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js";
+  import {IsActive, CancelDrain} from "../../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte";
+  import type {KubernetesResource} from "$lib/types";
 
   let {
     ctxName,
@@ -10,7 +11,7 @@
     ctxName: string;
     name: string;
     namespace: string;
-    obj: Record<string, any>;
+    obj: Record<string, KubernetesResource>;
   } = $props();
 
   let lines = $state<string[]>([]);
@@ -21,14 +22,14 @@
   $effect(() => {
     const eventName = `drain:${ctxName}:${name}`;
 
-    DrainService.IsActive(ctxName, name).then((active: boolean) => {
+    IsActive(ctxName, name).then((active: boolean) => {
       isActive = active;
       if (active) {
         terminalState = "active";
       }
     });
 
-    const unsub = Events.On(eventName, (wailsEvent: any) => {
+    const unsub = Events.On(eventName, (wailsEvent: KubernetesResource) => {
       const msg = wailsEvent.data;
       if (!msg) {
         return;
@@ -54,7 +55,7 @@
     });
 
     const unsubUpdated = Events.On(`drain:${ctxName}:updated`, () => {
-      DrainService.IsActive(ctxName, name).then((active: boolean) => {
+      IsActive(ctxName, name).then((active: boolean) => {
         isActive = active;
       });
     });
@@ -73,10 +74,10 @@
 
   async function cancelDrain() {
     try {
-      await DrainService.CancelDrain(ctxName, name);
+      await CancelDrain(ctxName, name);
       terminalState = "cancelled";
-    } catch (e: any) {
-      notificationStore.push(e?.message ?? "Cancel failed", "error");
+    } catch (e: unknown) {
+      notificationStore.push(e instanceof Error ? e.message : "Cancel failed", "error");
     }
   }
 </script>
@@ -86,6 +87,7 @@
     <h3 class="text-sm font-medium text-fg">Drain Log</h3>
     {#if isActive}
       <button
+        type="button"
         onclick={cancelDrain}
         class="text-xs px-2.5 py-1 rounded border border-destructive text-destructive hover:bg-destructive/10 transition-colors"
       >

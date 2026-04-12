@@ -31,10 +31,10 @@ vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/portforwar
 }));
 
 vi.mock("../../../bindings/github.com/Vilsol/klados/internal/config/models.js", () => {
-  const makeModel = () => vi.fn().mockImplementation((obj: any) => obj);
+  const makeModel = () => vi.fn().mockImplementation((obj: unknown) => obj);
   const makeModelWithCreateFrom = () => {
-    const M = vi.fn().mockImplementation((obj: any) => obj) as any;
-    M.createFrom = vi.fn().mockImplementation((obj: any) => obj);
+    const M = vi.fn().mockImplementation((obj: unknown) => obj) as unknown as {createFrom: ReturnType<typeof vi.fn>};
+    M.createFrom = vi.fn().mockImplementation((obj: unknown) => obj);
     return M;
   };
   return {
@@ -83,7 +83,7 @@ vi.mock("$lib/registry/index", () => ({
       actions: [],
     }),
   },
-  evalExpr: vi.fn((expr: string, item: any) => item[expr] ?? ""),
+  evalExpr: vi.fn((expr: string, item: Record<string, unknown>) => item[expr] ?? ""),
   defaultAlign: vi.fn().mockReturnValue("left"),
 }));
 
@@ -141,7 +141,7 @@ vi.mock("@klados/ui", () => ({
 
 vi.mock("@tanstack/svelte-virtual", () => ({
   createVirtualizer: ({count}: {count: number}) => ({
-    subscribe: (fn: (v: any) => void) => {
+    subscribe: (fn: (v: unknown) => void) => {
       fn({
         getTotalSize: () => count * 36,
         getVirtualItems: () => Array.from({length: count}, (_, i) => ({index: i, start: i * 36, size: 36})),

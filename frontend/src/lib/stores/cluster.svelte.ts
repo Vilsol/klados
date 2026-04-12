@@ -1,7 +1,16 @@
 import {Events} from "@wailsio/runtime";
-import * as ClusterService from "../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js";
-import * as AppService from "../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
-import * as ConfigService from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
+import {
+  ListContexts,
+  Connect,
+  Disconnect,
+  ListNamespaces,
+  CreateNamespace,
+  DeleteNamespace,
+  SwitchNamespace,
+  GetActiveNamespace,
+} from "../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js";
+import {SetReadOnly} from "../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
+import {GetConfig} from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
 import {getLogger} from "$lib/logger";
 import {preferencesStore} from "./preferences.svelte";
 
@@ -61,7 +70,7 @@ class ClusterStore {
   async setReadOnly(enabled: boolean) {
     this.isReadOnly = enabled;
     try {
-      await AppService.SetReadOnly(enabled);
+      await SetReadOnly(enabled);
     } catch (e) {
       log.error("Failed to save read-only state", {error: String(e)});
     }
@@ -92,19 +101,25 @@ class ClusterStore {
 
   async loadContexts() {
     try {
-      const result = await ClusterService.ListContexts();
+      const result = await ListContexts();
       this.contexts = result ?? [];
 
-      this.statusUnsubs.forEach((u) => u());
+      this.statusUnsubs.forEach((u) => {
+        u();
+      });
       this.statusUnsubs = [];
-      this.metaUnsubs.forEach((u) => u());
+      this.metaUnsubs.forEach((u) => {
+        u();
+      });
       this.metaUnsubs = [];
-      this.permUnsubs.forEach((u) => u());
+      this.permUnsubs.forEach((u) => {
+        u();
+      });
       this.permUnsubs = [];
 
       // Load read-only state from persisted config
       try {
-        const cfg = await ConfigService.GetConfig();
+        const cfg = await GetConfig();
         this.isReadOnly = cfg?.readOnly ?? false;
       } catch (e) {
         log.warn("Failed to load persisted config", {error: String(e)});
@@ -112,8 +127,8 @@ class ClusterStore {
 
       for (const ctx of this.contexts) {
         this.connectionStatus[ctx.name] = statusToString[ctx.status] ?? "disconnected";
-        const unsub = Events.On(`status:${ctx.name}:connection`, (wailsEvent: any) => {
-          const status = (wailsEvent.data ?? wailsEvent) as string;
+        const unsub = Events.On(`status:${ctx.name}:connection`, (wailsEvent: unknown) => {
+          const status = ((wailsEvent as {data?: unknown})?.data ?? wailsEvent) as string;
           this.connectionStatus[ctx.name] = (status as ConnectionStatusType) ?? "disconnected";
           if (status === "connected" && !this.activeContext) {
             this.restoreContext(ctx.name);
@@ -124,8 +139,8 @@ class ClusterStore {
           this.loadContexts();
         });
         this.metaUnsubs.push(metaUnsub);
-        const permUnsub = Events.On(`cluster:${ctx.name}:permissions`, (wailsEvent: any) => {
-          const perms = (wailsEvent.data ?? wailsEvent) as PermissionSet;
+        const permUnsub = Events.On(`cluster:${ctx.name}:permissions`, (wailsEvent: unknown) => {
+          const perms = ((wailsEvent as {data?: unknown})?.data ?? wailsEvent) as PermissionSet;
           this.permissions[ctx.name] = perms;
         });
         this.permUnsubs.push(permUnsub);
@@ -137,7 +152,7 @@ class ClusterStore {
       } else if (this.activeContext) {
         // activeContext already set by routing (e.g. page refresh) — still load namespaces
         try {
-          const saved = await ClusterService.GetActiveNamespace(this.activeContext);
+          const saved = await GetActiveNamespace(this.activeContext);
           if (saved) {
             this.selectedNamespaces[this.activeContext] = [saved];
           }
@@ -154,7 +169,7 @@ class ClusterStore {
   private async restoreContext(ctxName: string) {
     this.activeContext = ctxName;
     try {
-      const saved = await ClusterService.GetActiveNamespace(ctxName);
+      const saved = await GetActiveNamespace(ctxName);
       if (saved) {
         this.selectedNamespaces[ctxName] = [saved];
       }
@@ -167,7 +182,7 @@ class ClusterStore {
   async connect(ctxName: string) {
     this.connectionStatus[ctxName] = "connecting";
     try {
-      await ClusterService.Connect(ctxName);
+      await Connect(ctxName);
       this.connectionStatus[ctxName] = "connected";
       log.info("Cluster connected", {ctxName});
       // Only set activeContext if nothing is currently active
@@ -183,7 +198,7 @@ class ClusterStore {
 
   async disconnect(ctxName: string) {
     try {
-      await ClusterService.Disconnect(ctxName);
+      await Disconnect(ctxName);
       this.connectionStatus[ctxName] = "disconnected";
       log.info("Cluster disconnected", {ctxName});
       delete this.namespaces[ctxName];
@@ -200,7 +215,7 @@ class ClusterStore {
 
   async loadNamespaces(ctxName: string) {
     try {
-      const result = await ClusterService.ListNamespaces(ctxName);
+      const result = await ListNamespaces(ctxName);
       this.namespaces[ctxName] = result ?? [];
     } catch (e) {
       log.error("Failed to load namespaces", {error: String(e)});
@@ -208,12 +223,12 @@ class ClusterStore {
   }
 
   async createNamespace(ctxName: string, name: string) {
-    await ClusterService.CreateNamespace(ctxName, name);
+    await CreateNamespace(ctxName, name);
     await this.loadNamespaces(ctxName);
   }
 
   async deleteNamespace(ctxName: string, name: string) {
-    await ClusterService.DeleteNamespace(ctxName, name);
+    await DeleteNamespace(ctxName, name);
     this.namespaces[ctxName] = (this.namespaces[ctxName] ?? []).filter((n) => n !== name);
     this.selectedNamespaces[ctxName] = (this.selectedNamespaces[ctxName] ?? []).filter((n) => n !== name);
   }
@@ -222,7 +237,7 @@ class ClusterStore {
     this.selectedNamespaces[ctxName] = namespaces;
     const persist = namespaces.length === 1 ? namespaces[0] : "";
     try {
-      await ClusterService.SwitchNamespace(ctxName, persist);
+      await SwitchNamespace(ctxName, persist);
     } catch (e) {
       log.error("Failed to switch namespace", {error: String(e)});
     }

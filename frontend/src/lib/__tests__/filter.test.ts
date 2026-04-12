@@ -24,7 +24,7 @@ describe("filterItems", () => {
     const terms: SearchTerm[] = [{type: "text", value: "nginx", negated: false}];
     const result = filterItems(items, terms);
     expect(result).toHaveLength(2);
-    expect(result.map((r: any) => r.metadata.name)).toEqual(["nginx-proxy", "nginx-ingress"]);
+    expect(result.map((r: {metadata: {name: string}}) => r.metadata.name)).toEqual(["nginx-proxy", "nginx-ingress"]);
   });
 
   it("filters by phrase on name", () => {
@@ -75,7 +75,7 @@ describe("filterItems", () => {
     const terms: SearchTerm[] = [{type: "text", value: "nginx", negated: true}];
     const result = filterItems(items, terms);
     expect(result).toHaveLength(2);
-    expect(result.map((r: any) => r.metadata.name)).toEqual(["redis-master", "test-pod"]);
+    expect(result.map((r: {metadata: {name: string}}) => r.metadata.name)).toEqual(["redis-master", "test-pod"]);
   });
 
   it("negates label filter", () => {

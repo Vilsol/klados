@@ -16,6 +16,7 @@
 
 <div>
   <button
+    type="button"
     onclick={() => onToggle(node.fullSuffix)}
     class="w-full flex items-center gap-1 px-3 py-1 text-sm hover:bg-surface-hover transition-colors rounded-sm text-left"
   >

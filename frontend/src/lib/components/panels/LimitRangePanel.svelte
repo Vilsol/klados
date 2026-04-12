@@ -1,15 +1,18 @@
 <script lang="ts">
   import {SectionHeader} from "@klados/ui";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj}: {obj: Record<string, any>} = $props();
+  let {obj}: {obj: Record<string, KubernetesResource>} = $props();
 
-  const limits = $derived<any[]>(obj.spec?.limits ?? []);
+  const limits = $derived<KubernetesResource[]>(obj.spec?.limits ?? []);
 
-  function getResources(entry: any): string[] {
+  function getResources(entry: KubernetesResource): string[] {
     const all = new Set<string>();
     for (const field of ["default", "defaultRequest", "min", "max", "maxLimitRequestRatio"]) {
       if (entry[field]) {
-        Object.keys(entry[field]).forEach((k) => all.add(k));
+        Object.keys(entry[field]).forEach((k) => {
+          all.add(k);
+        });
       }
     }
     if (entry.type === "PersistentVolumeClaim") {

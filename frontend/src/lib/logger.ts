@@ -1,6 +1,8 @@
 import {Logger} from "tslog";
 import {LogFrontend} from "../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
 
+const positionalKeyPattern = /^\d+$/;
+
 const levelMap: Record<number, string> = {
   0: "debug", // silly
   1: "debug", // trace
@@ -12,12 +14,12 @@ const levelMap: Record<number, string> = {
 };
 
 function wailsTransport(logObj: Record<string, unknown>): void {
-  const meta = (logObj as any)._meta;
-  const level = levelMap[meta?.logLevelId ?? 3] ?? "info";
+  const meta = logObj._meta as Record<string, unknown> | undefined;
+  const level = levelMap[(meta?.logLevelId as number | undefined) ?? 3] ?? "info";
 
   // Positional arg '0' is the message
-  const rawMsg = String((logObj as any)["0"] ?? "");
-  const name: string | undefined = meta?.name;
+  const rawMsg = String(logObj["0"] ?? "");
+  const name: string | undefined = meta?.name as string | undefined;
   const message = name ? `[${name}] ${rawMsg}` : rawMsg;
 
   // Collect structured attrs — flatten object-valued positional args
@@ -26,7 +28,7 @@ function wailsTransport(logObj: Record<string, unknown>): void {
     if (k === "0" || k === "_meta") {
       continue;
     }
-    if (/^\d+$/.test(k) && typeof v === "object" && v !== null && !Array.isArray(v)) {
+    if (positionalKeyPattern.test(k) && typeof v === "object" && v !== null && !Array.isArray(v)) {
       Object.assign(attrs, v);
     } else {
       attrs[k] = v;

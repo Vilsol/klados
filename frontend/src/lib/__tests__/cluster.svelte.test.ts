@@ -12,12 +12,17 @@ vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/clusterser
   GetStatus: vi.fn(),
 }));
 
-import * as ClusterService from "../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice";
+import {
+  ListContexts,
+  Connect,
+  Disconnect,
+  ListNamespaces,
+} from "../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice";
 
-const mockedListContexts = vi.mocked(ClusterService.ListContexts);
-const mockedConnect = vi.mocked(ClusterService.Connect);
-const mockedDisconnect = vi.mocked(ClusterService.Disconnect);
-const mockedListNamespaces = vi.mocked(ClusterService.ListNamespaces);
+const mockedListContexts = vi.mocked(ListContexts);
+const mockedConnect = vi.mocked(Connect);
+const mockedDisconnect = vi.mocked(Disconnect);
+const mockedListNamespaces = vi.mocked(ListNamespaces);
 
 describe("clusterStore", () => {
   beforeEach(() => {
@@ -33,7 +38,7 @@ describe("clusterStore", () => {
     mockedListContexts.mockResolvedValue([
       {name: "ctx1", cluster: "c1", user: "u1", namespace: "default", status: ConnectionStatus.StatusConnected},
       {name: "ctx2", cluster: "c2", user: "u2", namespace: "ns2", status: ConnectionStatus.StatusDisconnected},
-    ] as any);
+    ] as unknown[]);
 
     await clusterStore.loadContexts();
 
@@ -43,8 +48,8 @@ describe("clusterStore", () => {
   });
 
   it("connect updates status and sets active context", async () => {
-    mockedConnect.mockResolvedValue(undefined as any);
-    mockedListNamespaces.mockResolvedValue(["default", "kube-system"] as any);
+    mockedConnect.mockResolvedValue(undefined);
+    mockedListNamespaces.mockResolvedValue(["default", "kube-system"] as unknown[]);
 
     await clusterStore.connect("ctx1");
 
@@ -56,8 +61,8 @@ describe("clusterStore", () => {
 
   it("connect does not override activeContext when already set", async () => {
     clusterStore.activeContext = "ctx1";
-    mockedConnect.mockResolvedValue(undefined as any);
-    mockedListNamespaces.mockResolvedValue([] as any);
+    mockedConnect.mockResolvedValue(undefined);
+    mockedListNamespaces.mockResolvedValue([] as unknown[]);
 
     await clusterStore.connect("ctx2");
 
@@ -76,7 +81,7 @@ describe("clusterStore", () => {
   it("disconnect clears active context", async () => {
     clusterStore.activeContext = "ctx1";
     clusterStore.namespaces = {ctx1: ["default"]};
-    mockedDisconnect.mockResolvedValue(undefined as any);
+    mockedDisconnect.mockResolvedValue(undefined);
 
     await clusterStore.disconnect("ctx1");
 
@@ -89,7 +94,7 @@ describe("clusterStore", () => {
   it("disconnect preserves other connected context as active", async () => {
     clusterStore.activeContext = "ctx1";
     clusterStore.connectionStatus = {ctx1: "connected", ctx2: "connected"};
-    mockedDisconnect.mockResolvedValue(undefined as any);
+    mockedDisconnect.mockResolvedValue(undefined);
 
     await clusterStore.disconnect("ctx1");
 

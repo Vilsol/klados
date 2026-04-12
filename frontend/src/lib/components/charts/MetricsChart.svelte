@@ -5,6 +5,8 @@
   import type {TimeSeries, ThresholdLine, Annotation} from "./types";
   import {getFormatter} from "./units";
 
+  const reThresholdLabel = /:(.*?)$/;
+
   interface ZoomRange {
     min: number;
     max: number;
@@ -236,7 +238,7 @@
                 }
                 const isLimit = t.label.toLowerCase().includes("limit");
                 const color = isLimit ? "#ef4444" : "#3b82f6";
-                const shortLabel = t.label.replace(/:(.*?)$/, ` <span style="color:${mutedColor}">$1</span>`);
+                const shortLabel = t.label.replace(reThresholdLabel, ` <span style="color:${mutedColor}">$1</span>`);
                 html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;opacity:0.85">`;
                 html += `<span style="display:inline-block;width:12px;border-top:2px dashed ${color};flex-shrink:0"></span>`;
                 html += `<span style="color:${color}">${shortLabel}</span>`;
@@ -493,11 +495,12 @@
           {@const label = seriesLabel(s, i)}
           {@const color = COLORS[i % COLORS.length]}
           <button
+            type="button"
             class="flex items-center gap-1 text-xs transition-opacity"
             style="opacity: {legendToggles[i] === false ? '0.4' : '1'}"
             onclick={() => {
-              legendToggles[i] = legendToggles[i] === false ? true : false
-              if (chart) chart.setSeries(i + 1, { show: legendToggles[i] !== false })
+              legendToggles[i] = legendToggles[i] !== false
+              if (chart) { chart.setSeries(i + 1, {show: legendToggles[i] !== false}); }
             }}
           >
             <span class="inline-block w-3 h-0.5 rounded" style="background:{color}"></span>

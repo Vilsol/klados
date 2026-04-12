@@ -5,9 +5,9 @@
   import {Events} from "@wailsio/runtime";
   import {push, router} from "svelte-spa-router";
   import {onDestroy} from "svelte";
-  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
-  import * as PortForwardService from "../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js";
-  import * as PluginService from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
+  import {ListAPIResources} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {ListForwards, StopForward} from "../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js";
+  import {GetPluginSidebarEntries} from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte.js";
   import {unwrapError} from "$lib/utils/async.js";
   import {descriptorRegistry} from "$lib/registry/index";
@@ -115,7 +115,7 @@
       const kindMap = new Map(customResources.map((r) => [r.gvr, r.kind]));
       return buildCRDTree(
         customResources.map((r) => r.gvr),
-        (gvr) => kindMap.get(gvr) || gvr.split(".").at(-1)!,
+        (gvr) => kindMap.get(gvr) || gvr.split(".").at(-1) || gvr,
       );
     })(),
   );
@@ -160,7 +160,7 @@
 
   async function loadPluginEntries() {
     try {
-      const result = await PluginService.GetPluginSidebarEntries();
+      const result = await GetPluginSidebarEntries();
       pluginEntries = (result ?? []) as PluginSidebarEntry[];
     } catch {
       // ignore
@@ -172,7 +172,7 @@
       return;
     }
     try {
-      const result = await PortForwardService.ListForwards(ctx);
+      const result = await ListForwards(ctx);
       forwards = (result ?? []) as ForwardSpec[];
     } catch {
       // ignore
@@ -217,10 +217,10 @@
       unsubPlugins = null;
     }
     if (ctx) {
-      unsub = Events.On(`discovery:${ctx}:resources`, (wailsEvent: any) => {
-        handleDiscovery((wailsEvent.data ?? wailsEvent) as APIResource[]);
+      unsub = Events.On(`discovery:${ctx}:resources`, (wailsEvent: {data?: APIResource[]}) => {
+        handleDiscovery((wailsEvent.data ?? []) as APIResource[]);
       });
-      ResourceService.ListAPIResources(ctx)
+      ListAPIResources(ctx)
         .then((r) => {
           if (r?.length) {
             handleDiscovery(r as APIResource[]);
@@ -248,10 +248,10 @@
 
   async function stopForward(id: string) {
     try {
-      await PortForwardService.StopForward(id);
+      await StopForward(id);
       await loadForwards();
       notificationStore.success("Port forward stopped");
-    } catch (e: any) {
+    } catch (e: unknown) {
       notificationStore.error("Failed to stop port forward", unwrapError(e));
     }
   }
@@ -285,6 +285,7 @@
     <div class="flex items-center justify-between px-3 py-2 border-b border-border">
       <span class="text-xs font-semibold uppercase tracking-wider text-muted">Resources</span>
       <button
+        type="button"
         onclick={() => sessionStore.toggleSidebar()}
         class="p-1 rounded hover:bg-surface-hover transition-colors"
         aria-label="Collapse sidebar"
@@ -296,6 +297,7 @@
     <nav class="flex-1 overflow-y-auto py-1">
       {#if ctx}
         <button
+          type="button"
           onclick={() => push(`/c/${ctx}`)}
           class="w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 rounded-none hover:bg-surface-hover transition-colors border-b border-border mb-1 {isActive(`/c/${ctx}`) ? 'bg-surface-hover text-accent font-medium' : 'text-fg'}"
         >
@@ -305,6 +307,7 @@
       {#each Object.entries(gvrGroups) as [ groupName, gvrs ]}
         <div>
           <button
+            type="button"
             onclick={() => toggleGroup(groupName)}
             class="w-full flex items-center gap-1 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted hover:bg-surface-hover transition-colors"
           >
@@ -316,7 +319,8 @@
               {#each gvrs as gvr}
                 {@const unavailable = ctx && !descriptorRegistry.isGVRAvailable(gvr)}
                 <button
-                  onclick={() => { if (!unavailable) navigate(gvr) }}
+                  type="button"
+                  onclick={() => { if (!unavailable) { navigate(gvr); } }}
                   disabled={!!unavailable}
                   title={unavailable ? `API group not available on this cluster` : undefined}
                   class="w-full text-left px-3 py-1 text-sm transition-colors rounded-sm {unavailable ? 'opacity-40 cursor-not-allowed text-muted' : isGVRActive(gvr) ? 'bg-surface-hover text-accent font-medium' : 'hover:bg-surface-hover'}"
@@ -332,6 +336,7 @@
       {#if crdTree.length > 0}
         <div>
           <button
+            type="button"
             onclick={() => toggleGroup('Custom Resources')}
             class="w-full flex items-center gap-1 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted hover:bg-surface-hover transition-colors"
           >
@@ -352,6 +357,7 @@
         {#each pluginCategories as category}
           <div>
             <button
+              type="button"
               onclick={() => toggleGroup(`plugin:${category}`)}
               class="w-full flex items-center gap-1 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted hover:bg-surface-hover transition-colors"
             >
@@ -362,6 +368,7 @@
               <div class="ml-4">
                 {#each pluginEntries.filter((e) => e.category === category) as entry}
                   <button
+                    type="button"
                     onclick={() => navigate(entry.gvr)}
                     class="w-full text-left px-3 py-1 text-sm transition-colors rounded-sm {isGVRActive(entry.gvr) ? 'bg-surface-hover text-accent font-medium' : 'hover:bg-surface-hover'}"
                   >
@@ -377,6 +384,7 @@
       {#if ctx}
         <div class="border-t border-border mt-1 pt-1">
           <button
+            type="button"
             onclick={() => push(`/c/${ctx}/events`)}
             class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium hover:bg-surface-hover transition-colors {isActive(`/c/${ctx}/events`) ? 'bg-surface-hover text-accent' : 'text-muted'}"
           >
@@ -389,6 +397,7 @@
     <!-- Plugins link -->
     <div class="border-t border-border">
       <button
+        type="button"
         onclick={() => push('/plugins')}
         class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium hover:bg-surface-hover transition-colors {isActive('/plugins') ? 'bg-surface-hover text-accent' : 'text-muted'}"
       >
@@ -396,6 +405,7 @@
         Plugins
       </button>
       <button
+        type="button"
         onclick={() => push('/settings')}
         class="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium hover:bg-surface-hover transition-colors {activePath.startsWith('/settings') ? 'bg-surface-hover text-accent' : 'text-muted'}"
       >
@@ -410,6 +420,7 @@
         <span class="text-xs font-semibold uppercase tracking-wider text-muted">Port Forwards</span>
         {#if ctx}
           <button
+            type="button"
             onclick={() => push(`/c/${ctx}/port-forwards`)}
             class="p-1 rounded hover:bg-surface-hover transition-colors text-muted hover:text-fg"
             title="Manage port forwards"
@@ -438,6 +449,7 @@
                 {/if}
               </div>
               <button
+                type="button"
                 onclick={() => stopForward(fwd.id)}
                 class="p-0.5 rounded text-muted hover:text-fg opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                 title="Stop"
@@ -457,6 +469,7 @@
 
 {#if sessionStore.sidebarCollapsed}
   <button
+    type="button"
     onclick={() => sessionStore.toggleSidebar()}
     class="absolute left-0 top-16 p-1.5 bg-surface border border-border border-l-0 rounded-r hover:bg-surface-hover transition-colors z-10"
     aria-label="Expand sidebar"

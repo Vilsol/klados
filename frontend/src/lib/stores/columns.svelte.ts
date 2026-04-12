@@ -1,4 +1,10 @@
-import * as ConfigService from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
+import {
+  GetColumnPrefs,
+  GetCompactRows,
+  DeleteColumnPrefs,
+  SetColumnPrefs,
+  SetCompactRows,
+} from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
 import {GVRColumnPrefs, ColumnSettings, SortPrefs} from "../../../bindings/github.com/Vilsol/klados/internal/config/models.js";
 import {descriptorRegistry} from "../registry/index.js";
 import type {ColumnDef} from "../registry/index.js";
@@ -19,7 +25,7 @@ class ColumnStore {
     }
     this.#gvr = gvr;
 
-    const [prefs, compact] = await Promise.all([ConfigService.GetColumnPrefs(gvr), ConfigService.GetCompactRows()]);
+    const [prefs, compact] = await Promise.all([GetColumnPrefs(gvr), GetCompactRows()]);
     this.compact = compact;
     this.#applyPrefs(prefs);
   }
@@ -33,7 +39,10 @@ class ColumnStore {
     if (prefs?.columns) {
       for (const [name, settings] of Object.entries(prefs.columns)) {
         if (settings?.width !== undefined && poolMap.has(name)) {
-          poolMap.set(name, {...poolMap.get(name)!, width: settings.width});
+          const existing = poolMap.get(name);
+          if (existing) {
+            poolMap.set(name, {...existing, width: settings.width});
+          }
         }
       }
     }
@@ -49,7 +58,7 @@ class ColumnStore {
     const visibleSet = new Set(visibleNames);
     this.visibleColumns = visibleNames.map((name) => poolMap.get(name)).filter((c): c is ColumnDef => c !== undefined);
     this.allColumns = pool.map((c) => ({
-      col: poolMap.get(c.name)!,
+      col: poolMap.get(c.name) as ColumnDef,
       visible: visibleSet.has(c.name),
     }));
 
@@ -120,13 +129,13 @@ class ColumnStore {
       clearTimeout(this.#saveTimer);
       this.#saveTimer = null;
     }
-    ConfigService.DeleteColumnPrefs(this.#gvr);
+    DeleteColumnPrefs(this.#gvr);
     this.#applyPrefs(null);
   }
 
   async setCompact(value: boolean): Promise<void> {
     this.compact = value;
-    await ConfigService.SetCompactRows(value);
+    await SetCompactRows(value);
   }
 
   #buildPrefs(): GVRColumnPrefs {
@@ -144,7 +153,7 @@ class ColumnStore {
       clearTimeout(this.#saveTimer);
       this.#saveTimer = null;
     }
-    ConfigService.SetColumnPrefs(this.#gvr, this.#buildPrefs());
+    SetColumnPrefs(this.#gvr, this.#buildPrefs());
   }
 
   #debouncedSave(): void {
@@ -153,7 +162,7 @@ class ColumnStore {
     }
     this.#saveTimer = setTimeout(() => {
       this.#saveTimer = null;
-      ConfigService.SetColumnPrefs(this.#gvr, this.#buildPrefs());
+      SetColumnPrefs(this.#gvr, this.#buildPrefs());
     }, 300);
   }
 }

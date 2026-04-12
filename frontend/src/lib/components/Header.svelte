@@ -8,7 +8,7 @@
   import {loadPluginComponent} from "$lib/plugins/loader.js";
   import {streamingStore} from "$lib/stores/streaming.svelte.js";
   import {Events} from "@wailsio/runtime";
-  import * as DrainService from "../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js";
+  import {ListActive} from "../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js";
 
   const ctx = $derived(clusterStore.activeContext);
   const selected = $derived(ctx ? clusterStore.getSelectedNamespaces(ctx) : []);
@@ -29,12 +29,12 @@
       return;
     }
 
-    DrainService.ListActive(currentCtx).then((nodes: string[]) => {
+    ListActive(currentCtx).then((nodes: string[]) => {
       activeDrains = nodes ?? [];
     });
 
     const unsub = Events.On(`drain:${currentCtx}:updated`, () => {
-      DrainService.ListActive(currentCtx).then((nodes: string[]) => {
+      ListActive(currentCtx).then((nodes: string[]) => {
         activeDrains = nodes ?? [];
       });
     });
@@ -52,9 +52,9 @@
   <div class="flex items-center gap-2 ml-4">
     {#if ctx}
       <ConnectionIndicator status={clusterStore.connectionStatus[ctx] ?? 'disconnected'} clusterName={ctx} />
-      <button onclick={() => push('/clusters')} class="text-sm font-medium hover:underline">{ctx}</button>
+      <button type="button" onclick={() => push('/clusters')} class="text-sm font-medium hover:underline">{ctx}</button>
     {:else}
-      <button onclick={() => push('/clusters')} class="text-sm text-muted hover:underline">No cluster selected</button>
+      <button type="button" onclick={() => push('/clusters')} class="text-sm text-muted hover:underline">No cluster selected</button>
     {/if}
   </div>
 
@@ -92,6 +92,7 @@
 
   <div class="ml-auto flex items-center gap-2">
     <button
+      type="button"
       onclick={() => clusterStore.setReadOnly(!clusterStore.isReadOnly)}
       title={clusterStore.isReadOnly ? 'Read-only mode (click to disable)' : 'Click to enable read-only mode'}
       aria-label="Toggle read-only mode"

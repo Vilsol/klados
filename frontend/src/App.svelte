@@ -11,8 +11,7 @@
   import {descriptorRegistry} from "$lib/registry/index";
   import {shortcutStore} from "$lib/stores/shortcuts.svelte";
   import {Events} from "@wailsio/runtime";
-  import * as ConfigService from "../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
-  import * as AppService from "../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
+  import {LogFrontend, GetSession, SaveUIState} from "../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
   import type {TabState} from "../bindings/github.com/Vilsol/klados/internal/session/models.js";
   import PanelWindow from "$lib/components/PanelWindow.svelte";
   import StackTrace from "stacktrace-js";
@@ -26,7 +25,7 @@
   let paletteOpen = $state(false);
 
   function logToBackend(level: string, message: string, detail: string) {
-    AppService.LogFrontend(level, message, detail).catch(() => {});
+    LogFrontend(level, message, detail).catch(() => {});
   }
 
   async function logError(msg: string, err: Error | undefined) {
@@ -44,7 +43,7 @@
     logToBackend("error", msg, stack);
   }
 
-  function argsToLog(args: any[]): [string, Error | undefined] {
+  function argsToLog(args: unknown[]): [string, Error | undefined] {
     const err = args.find((a) => a instanceof Error) as Error | undefined;
     const msg = args.map((a) => (a instanceof Error ? a.message : String(a))).join(" ");
     return [msg, err];
@@ -82,7 +81,7 @@
 
     (async () => {
       try {
-        const sess = await AppService.GetSession();
+        const sess = await GetSession();
         if (sess) {
           const tabs = (sess.openTabs ?? []).map((t: TabState) => ({
             clusterContext: t.clusterContext ?? "",
@@ -183,7 +182,7 @@
     const activeTab = sessionStore.activeTabIndex;
     const sidebarCollapsed = sessionStore.sidebarCollapsed;
     const terminalFontSize = sessionStore.terminalFontSize;
-    AppService.SaveUIState(
+    SaveUIState(
       tabs.map((t) => ({
         clusterContext: t.clusterContext,
         gvr: t.gvr,

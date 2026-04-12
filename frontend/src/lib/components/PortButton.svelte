@@ -11,6 +11,7 @@
 </script>
 
 <button
+  type="button"
   {onclick}
   class="text-xs font-mono bg-surface border border-border rounded px-1.5 py-0.5 hover:bg-surface-hover hover:border-accent/50 transition-colors"
   title="Forward port {port}"

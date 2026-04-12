@@ -3,7 +3,7 @@
   import {selectionStore} from "$lib/stores/selection.svelte";
   import {notificationStore} from "$lib/stores/notification.svelte";
   import {Check, X, Loader2} from "lucide-svelte";
-  import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {DeleteResource} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 
   let {
     open = $bindable(false),
@@ -20,7 +20,7 @@
   const selectedItems = $derived(selectionStore.items());
   const gvr = $derived(selectionStore.selectedGVR);
 
-  function itemKey(obj: Record<string, any>): string {
+  function itemKey(obj: Record<string, unknown>): string {
     const ns = obj.metadata?.namespace ?? "";
     const name = obj.metadata?.name ?? "";
     return ns ? `${ns}/${name}` : name;
@@ -42,11 +42,12 @@
       statuses = new Map(statuses).set(key, {status: "deleting"});
 
       try {
-        await ResourceService.DeleteResource(contextName, gvr, ns, name);
+        // biome-ignore lint/performance/noAwaitInLoops: sequential for per-item status updates
+        await DeleteResource(contextName, gvr, ns, name);
         statuses = new Map(statuses).set(key, {status: "success"});
         succeeded.push(key);
-      } catch (e: any) {
-        statuses = new Map(statuses).set(key, {status: "error", error: e?.message ?? String(e)});
+      } catch (e: unknown) {
+        statuses = new Map(statuses).set(key, {status: "error", error: (e as {message?: string})?.message ?? String(e)});
         failCount++;
       }
     }
@@ -99,6 +100,7 @@
           >Cancel</Dialog.Close
         >
         <button
+          type="button"
           onclick={run}
           disabled={running}
           class="px-3 py-1.5 text-sm rounded bg-destructive text-destructive-fg hover:opacity-90 transition-opacity disabled:opacity-50"

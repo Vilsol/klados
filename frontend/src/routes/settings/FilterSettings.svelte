@@ -1,19 +1,18 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import * as ConfigService from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
+  import {
+    GetConfig,
+    GetClusterPrefs,
+    SetClusterSavedFilters,
+    SetSavedFilters,
+  } from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
+  import type {SavedFilter} from "../../../bindings/github.com/Vilsol/klados/internal/config/models.js";
   import {clusterStore} from "$lib/stores/cluster.svelte";
-
-  interface FilterEntry {
-    name: string;
-    labels?: Record<string, string>;
-    annotations?: Record<string, string>;
-    search?: string;
-  }
 
   type FilterScope = "global" | "cluster";
 
-  let filtersByGVR = $state<Record<string, FilterEntry[]>>({});
-  let clusterFiltersByGVR = $state<Record<string, FilterEntry[]>>({});
+  let filtersByGVR = $state<Record<string, SavedFilter[]>>({});
+  let clusterFiltersByGVR = $state<Record<string, SavedFilter[]>>({});
   let newGVR = $state<string>("");
   let newClusterGVR = $state<string>("");
 
@@ -34,9 +33,9 @@
   });
 
   async function loadGlobalFilters() {
-    const config = await ConfigService.GetConfig();
-    if (config && (config as any).savedFilters) {
-      filtersByGVR = (config as any).savedFilters;
+    const config = await GetConfig();
+    if (config?.savedFilters) {
+      filtersByGVR = config.savedFilters as Record<string, SavedFilter[]>;
     }
   }
 
@@ -44,9 +43,9 @@
     if (!activeContext) {
       return;
     }
-    const prefs = await ConfigService.GetClusterPrefs(activeContext);
-    if (prefs && (prefs as any).savedFilters) {
-      clusterFiltersByGVR = (prefs as any).savedFilters;
+    const prefs = await GetClusterPrefs(activeContext);
+    if (prefs?.savedFilters) {
+      clusterFiltersByGVR = prefs.savedFilters as Record<string, SavedFilter[]>;
     } else {
       clusterFiltersByGVR = {};
     }
@@ -66,11 +65,12 @@
     return Object.keys(result).length > 0 ? result : undefined;
   }
 
-  function formatKV(obj?: Record<string, string>): string {
+  function formatKV(obj?: Record<string, string | undefined>): string {
     if (!obj) {
       return "";
     }
     return Object.entries(obj)
+      .filter((entry): entry is [string, string] => entry[1] !== undefined)
       .map(([k, v]) => `${k}=${v}`)
       .join(", ");
   }
@@ -111,7 +111,7 @@
     if (!editingGVR || !editName.trim()) {
       return;
     }
-    const filter: FilterEntry = {
+    const filter: SavedFilter = {
       name: editName.trim(),
       labels: parseKV(editLabels),
       annotations: parseKV(editAnnotations),
@@ -119,7 +119,7 @@
     };
 
     const gvr = editingGVR;
-    if (editingScope === "cluster") {
+    if (editingScope === "cluster" && activeContext) {
       const existing = [...(clusterFiltersByGVR[gvr] ?? [])];
       if (editingIndex >= 0) {
         existing[editingIndex] = filter;
@@ -127,7 +127,7 @@
         existing.push(filter);
       }
       clusterFiltersByGVR = {...clusterFiltersByGVR, [gvr]: existing};
-      await ConfigService.SetClusterSavedFilters(activeContext!, gvr, existing as any[]);
+      await SetClusterSavedFilters(activeContext, gvr, existing);
     } else {
       const existing = [...(filtersByGVR[gvr] ?? [])];
       if (editingIndex >= 0) {
@@ -136,13 +136,13 @@
         existing.push(filter);
       }
       filtersByGVR = {...filtersByGVR, [gvr]: existing};
-      await ConfigService.SetSavedFilters(gvr, existing as any[]);
+      await SetSavedFilters(gvr, existing);
     }
     closeModal();
   }
 
   async function deleteFilter(gvr: string, index: number, scope: FilterScope = "global") {
-    if (scope === "cluster") {
+    if (scope === "cluster" && activeContext) {
       const existing = [...(clusterFiltersByGVR[gvr] ?? [])];
       existing.splice(index, 1);
       if (existing.length === 0) {
@@ -151,7 +151,7 @@
       } else {
         clusterFiltersByGVR = {...clusterFiltersByGVR, [gvr]: existing};
       }
-      await ConfigService.SetClusterSavedFilters(activeContext!, gvr, existing as any[]);
+      await SetClusterSavedFilters(activeContext, gvr, existing);
     } else {
       const existing = [...(filtersByGVR[gvr] ?? [])];
       existing.splice(index, 1);
@@ -161,7 +161,7 @@
       } else {
         filtersByGVR = {...filtersByGVR, [gvr]: existing};
       }
-      await ConfigService.SetSavedFilters(gvr, existing as any[]);
+      await SetSavedFilters(gvr, existing);
     }
   }
 
@@ -234,8 +234,12 @@
       </div>
 
       <div class="flex justify-end gap-2 pt-2">
-        <button class="px-3 py-1.5 rounded border border-border text-fg text-sm hover:bg-surface-hover" onclick={closeModal}>Cancel</button>
-        <button class="px-3 py-1.5 rounded bg-accent text-accent-foreground text-sm hover:opacity-90" onclick={saveFilter}>Save</button>
+        <button type="button" class="px-3 py-1.5 rounded border border-border text-fg text-sm hover:bg-surface-hover" onclick={closeModal}>
+          Cancel
+        </button>
+        <button type="button" class="px-3 py-1.5 rounded bg-accent text-accent-foreground text-sm hover:opacity-90" onclick={saveFilter}>
+          Save
+        </button>
       </div>
     </div>
   </div>
@@ -249,7 +253,7 @@
     <div class="border border-border rounded">
       <div class="flex items-center justify-between px-4 py-2 bg-surface border-b border-border">
         <span class="text-sm font-mono text-fg">{gvr}</span>
-        <button class="text-sm text-accent hover:underline" onclick={() => openAdd(gvr, 'global')}>+ Add filter</button>
+        <button type="button" class="text-sm text-accent hover:underline" onclick={() => openAdd(gvr, 'global')}>+ Add filter</button>
       </div>
       {#if (filtersByGVR[gvr] ?? []).length === 0}
         <div class="px-4 py-3 text-sm text-muted">No filters for this resource type.</div>
@@ -263,8 +267,10 @@
               {/if}
             </div>
             <div class="flex gap-2">
-              <button class="text-xs text-muted hover:text-fg" onclick={() => openEdit(gvr, i, 'global')}>Edit</button>
-              <button class="text-xs text-destructive hover:underline" onclick={() => deleteFilter(gvr, i, 'global')}>Delete</button>
+              <button type="button" class="text-xs text-muted hover:text-fg" onclick={() => openEdit(gvr, i, 'global')}>Edit</button>
+              <button type="button" class="text-xs text-destructive hover:underline" onclick={() => deleteFilter(gvr, i, 'global')}>
+                Delete
+              </button>
             </div>
           </div>
         {/each}
@@ -286,7 +292,9 @@
         class="flex-1 px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
         onkeydown={(e) => e.key === 'Enter' && addGVR()}
       >
-      <button class="px-3 py-1.5 rounded bg-accent text-accent-foreground text-sm hover:opacity-90" onclick={addGVR}>Add</button>
+      <button type="button" class="px-3 py-1.5 rounded bg-accent text-accent-foreground text-sm hover:opacity-90" onclick={addGVR}>
+        Add
+      </button>
     </div>
   </div>
 
@@ -299,7 +307,7 @@
         <div class="border border-border rounded mt-4">
           <div class="flex items-center justify-between px-4 py-2 bg-surface border-b border-border">
             <span class="text-sm font-mono text-fg">{gvr}</span>
-            <button class="text-sm text-accent hover:underline" onclick={() => openAdd(gvr, 'cluster')}>+ Add filter</button>
+            <button type="button" class="text-sm text-accent hover:underline" onclick={() => openAdd(gvr, 'cluster')}>+ Add filter</button>
           </div>
           {#if (clusterFiltersByGVR[gvr] ?? []).length === 0}
             <div class="px-4 py-3 text-sm text-muted">No filters for this resource type.</div>
@@ -313,8 +321,10 @@
                   {/if}
                 </div>
                 <div class="flex gap-2">
-                  <button class="text-xs text-muted hover:text-fg" onclick={() => openEdit(gvr, i, 'cluster')}>Edit</button>
-                  <button class="text-xs text-destructive hover:underline" onclick={() => deleteFilter(gvr, i, 'cluster')}>Delete</button>
+                  <button type="button" class="text-xs text-muted hover:text-fg" onclick={() => openEdit(gvr, i, 'cluster')}>Edit</button>
+                  <button type="button" class="text-xs text-destructive hover:underline" onclick={() => deleteFilter(gvr, i, 'cluster')}>
+                    Delete
+                  </button>
                 </div>
               </div>
             {/each}
@@ -336,7 +346,13 @@
             class="flex-1 px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
             onkeydown={(e) => e.key === 'Enter' && addClusterGVR()}
           >
-          <button class="px-3 py-1.5 rounded bg-accent text-accent-foreground text-sm hover:opacity-90" onclick={addClusterGVR}>Add</button>
+          <button
+            type="button"
+            class="px-3 py-1.5 rounded bg-accent text-accent-foreground text-sm hover:opacity-90"
+            onclick={addClusterGVR}
+          >
+            Add
+          </button>
         </div>
       </div>
     {:else}

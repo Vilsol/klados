@@ -6,7 +6,7 @@ const mockDestroy = vi.hoisted(() => vi.fn());
 const mockSetSeries = vi.hoisted(() => vi.fn());
 const mockSetSize = vi.hoisted(() => vi.fn());
 const mockSetScale = vi.hoisted(() => vi.fn());
-const mockInstances = vi.hoisted(() => [] as any[]);
+const mockInstances = vi.hoisted(() => [] as unknown[]);
 
 vi.mock("uplot", () => {
   class UPlot {
@@ -15,16 +15,16 @@ vi.mock("uplot", () => {
     setSeries = mockSetSeries;
     setSize = mockSetSize;
     setScale = mockSetScale;
-    data: any;
-    series: any[];
+    data: unknown;
+    series: unknown[];
     over = {addEventListener: vi.fn(), clientWidth: 400};
     root = document.createElement("div");
     cursor = {idx: null as number | null, left: 0, top: 0};
     scales = {x: {min: 0, max: 0}};
 
-    constructor(_opts: any, _data: any, el: HTMLElement) {
+    constructor(_opts: unknown, _data: unknown, el: HTMLElement) {
       this.data = _data;
-      this.series = _opts?.series ?? [];
+      this.series = (_opts as {series?: unknown[]})?.series ?? [];
       const canvas = document.createElement("canvas");
       el?.appendChild(canvas);
       mockInstances.push(this);

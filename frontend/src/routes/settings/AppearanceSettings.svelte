@@ -1,6 +1,10 @@
 <script lang="ts">
   import {onMount} from "svelte";
-  import * as ConfigService from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
+  import {
+    SetAccentColor,
+    SetCompactRows,
+    SetContextualAutocomplete,
+  } from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
   import {preferencesStore} from "$lib/stores/preferences.svelte";
 
   const presetColors = ["#6366f1", "#8b5cf6", "#ec4899", "#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4"];
@@ -17,17 +21,17 @@
 
   function setAccent(color: string) {
     accentColor = color;
-    ConfigService.SetAccentColor(color);
+    SetAccentColor(color);
   }
 
   function setCompact(checked: boolean) {
     compactRows = checked;
-    ConfigService.SetCompactRows(checked);
+    SetCompactRows(checked);
   }
 
   function setContextualAutocomplete(checked: boolean) {
     contextualAutocomplete = checked;
-    ConfigService.SetContextualAutocomplete(checked);
+    SetContextualAutocomplete(checked);
   }
 
   let isPreset = $derived(presetColors.includes(accentColor));
@@ -39,6 +43,7 @@
     <div class="flex items-center gap-3 flex-wrap">
       {#each presetColors as color}
         <button
+          type="button"
           class="w-8 h-8 rounded-full border-2 transition-all {accentColor === color ? 'border-fg scale-110' : 'border-transparent hover:border-muted-foreground'}"
           style="background-color: {color}"
           onclick={() => setAccent(color)}
@@ -61,7 +66,9 @@
       </label>
     </div>
     {#if accentColor}
-      <button class="mt-3 text-sm text-muted-foreground hover:text-fg underline" onclick={() => setAccent('')}>Reset to default</button>
+      <button type="button" class="mt-3 text-sm text-muted-foreground hover:text-fg underline" onclick={() => setAccent('')}>
+        Reset to default
+      </button>
     {/if}
   </div>
 

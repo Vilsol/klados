@@ -57,7 +57,7 @@ describe("Sidebar plugin entries", () => {
     const {GetPluginSidebarEntries} = await import("../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js");
     vi.mocked(GetPluginSidebarEntries).mockResolvedValue([
       {category: "Security", label: "Certificates", gvr: "cert-manager.io.v1.certificates", icon: "", plugin: "cert-manager"},
-    ] as any);
+    ] as unknown[]);
 
     render(Sidebar);
 
@@ -71,7 +71,7 @@ describe("Sidebar plugin entries", () => {
     vi.mocked(GetPluginSidebarEntries).mockResolvedValue([
       {category: "Security", label: "Certificates", gvr: "cert-manager.io.v1.certificates", icon: "", plugin: "cert-manager"},
       {category: "Security", label: "Issuers", gvr: "cert-manager.io.v1.issuers", icon: "", plugin: "cert-manager"},
-    ] as any);
+    ] as unknown[]);
 
     render(Sidebar);
 

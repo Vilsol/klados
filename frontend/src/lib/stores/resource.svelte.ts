@@ -1,20 +1,20 @@
 import {Events} from "@wailsio/runtime";
-import * as ResourceService from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+import {ListResources, StartWatch, StopWatch} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 import {getLogger} from "$lib/logger";
 
 const log = getLogger("resource");
 
 interface WatchEvent {
   type: "ADDED" | "MODIFIED" | "DELETED";
-  object: Record<string, any>;
+  object: Record<string, unknown>;
 }
 
-function resourceKey(obj: Record<string, any>): string {
+function resourceKey(obj: Record<string, unknown>): string {
   return `${obj.metadata?.namespace ?? ""}/${obj.metadata?.name ?? ""}`;
 }
 
 class ResourceStore {
-  items = $state<Record<string, any>[]>([]);
+  items = $state<Record<string, unknown>[]>([]);
   loading = $state(false);
   error = $state<string | null>(null);
   lastLoadMs = $state<number | null>(null);
@@ -40,19 +40,19 @@ class ResourceStore {
     this.lastLoadMs = null;
 
     // Events.On returns an unsubscribe fn; callback receives WailsEvent { name, data }
-    this.unsub = Events.On(this.eventName, (wailsEvent: any) => {
-      this.handleEvent(wailsEvent.data as WatchEvent);
+    this.unsub = Events.On(this.eventName, (wailsEvent: unknown) => {
+      this.handleEvent((wailsEvent as {data: WatchEvent}).data);
     });
 
     try {
       const tList = performance.now();
-      const list = await ResourceService.ListResources(contextName, gvr, namespace);
+      const list = await ListResources(contextName, gvr, namespace);
       if (gen !== this.generation) {
         return; // superseded by a newer start/stop
       }
       const listMs = performance.now() - tList;
 
-      const map = new Map<string, Record<string, any>>();
+      const map = new Map<string, Record<string, unknown>>();
       for (const obj of list ?? []) {
         map.set(resourceKey(obj), obj);
       }
@@ -75,14 +75,12 @@ class ResourceStore {
       });
 
       // Start watch in background — event listener is already subscribed
-      ResourceService.StartWatch(contextName, gvr, namespace).catch((e) =>
-        log.warn("StartWatch failed", {contextName, gvr, namespace, error: String(e)}),
-      );
-    } catch (e: any) {
+      StartWatch(contextName, gvr, namespace).catch((e) => log.warn("StartWatch failed", {contextName, gvr, namespace, error: String(e)}));
+    } catch (e) {
       if (gen !== this.generation) {
         return;
       }
-      this.error = e?.message ?? String(e);
+      this.error = (e instanceof Error ? e.message : null) ?? String(e);
       this.loading = false;
     }
   }
@@ -94,7 +92,7 @@ class ResourceStore {
       this.unsub = null;
     }
     if (this.contextName && this.gvr) {
-      ResourceService.StopWatch(this.contextName, this.gvr, this.namespace).catch((e) => log.warn("StopWatch failed", {error: String(e)}));
+      StopWatch(this.contextName, this.gvr, this.namespace).catch((e) => log.warn("StopWatch failed", {error: String(e)}));
     }
     this.items = [];
     this.loading = false;

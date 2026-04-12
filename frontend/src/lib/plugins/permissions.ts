@@ -17,7 +17,7 @@ function parseGVR(gvr: string): {group: string; version: string; resource: strin
 export function assertGVRPermission(manifest: PluginManifest, gvr: string, verb: string): void {
   const {group, version, resource} = parseGVR(gvr);
   const allowed = manifest.permissions?.resources?.some(
-    (p) => p.group === group && p.version === version && p.resource === resource && p.verbs.includes(verb as any),
+    (p) => p.group === group && p.version === version && p.resource === resource && p.verbs.includes(verb),
   );
   if (!allowed) {
     throw new Error(`plugin "${manifest.name}" is not permitted to ${verb} ${gvr}`);

@@ -11,20 +11,21 @@ export interface APIResource {
   namespaced: boolean;
 }
 
-export function getControllerRef(obj: any): ControllerRef | null {
-  const refs = obj?.metadata?.ownerReferences;
-  if (!Array.isArray(refs)) {
+export function getControllerRef(obj: unknown): ControllerRef | null {
+  const refs = (obj as Record<string, unknown> | undefined)?.metadata;
+  const ownerRefs = (refs as Record<string, unknown> | undefined)?.ownerReferences;
+  if (!Array.isArray(ownerRefs)) {
     return null;
   }
-  const controller = refs.find((r: any) => r.controller === true);
+  const controller = ownerRefs.find((r: Record<string, unknown>) => r.controller === true);
   if (!controller) {
     return null;
   }
   return {
-    apiVersion: controller.apiVersion,
-    kind: controller.kind,
-    name: controller.name,
-    uid: controller.uid,
+    apiVersion: controller.apiVersion as string,
+    kind: controller.kind as string,
+    name: controller.name as string,
+    uid: controller.uid as string,
   };
 }
 

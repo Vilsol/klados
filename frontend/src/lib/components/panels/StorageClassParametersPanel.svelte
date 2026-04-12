@@ -1,5 +1,6 @@
 <script lang="ts">
-  let {obj}: {obj: Record<string, any>} = $props();
+  import type {KubernetesResource} from "$lib/types";
+  let {obj}: {obj: Record<string, KubernetesResource>} = $props();
 
   const params = $derived<Record<string, string>>(obj.spec?.parameters ?? obj.parameters ?? {});
   const entries = $derived(Object.entries(params));

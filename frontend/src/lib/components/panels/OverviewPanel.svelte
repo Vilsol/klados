@@ -9,10 +9,11 @@
   import {slotRegistry} from "$lib/plugins/slots.svelte.js";
   import {loadPluginComponent} from "$lib/plugins/loader.js";
   import {streamingStore} from "$lib/stores/streaming.svelte.js";
-  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {UpdateResource} from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte";
   import PortForwardDialog from "$lib/components/PortForwardDialog.svelte";
   import PortButton from "$lib/components/PortButton.svelte";
+  import type {KubernetesResource} from "$lib/types";
 
   let {
     obj,
@@ -24,8 +25,8 @@
     name = "",
     onopenowner,
   }: {
-    obj: Record<string, any>;
-    onupdate?: (updated: Record<string, any>) => void;
+    obj: Record<string, KubernetesResource>;
+    onupdate?: (updated: Record<string, KubernetesResource>) => void;
     descriptor: DescriptorDef;
     gvr?: string;
     ctxName?: string;
@@ -80,14 +81,14 @@
       const updated = JSON.parse(JSON.stringify(obj));
       updated.metadata.labels = Object.fromEntries(editLabels.filter(([k]) => k.trim()));
       updated.metadata.annotations = Object.fromEntries(editAnnotations.filter(([k]) => k.trim()));
-      const result = await ResourceService.UpdateResource(ctxName, gvr, namespace, updated);
+      const result = await UpdateResource(ctxName, gvr, namespace, updated);
       if (result) {
         onupdate?.(result);
       }
       editingLabels = false;
       notificationStore.push("Labels and annotations saved.", "success");
-    } catch (e: any) {
-      notificationStore.push(e?.message ?? "Save failed", "error");
+    } catch (e: unknown) {
+      notificationStore.push(e instanceof Error ? e.message : "Save failed", "error");
     } finally {
       saving = false;
     }
@@ -95,11 +96,11 @@
 
   const controllerRef = $derived(getControllerRef(obj));
 
-  const tolerations = $derived<any[]>(obj.spec?.tolerations ?? obj.spec?.template?.spec?.tolerations ?? []);
+  const tolerations = $derived<KubernetesResource[]>(obj.spec?.tolerations ?? obj.spec?.template?.spec?.tolerations ?? []);
   let tolerationsExpanded = $state(true);
   let tolerationsEl: HTMLElement | undefined = $state();
 
-  function formatToleration(t: any): string {
+  function formatToleration(t: KubernetesResource): string {
     const key = t.key || "*";
     const op = t.operator === "Exists" ? "Exists" : `=${t.value ?? ""}`;
     const effect = t.effect || "All";
@@ -117,21 +118,21 @@
 
   // Containers state
   const hasContainersPanel = $derived(descriptor.detailPanels.includes("containers"));
-  const containers = $derived<any[]>(obj.spec?.containers ?? []);
-  const initContainers = $derived<any[]>(obj.spec?.initContainers ?? []);
-  const conditions = $derived<any[]>(obj.status?.conditions ?? []);
+  const containers = $derived<KubernetesResource[]>(obj.spec?.containers ?? []);
+  const initContainers = $derived<KubernetesResource[]>(obj.spec?.initContainers ?? []);
+  const conditions = $derived<KubernetesResource[]>(obj.status?.conditions ?? []);
 
   let pfPort = $state<number | null>(null);
 
-  function containerStatus(cname: string): any {
-    return (obj.status?.containerStatuses ?? []).find((s: any) => s.name === cname);
+  function containerStatus(cname: string): KubernetesResource {
+    return (obj.status?.containerStatuses ?? []).find((s: KubernetesResource) => s.name === cname);
   }
 
-  function initContainerStatus(cname: string): any {
-    return (obj.status?.initContainerStatuses ?? []).find((s: any) => s.name === cname);
+  function initContainerStatus(cname: string): KubernetesResource {
+    return (obj.status?.initContainerStatuses ?? []).find((s: KubernetesResource) => s.name === cname);
   }
 
-  function stateLabel(status: any): string {
+  function stateLabel(status: KubernetesResource): string {
     if (!status) {
       return "Unknown";
     }
@@ -191,8 +192,9 @@
           <div class="text-xs text-muted mb-0.5">Controlled By</div>
           {#if onopenowner && clusterStore.resolveOwnerGVR(controllerRef.apiVersion, controllerRef.kind)}
             <button
+              type="button"
               class="text-xs font-mono text-accent hover:underline text-left"
-              onclick={() => onopenowner!(controllerRef, obj.metadata?.namespace ?? '')}
+              onclick={() => onopenowner?.(controllerRef, obj.metadata?.namespace ?? '')}
             >
               {controllerRef.kind}/{controllerRef.name}
             </button>
@@ -204,7 +206,9 @@
       {#if tolerations.length > 0}
         <div class="min-w-0">
           <div class="text-xs text-muted mb-0.5">Tolerations</div>
-          <button onclick={scrollToTolerations} class="text-xs font-mono text-accent hover:underline">{tolerations.length}</button>
+          <button type="button" onclick={scrollToTolerations} class="text-xs font-mono text-accent hover:underline">
+            {tolerations.length}
+          </button>
         </div>
       {/if}
     </div>
@@ -221,7 +225,7 @@
 
   {#if tolerations.length > 0}
     <section bind:this={tolerationsEl} class="bg-surface border border-border rounded-lg p-4">
-      <button onclick={() => tolerationsExpanded = !tolerationsExpanded} class="flex items-center gap-1 w-full text-left">
+      <button type="button" onclick={() => tolerationsExpanded = !tolerationsExpanded} class="flex items-center gap-1 w-full text-left">
         <SectionHeader class="">{tolerationsExpanded ? '▾' : '▸'} Tolerations ({tolerations.length})</SectionHeader>
       </button>
       {#if tolerationsExpanded}
@@ -240,15 +244,24 @@
       <div class="flex items-center justify-between mb-3">
         <SectionHeader class="">Labels & Annotations</SectionHeader>
         {#if !editingLabels}
-          <button onclick={startEdit} class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors">
+          <button
+            type="button"
+            onclick={startEdit}
+            class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
+          >
             Edit
           </button>
         {:else}
           <div class="flex gap-2">
-            <button onclick={cancelEdit} class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors">
+            <button
+              type="button"
+              onclick={cancelEdit}
+              class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors"
+            >
               Cancel
             </button>
             <button
+              type="button"
               onclick={saveLabels}
               disabled={saving}
               class="text-xs px-2.5 py-1 rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -347,6 +360,7 @@
               {#if c.resources?.requests || c.resources?.limits}
                 <div>
                   <button
+                    type="button"
                     onclick={() => toggleSection(c.name, 'resources')}
                     class="flex items-center gap-1 w-full text-left py-1.5 text-xs font-semibold text-muted uppercase tracking-wide hover:text-fg transition-colors"
                   >
@@ -391,6 +405,7 @@
               {#if c.ports?.length}
                 <div>
                   <button
+                    type="button"
                     onclick={() => toggleSection(c.name, 'ports')}
                     class="flex items-center gap-1 w-full text-left py-1.5 text-xs font-semibold text-muted uppercase tracking-wide hover:text-fg transition-colors"
                   >
@@ -411,6 +426,7 @@
               {#if c.env?.length}
                 <div>
                   <button
+                    type="button"
                     onclick={() => toggleSection(c.name, 'env')}
                     class="flex items-center gap-1 w-full text-left py-1.5 text-xs font-semibold text-muted uppercase tracking-wide hover:text-fg transition-colors"
                   >
@@ -435,6 +451,7 @@
               {#if c.volumeMounts?.length}
                 <div>
                   <button
+                    type="button"
                     onclick={() => toggleSection(c.name, 'mounts')}
                     class="flex items-center gap-1 w-full text-left py-1.5 text-xs font-semibold text-muted uppercase tracking-wide hover:text-fg transition-colors"
                   >
@@ -472,6 +489,7 @@
   {#if hasContainersPanel && initContainers.length > 0}
     <section class="bg-surface border border-border rounded-lg p-4">
       <button
+        type="button"
         onclick={() => showInitContainers = !showInitContainers}
         class="text-xs font-semibold text-muted uppercase tracking-wide flex items-center gap-1"
       >

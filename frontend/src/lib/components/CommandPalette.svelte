@@ -199,6 +199,7 @@
               {#each items as item (item.id)}
                 {@const idx = flatItems.indexOf(item)}
                 <button
+                  type="button"
                   role="option"
                   aria-selected={idx === selectedIndex}
                   class="w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-surface-hover transition-colors {idx === selectedIndex ? 'bg-surface-hover' : ''}"

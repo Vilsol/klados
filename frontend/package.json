@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
-    "lint": "biome lint"
+    "lint": "biome lint",
+    "format": "biome format --write"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",

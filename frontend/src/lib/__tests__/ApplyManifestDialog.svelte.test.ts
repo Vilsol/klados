@@ -20,6 +20,8 @@ vi.mock("$lib/stores/notification.svelte", () => ({
 
 import ApplyManifestDialog from "$lib/components/ApplyManifestDialog.svelte";
 
+const APPLY_REGEX = /Apply/i;
+
 describe("ApplyManifestDialog", () => {
   it("renders Open File and Paste from Clipboard buttons when open", async () => {
     render(ApplyManifestDialog, {props: {open: true, ctxName: "test-ctx"}});
@@ -32,7 +34,7 @@ describe("ApplyManifestDialog", () => {
     render(ApplyManifestDialog, {props: {open: true, ctxName: "test-ctx"}});
     await tick();
     await waitFor(() => {
-      const btn = screen.getByRole("button", {name: /Apply/i});
+      const btn = screen.getByRole("button", {name: APPLY_REGEX});
       expect(btn).toBeTruthy();
       expect((btn as HTMLButtonElement).disabled).toBe(true);
     });

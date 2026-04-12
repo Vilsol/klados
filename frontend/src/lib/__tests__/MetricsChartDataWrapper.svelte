@@ -27,4 +27,4 @@
 </script>
 
 <MetricsChart title="CPU" unit="cores" {series} />
-<button data-testid="update-data" onclick={updateData}>update</button>
+<button type="button" data-testid="update-data" onclick={updateData}>update</button>

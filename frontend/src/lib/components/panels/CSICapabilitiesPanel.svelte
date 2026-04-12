@@ -1,7 +1,8 @@
 <script lang="ts">
-  import * as ResourceService from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {ListResources} from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import type {KubernetesResource} from "$lib/types";
 
-  let {obj, ctxName}: {obj: Record<string, any>; ctxName: string} = $props();
+  let {obj, ctxName}: {obj: Record<string, KubernetesResource>; ctxName: string} = $props();
 
   const spec = $derived(obj.spec ?? {});
   const attachRequired = $derived<boolean>(spec.attachRequired ?? true);
@@ -17,7 +18,7 @@
     const driverName = obj.metadata?.name;
     (async () => {
       try {
-        const items: any[] = (await ResourceService.ListResources(ctxName, "snapshot.storage.k8s.io.v1.volumesnapshotclasses", "")) ?? [];
+        const items: KubernetesResource[] = (await ListResources(ctxName, "snapshot.storage.k8s.io.v1.volumesnapshotclasses", "")) ?? [];
         const matching = items.filter((c) => c.driver === driverName).map((c) => c.metadata?.name ?? "");
         snapshotStatus = matching.length > 0 ? {classes: matching} : "none";
       } catch {
