@@ -48,6 +48,7 @@
     "yaml": "^2.8.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.11",
     "@sveltejs/vite-plugin-svelte": "^7",
     "@tailwindcss/vite": "^4",
     "@testing-library/svelte": "^5",

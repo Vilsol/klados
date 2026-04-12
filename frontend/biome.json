@@ -1,0 +1,92 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.11/schema.json",
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": false
+  },
+  "files": {
+    "includes": ["**", "!!**/dist", "!!bindings"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 140,
+    "attributePosition": "auto",
+    "bracketSpacing": true,
+    "expand": "auto",
+    "trailingNewline": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "javascript": {
+    "experimentalEmbeddedSnippetsEnabled": true,
+    "formatter": {
+      "quoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "all",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineEnding": "lf",
+      "lineWidth": 140,
+      "bracketSpacing": true,
+      "expand": "auto",
+      "operatorLinebreak": "after",
+      "trailingNewline": true
+    }
+  },
+  "json": {
+    "formatter": {
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineEnding": "lf",
+      "lineWidth": 140,
+      "trailingCommas": "none",
+      "bracketSpacing": true,
+      "expand": "auto",
+      "trailingNewline": true
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    },
+    "formatter": {
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineEnding": "lf",
+      "lineWidth": 140,
+      "trailingNewline": true
+    }
+  },
+  "html": {
+    "experimentalFullSupportEnabled": true,
+    "formatter": {
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineEnding": "lf",
+      "lineWidth": 140,
+      "attributePosition": "auto",
+      "whitespaceSensitivity": "css",
+      "indentScriptAndStyle": true,
+      "selfCloseVoidElements": "never",
+      "trailingNewline": true
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
+}
