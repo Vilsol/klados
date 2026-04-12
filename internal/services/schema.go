@@ -38,6 +38,19 @@ func (s *SchemaService) GetSchema(contextName, gvr, kind string) (map[string]any
 		return nil, err
 	}
 
+	// Derive kind from GVR via discovery when not provided.
+	if kind == "" {
+		resources, err := s.appSvc.ClusterManager().DiscoverResources(contextName)
+		if err == nil {
+			for _, r := range resources {
+				if r.GVR == gvr {
+					kind = r.Kind
+					break
+				}
+			}
+		}
+	}
+
 	sv, err := conn.Clientset.Discovery().ServerVersion()
 	if err != nil {
 		return nil, fmt.Errorf("getting server version: %w", err)
@@ -85,6 +98,8 @@ func (s *SchemaService) GetSchema(contextName, gvr, kind string) (map[string]any
 	if schema == nil {
 		// Fallback: return full doc so caller still has something
 		schema = fullDoc
+	} else {
+		bundleSchemaRefs(schema, fullDoc)
 	}
 
 	data, _ := json.Marshal(schema)
@@ -95,6 +110,86 @@ func (s *SchemaService) GetSchema(contextName, gvr, kind string) (map[string]any
 	}
 
 	return schema, nil
+}
+
+const openAPIRefPrefix = "#/components/schemas/"
+const jsonSchemaRefPrefix = "#/definitions/"
+
+// bundleSchemaRefs collects all transitively-referenced schemas from the OpenAPI
+// document's components/schemas and attaches them as "definitions" on the root schema.
+// It rewrites $ref pointers from OpenAPI format (#/components/schemas/X) to
+// JSON Schema Draft-07 format (#/definitions/X) and unwraps single-element
+// allOf wrappers (allOf: [{$ref: "..."}]) to plain $ref, since json-schema-library's
+// Draft07 cannot resolve $ref through allOf.
+func bundleSchemaRefs(schema, fullDoc map[string]any) {
+	components, ok := fullDoc["components"].(map[string]any)
+	if !ok {
+		return
+	}
+	allSchemas, ok := components["schemas"].(map[string]any)
+	if !ok {
+		return
+	}
+
+	defs := make(map[string]any)
+	visited := make(map[string]bool)
+
+	// Collect all $ref targets transitively, rewriting refs and unwrapping allOf.
+	var collect func(node any)
+	collect = func(node any) {
+		switch v := node.(type) {
+		case map[string]any:
+			// Unwrap allOf: [{"$ref": "..."}] → {"$ref": "..."} with sibling fields preserved.
+			unwrapAllOfRef(v)
+
+			if ref, ok := v["$ref"].(string); ok {
+				if name, found := strings.CutPrefix(ref, openAPIRefPrefix); found {
+					v["$ref"] = jsonSchemaRefPrefix + name
+					if !visited[name] {
+						visited[name] = true
+						if def, ok := allSchemas[name].(map[string]any); ok {
+							defs[name] = def
+							collect(def)
+						}
+					}
+				}
+			}
+			for _, child := range v {
+				collect(child)
+			}
+		case []any:
+			for _, item := range v {
+				collect(item)
+			}
+		}
+	}
+
+	collect(schema)
+
+	if len(defs) > 0 {
+		schema["definitions"] = defs
+	}
+}
+
+// unwrapAllOfRef converts allOf: [{"$ref": "..."}] into a direct $ref on the parent map.
+// Kubernetes OpenAPI wraps $ref in allOf alongside "default" and "description" fields.
+// json-schema-library Draft07 can't resolve $ref through allOf, so we flatten it.
+func unwrapAllOfRef(m map[string]any) {
+	allOf, ok := m["allOf"].([]any)
+	if !ok || len(allOf) != 1 {
+		return
+	}
+	entry, ok := allOf[0].(map[string]any)
+	if !ok {
+		return
+	}
+	ref, ok := entry["$ref"].(string)
+	if !ok {
+		return
+	}
+	// Move $ref up, remove allOf.
+	m["$ref"] = ref
+	delete(m, "allOf")
 }
 
 // extractResourceSchema finds the JSON Schema for a specific resource Kind within an OpenAPI v3 document.

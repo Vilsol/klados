@@ -12,6 +12,10 @@ vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/resourcese
   GetAllTemplateGVRs: vi.fn().mockResolvedValue(["core.v1.pods", "apps.v1.deployments"]),
 }));
 
+vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js", () => ({
+  GetSchema: vi.fn().mockResolvedValue({}),
+}));
+
 vi.mock("$lib/stores/notification.svelte", () => ({
   notificationStore: {push: vi.fn()},
 }));

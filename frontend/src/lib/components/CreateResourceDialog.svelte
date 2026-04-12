@@ -1,20 +1,18 @@
 <script lang="ts">
   import {Dialog} from "bits-ui";
-  import {Combobox} from "@klados/ui";
+  import {Combobox, cmYamlExtensions} from "@klados/ui";
   import {onDestroy} from "svelte";
-  import {EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter} from "@codemirror/view";
+  import {EditorView} from "@codemirror/view";
   import {EditorState} from "@codemirror/state";
-  import {defaultKeymap, history, historyKeymap} from "@codemirror/commands";
-  import {yaml as yamlLang} from "@codemirror/lang-yaml";
-  import {search, searchKeymap} from "@codemirror/search";
-  import {syntaxHighlighting, foldGutter, foldKeymap} from "@codemirror/language";
-  import {oneDarkHighlightStyle} from "@codemirror/theme-one-dark";
+  import {yamlSchema} from "codemirror-json-schema/yaml";
+  import {yamlLanguage} from "@codemirror/lang-yaml";
   import {parse} from "yaml";
   import {
     GetAllTemplateGVRs,
     GetTemplates,
     CreateResource,
   } from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {GetSchema} from "../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte";
   import {getLogger} from "$lib/logger";
 
@@ -56,43 +54,44 @@
   let prevSelectedTemplateName = $state("");
   let editorDirty = $state(false);
 
-  const editorTheme = EditorView.theme({
-    "&": {height: "100%", fontSize: "12.5px", backgroundColor: "var(--color-bg)", color: "var(--color-fg)"},
-    ".cm-content": {
-      padding: "4px 0",
-      fontFamily: '"JetBrains Mono", "Fira Code", ui-monospace, monospace',
-      caretColor: "var(--color-accent)",
-    },
-    ".cm-gutters": {
-      backgroundColor: "var(--color-surface)",
-      color: "var(--color-muted)",
-      borderRight: "1px solid var(--color-border)",
-      minWidth: "3rem",
-    },
-    ".cm-scroller": {overflow: "auto", lineHeight: "1.6"},
-  });
+  let currentSchema: Record<string, unknown> | null = null;
 
-  function initEditor(doc: string) {
+  function initEditor(doc: string, schema?: Record<string, unknown> | null) {
+    const cursorPos = view ? Math.min(view.state.selection.main.head, doc.length) : 0;
     view?.destroy();
     view = new EditorView({
       state: EditorState.create({
         doc,
+        selection: {anchor: cursorPos},
         extensions: [
-          lineNumbers(),
-          highlightActiveLine(),
-          highlightActiveLineGutter(),
-          foldGutter(),
-          history(),
-          syntaxHighlighting(oneDarkHighlightStyle),
-          yamlLang(),
-          search({top: true}),
-          keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, ...foldKeymap]),
-          EditorView.lineWrapping,
-          editorTheme,
+          ...cmYamlExtensions({lang: schema ? yamlSchema(schema) : undefined}),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
               editorDirty = true;
             }
+          }),
+          // Debug: log whether Ctrl+Space reaches CodeMirror and whether completion sources are called
+          EditorView.domEventHandlers({
+            keydown(event) {
+              if (event.key === " " && event.ctrlKey) {
+                log.info("[key-debug] Ctrl+Space reached CodeMirror DOM", {
+                  key: event.key,
+                  code: event.code,
+                  ctrlKey: event.ctrlKey,
+                  defaultPrevented: event.defaultPrevented,
+                });
+              }
+              return false;
+            },
+          }),
+          yamlLanguage.data.of({
+            autocomplete: (ctx: import("@codemirror/autocomplete").CompletionContext) => {
+              log.info("[completion-debug] yamlLanguage completion source called", {
+                pos: ctx.pos,
+                explicit: ctx.explicit,
+              });
+              return null;
+            },
           }),
         ],
       }),
@@ -141,7 +140,46 @@
 
   $effect(() => {
     if (open && container && !view) {
-      initEditor("");
+      initEditor("", currentSchema);
+      // Trigger schema fetch for the initial GVR
+      if (selectedGvr && ctxName) {
+        fetchAndApplySchema(selectedGvr);
+      }
+    }
+    if (!open && view) {
+      view.destroy();
+      view = undefined;
+      lastSchemaGvr = "";
+      currentSchema = null;
+    }
+  });
+
+  // Fetch schema when GVR changes; rebuild editor to apply it.
+  let lastSchemaGvr = "";
+
+  function fetchAndApplySchema(gvr: string) {
+    if (!gvr || !ctxName || !view) {
+      return;
+    }
+    if (gvr === lastSchemaGvr) {
+      return;
+    }
+    lastSchemaGvr = gvr;
+    GetSchema(ctxName, gvr, "")
+      .then((schema) => {
+        if (view && schema && Object.keys(schema).length > 0) {
+          currentSchema = schema;
+          const doc = view.state.doc.toString();
+          initEditor(doc, schema);
+        }
+      })
+      .catch((e) => log.warn("Failed to fetch schema for autocomplete", {error: String(e)}));
+  }
+
+  $effect(() => {
+    const gvr = selectedGvr;
+    if (gvr && ctxName && view) {
+      fetchAndApplySchema(gvr);
     }
   });
 

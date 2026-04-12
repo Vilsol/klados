@@ -28,6 +28,7 @@
     "@codemirror/lang-json": ">=6",
     "@codemirror/legacy-modes": ">=6",
     "@codemirror/commands": ">=6",
+    "@codemirror/autocomplete": ">=6",
     "@codemirror/search": ">=6",
     "@tanstack/svelte-virtual": ">=3",
     "ansi_up": ">=5",

@@ -1,13 +1,9 @@
 <script lang="ts">
   import {Dialog} from "bits-ui";
+  import {cmYamlExtensions} from "@klados/ui";
   import {onDestroy} from "svelte";
-  import {EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter} from "@codemirror/view";
+  import {EditorView} from "@codemirror/view";
   import {EditorState} from "@codemirror/state";
-  import {defaultKeymap, history, historyKeymap} from "@codemirror/commands";
-  import {yaml as yamlLang} from "@codemirror/lang-yaml";
-  import {search, searchKeymap} from "@codemirror/search";
-  import {syntaxHighlighting, foldGutter, foldKeymap} from "@codemirror/language";
-  import {oneDarkHighlightStyle} from "@codemirror/theme-one-dark";
   import {BrowseManifestFile} from "../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
   import {ApplyManifest} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte";
@@ -35,39 +31,13 @@
   let hasApplied = $state(false);
   let editorContent = $state("");
 
-  const editorTheme = EditorView.theme({
-    "&": {height: "100%", fontSize: "12.5px", backgroundColor: "var(--color-bg)", color: "var(--color-fg)"},
-    ".cm-content": {
-      padding: "4px 0",
-      fontFamily: '"JetBrains Mono", "Fira Code", ui-monospace, monospace',
-      caretColor: "var(--color-accent)",
-    },
-    ".cm-gutters": {
-      backgroundColor: "var(--color-surface)",
-      color: "var(--color-muted)",
-      borderRight: "1px solid var(--color-border)",
-      minWidth: "3rem",
-    },
-    ".cm-scroller": {overflow: "auto", lineHeight: "1.6"},
-  });
-
   function initEditor(doc = "") {
     view?.destroy();
     view = new EditorView({
       state: EditorState.create({
         doc,
         extensions: [
-          lineNumbers(),
-          highlightActiveLine(),
-          highlightActiveLineGutter(),
-          foldGutter(),
-          history(),
-          syntaxHighlighting(oneDarkHighlightStyle),
-          yamlLang(),
-          search({top: true}),
-          keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, ...foldKeymap]),
-          EditorView.lineWrapping,
-          editorTheme,
+          ...cmYamlExtensions(),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
               editorContent = update.state.doc.toString();
