@@ -215,10 +215,14 @@ function getBasePluginURL(): string | null {
 }
 
 async function invokeComponentCommand(pluginName: string, component: string, perms: PermsSummary, basePluginURL: string | null) {
-  if (!basePluginURL) return;
+  if (!basePluginURL) {
+    return;
+  }
   const url = `${basePluginURL}/${pluginName}/${component}`;
   const mod = await import(/* @vite-ignore */ url);
-  if (!mod?.default) return;
+  if (!mod?.default) {
+    return;
+  }
   const ctx = buildCommandContext(pluginName, perms);
   mount(mod.default, {target: document.body, props: {ctx}});
 }

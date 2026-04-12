@@ -70,7 +70,9 @@
           ? parseInt(localPort, 10)
           : 0;
 
-      if (!name || Number.isNaN(remote) || remote <= 0 || !ns) return;
+      if (!name || Number.isNaN(remote) || remote <= 0 || !ns) {
+        return;
+      }
 
       const spec = await PortForwardService.StartForward(ctx, ns, kind as TargetKind, name, gvr, local, remote);
       log.info("Port forward started", {localPort: local, remotePort: remote});

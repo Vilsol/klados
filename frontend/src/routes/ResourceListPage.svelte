@@ -32,17 +32,23 @@
 
   // Keep activeContext in sync with the current tab's context for the header
   $effect(() => {
-    if (ctxName) clusterStore.setActiveContext(ctxName);
+    if (ctxName) {
+      clusterStore.setActiveContext(ctxName);
+    }
   });
 
   // Initialize column store whenever GVR changes
   $effect(() => {
-    if (gvr) columnStore.loadForGVR(gvr);
+    if (gvr) {
+      columnStore.loadForGVR(gvr);
+    }
   });
 
   // Set GVR on selection store (auto-clears on GVR change)
   $effect(() => {
-    if (gvr) selectionStore.setGVR(gvr);
+    if (gvr) {
+      selectionStore.setGVR(gvr);
+    }
   });
 
   // Clear selection on namespace change
@@ -55,13 +61,18 @@
 
   // Restore scroll position after items load
   $effect(() => {
-    if (!listScrollContainer || store.loading) return;
+    if (!listScrollContainer || store.loading) {
+      return;
+    }
     const tab = sessionStore.tabs[sessionStore.activeTabIndex];
     const saved = tab?.scrollPosition;
-    if (saved)
+    if (saved) {
       requestAnimationFrame(() => {
-        if (listScrollContainer) listScrollContainer.scrollTop = saved;
+        if (listScrollContainer) {
+          listScrollContainer.scrollTop = saved;
+        }
       });
+    }
   });
 
   onDestroy(() => {
@@ -93,11 +104,15 @@
 
   // Keep selected item in sync with live watch updates
   $effect(() => {
-    if (!selectedItem) return;
+    if (!selectedItem) {
+      return;
+    }
     const name = selectedItem.metadata?.name;
     const ns = selectedItem.metadata?.namespace;
     const fresh = store.items.find((i) => i.metadata?.name === name && i.metadata?.namespace === ns);
-    if (fresh) selectedItem = fresh;
+    if (fresh) {
+      selectedItem = fresh;
+    }
   });
 
   const sparklineGvrs = ["core.v1.pods", "core.v1.nodes"];
@@ -117,7 +132,9 @@
     const ctx = ctxName;
     const g = gvr;
     const ns = watchNamespace;
-    if (!enabled || !ctx || !g || !sparklineGvrs.includes(g)) return;
+    if (!enabled || !ctx || !g || !sparklineGvrs.includes(g)) {
+      return;
+    }
 
     async function poll() {
       try {
@@ -126,7 +143,9 @@
           const data: Record<string, MetricResult[]> = {};
           if (result) {
             for (const [k, v] of Object.entries(result)) {
-              if (v) data[k] = v as MetricResult[];
+              if (v) {
+                data[k] = v as MetricResult[];
+              }
             }
           }
           sparklineData = data;
@@ -145,7 +164,9 @@
 
   async function openOwnerDrawer(ref: ControllerRef, namespace: string) {
     const ownerGVR = clusterStore.resolveOwnerGVR(ref.apiVersion, ref.kind);
-    if (!ownerGVR) return;
+    if (!ownerGVR) {
+      return;
+    }
     try {
       const owner = await ResourceService.GetResource(ctxName, ownerGVR, namespace, ref.name);
       if (owner) {

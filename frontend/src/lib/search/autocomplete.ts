@@ -60,7 +60,9 @@ function collectNamespaces(items: Record<string, any>[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const item of items) {
     const ns = item.metadata?.namespace ?? "";
-    if (ns) counts.set(ns, (counts.get(ns) ?? 0) + 1);
+    if (ns) {
+      counts.set(ns, (counts.get(ns) ?? 0) + 1);
+    }
   }
   return counts;
 }

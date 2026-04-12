@@ -56,7 +56,9 @@ describe("ApplyManifestDialog", () => {
     await waitFor(async () => {
       const btns = screen.getAllByRole("button");
       const applyBtn = btns.find((b) => b.textContent?.includes("Apply") && !(b as HTMLButtonElement).disabled);
-      if (!applyBtn) throw new Error("Apply button not enabled yet");
+      if (!applyBtn) {
+        throw new Error("Apply button not enabled yet");
+      }
       await fireEvent.click(applyBtn);
     });
 

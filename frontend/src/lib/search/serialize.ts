@@ -24,7 +24,9 @@ export function savedFilterToQuery(filter: SavedFilter): string {
 }
 
 export function queryToSavedFilter(query: string): Omit<SavedFilter, "name"> {
-  if (!query.trim()) return {};
+  if (!query.trim()) {
+    return {};
+  }
 
   const terms = parseSearch(query);
   const labels: Record<string, string> = {};
@@ -48,8 +50,14 @@ export function queryToSavedFilter(query: string): Omit<SavedFilter, "name"> {
   }
 
   const result: Omit<SavedFilter, "name"> = {};
-  if (Object.keys(labels).length > 0) result.labels = labels;
-  if (Object.keys(annotations).length > 0) result.annotations = annotations;
-  if (searchParts.length > 0) result.search = searchParts.join(" ");
+  if (Object.keys(labels).length > 0) {
+    result.labels = labels;
+  }
+  if (Object.keys(annotations).length > 0) {
+    result.annotations = annotations;
+  }
+  if (searchParts.length > 0) {
+    result.search = searchParts.join(" ");
+  }
   return result;
 }

@@ -18,7 +18,9 @@
   const svcName = $derived<string>(obj.metadata?.name ?? "");
 
   $effect(() => {
-    if (!ctxName || !ns || !svcName) return;
+    if (!ctxName || !ns || !svcName) {
+      return;
+    }
     endpoints = null;
     endpointError = "";
     ResourceService.GetResource(ctxName, "core.v1.endpoints", ns, svcName)

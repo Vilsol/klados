@@ -82,13 +82,17 @@
   }
 
   function removeSession(i: number) {
-    if (i < 0 || i >= sessions.length) return;
+    if (i < 0 || i >= sessions.length) {
+      return;
+    }
     removeSessionById(sessions[i].id);
   }
 
   function removeSessionById(id: string) {
     const idx = sessions.findIndex((s) => s.id === id);
-    if (idx < 0) return;
+    if (idx < 0) {
+      return;
+    }
     ExecService.CloseExecSession(id);
     sessions = sessions.filter((s) => s.id !== id);
     if (activeIdx >= sessions.length) {

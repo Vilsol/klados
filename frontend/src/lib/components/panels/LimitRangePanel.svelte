@@ -8,7 +8,9 @@
   function getResources(entry: any): string[] {
     const all = new Set<string>();
     for (const field of ["default", "defaultRequest", "min", "max", "maxLimitRequestRatio"]) {
-      if (entry[field]) Object.keys(entry[field]).forEach((k) => all.add(k));
+      if (entry[field]) {
+        Object.keys(entry[field]).forEach((k) => all.add(k));
+      }
     }
     if (entry.type === "PersistentVolumeClaim") {
       return [...all].filter((r) => r === "storage");

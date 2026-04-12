@@ -26,11 +26,15 @@ export function buildCRDTree(gvrs: string[], getKind: (gvr: string) => string): 
 
   for (const gvr of gvrs) {
     const group = extractGroup(gvr);
-    if (!group) continue;
+    if (!group) {
+      continue;
+    }
     const segs = group.split(".").reverse();
     let cur = root;
     for (const seg of segs) {
-      if (!cur.children.has(seg)) cur.children.set(seg, {children: new Map(), gvrs: []});
+      if (!cur.children.has(seg)) {
+        cur.children.set(seg, {children: new Map(), gvrs: []});
+      }
       cur = cur.children.get(seg)!;
     }
     cur.gvrs.push(gvr);
@@ -71,7 +75,9 @@ function enforceMinTopLevel(nodes: CRDTreeNode[]): CRDTreeNode[] {
       for (const child of node.children) {
         result.push({...child, label: `${child.label}.${node.label}`});
       }
-      if (node.directGvrs.length > 0) result.push(node);
+      if (node.directGvrs.length > 0) {
+        result.push(node);
+      }
     } else {
       result.push(node);
     }

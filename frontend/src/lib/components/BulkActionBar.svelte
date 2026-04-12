@@ -18,7 +18,9 @@
   const canScale = $derived(SCALABLE_GVRS.includes(gvr));
 
   $effect(() => {
-    if (!exportMenuOpen) return;
+    if (!exportMenuOpen) {
+      return;
+    }
     const close = () => {
       exportMenuOpen = false;
     };

@@ -16,13 +16,17 @@
   }
 
   function onResizeMove(e: MouseEvent) {
-    if (!dragging) return;
+    if (!dragging) {
+      return;
+    }
     const delta = dragStartY - e.clientY;
     bottomPanelStore.setHeight(dragStartHeight + delta);
   }
 
   function onResizeEnd() {
-    if (!dragging) return;
+    if (!dragging) {
+      return;
+    }
     dragging = false;
     document.body.style.cursor = "";
     document.body.style.userSelect = "";

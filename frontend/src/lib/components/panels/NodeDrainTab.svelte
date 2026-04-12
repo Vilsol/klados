@@ -23,12 +23,16 @@
 
     DrainService.IsActive(ctxName, name).then((active: boolean) => {
       isActive = active;
-      if (active) terminalState = "active";
+      if (active) {
+        terminalState = "active";
+      }
     });
 
     const unsub = Events.On(eventName, (wailsEvent: any) => {
       const msg = wailsEvent.data;
-      if (!msg) return;
+      if (!msg) {
+        return;
+      }
       switch (msg.type) {
         case "log":
           lines = [...lines, msg.message];
@@ -38,7 +42,9 @@
           break;
         case "complete":
           isActive = false;
-          if (terminalState === "active") terminalState = "complete";
+          if (terminalState === "active") {
+            terminalState = "complete";
+          }
           break;
         case "cancelled":
           isActive = false;

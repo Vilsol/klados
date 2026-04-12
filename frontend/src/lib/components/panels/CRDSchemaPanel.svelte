@@ -23,7 +23,9 @@
   function getContent(): string {
     const v = servedVersions.find((v) => v.name === selectedVersion);
     const schema = v?.schema?.openAPIV3Schema;
-    if (!schema) return "// No schema defined for this version";
+    if (!schema) {
+      return "// No schema defined for this version";
+    }
     return JSON.stringify(schema, null, 2);
   }
 

@@ -15,7 +15,9 @@
   const nsOptions = $derived((ctx ? clusterStore.getNamespaces(ctx) : []).map((ns) => ({value: ns, label: ns})));
 
   function onNamespaceChange(namespaces: string[]) {
-    if (ctx) clusterStore.setNamespaces(ctx, namespaces);
+    if (ctx) {
+      clusterStore.setNamespaces(ctx, namespaces);
+    }
   }
 
   let activeDrains = $state<string[]>([]);

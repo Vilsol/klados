@@ -30,7 +30,9 @@ if (typeof window !== "undefined") {
   // Clear cached modules for a plugin when it reloads so the new version is fetched.
   Events.On("plugin:reloading", (wailsEvent: any) => {
     const name = wailsEvent?.data?.name ?? wailsEvent?.name;
-    if (!name) return;
+    if (!name) {
+      return;
+    }
     for (const key of moduleCache.keys()) {
       if (key.includes(`/${name}/`)) {
         moduleCache.delete(key);

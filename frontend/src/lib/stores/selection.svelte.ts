@@ -50,7 +50,9 @@ class SelectionStore {
     const from = this.lastToggled;
     if (!from) {
       const item = itemsByKey.get(toKey);
-      if (item) this.select(toKey, item);
+      if (item) {
+        this.select(toKey, item);
+      }
       return;
     }
 
@@ -58,7 +60,9 @@ class SelectionStore {
     const toIdx = orderedKeys.indexOf(toKey);
     if (fromIdx === -1 || toIdx === -1) {
       const item = itemsByKey.get(toKey);
-      if (item) this.select(toKey, item);
+      if (item) {
+        this.select(toKey, item);
+      }
       return;
     }
 
@@ -71,7 +75,9 @@ class SelectionStore {
     for (const k of rangeKeys) {
       keys.add(k);
       const item = itemsByKey.get(k);
-      if (item) items.set(k, item);
+      if (item) {
+        items.set(k, item);
+      }
     }
 
     this.selectedKeys = keys;
@@ -86,7 +92,9 @@ class SelectionStore {
     for (const k of keys) {
       newKeys.add(k);
       const item = itemsByKey.get(k);
-      if (item) newItems.set(k, item);
+      if (item) {
+        newItems.set(k, item);
+      }
     }
 
     this.selectedKeys = newKeys;

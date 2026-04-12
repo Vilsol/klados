@@ -34,22 +34,34 @@
 
   const gaugePercent = $derived(() => {
     const range = maxReplicas - minReplicas;
-    if (range <= 0) return 100;
+    if (range <= 0) {
+      return 100;
+    }
     return Math.min(100, Math.max(0, ((currentReplicas - minReplicas) / range) * 100));
   });
 
   const desiredPercent = $derived(() => {
     const range = maxReplicas - minReplicas;
-    if (range <= 0) return 100;
+    if (range <= 0) {
+      return 100;
+    }
     return Math.min(100, Math.max(0, ((desiredReplicas - minReplicas) / range) * 100));
   });
 
   function getMetricName(m: any): string {
     const type: string = m.type ?? "";
-    if (type === "Resource") return m.resource?.name ?? "—";
-    if (type === "Pods") return m.pods?.metric?.name ?? "—";
-    if (type === "Object") return m.object?.metric?.name ?? "—";
-    if (type === "External") return m.external?.metric?.name ?? "—";
+    if (type === "Resource") {
+      return m.resource?.name ?? "—";
+    }
+    if (type === "Pods") {
+      return m.pods?.metric?.name ?? "—";
+    }
+    if (type === "Object") {
+      return m.object?.metric?.name ?? "—";
+    }
+    if (type === "External") {
+      return m.external?.metric?.name ?? "—";
+    }
     return "—";
   }
 
@@ -57,9 +69,15 @@
     const type: string = m.type ?? "";
     if (type === "Resource") {
       const t = m.resource?.target;
-      if (!t) return "—";
-      if (t.type === "Utilization") return `${t.averageUtilization ?? "—"}%`;
-      if (t.type === "AverageValue") return t.averageValue ?? "—";
+      if (!t) {
+        return "—";
+      }
+      if (t.type === "Utilization") {
+        return `${t.averageUtilization ?? "—"}%`;
+      }
+      if (t.type === "AverageValue") {
+        return t.averageValue ?? "—";
+      }
       return t.value ?? "—";
     }
     if (type === "Pods") {
@@ -68,35 +86,56 @@
     }
     if (type === "Object") {
       const t = m.object?.target;
-      if (!t) return "—";
-      if (t.type === "Value") return t.value ?? "—";
+      if (!t) {
+        return "—";
+      }
+      if (t.type === "Value") {
+        return t.value ?? "—";
+      }
       return t.averageValue ?? "—";
     }
     if (type === "External") {
       const t = m.external?.target;
-      if (!t) return "—";
-      if (t.type === "Value") return t.value ?? "—";
+      if (!t) {
+        return "—";
+      }
+      if (t.type === "Value") {
+        return t.value ?? "—";
+      }
       return t.averageValue ?? "—";
     }
     return "—";
   }
 
   function getCurrentMetric(m: any): string {
-    if (currentMetrics.length === 0) return "<unknown>";
+    if (currentMetrics.length === 0) {
+      return "<unknown>";
+    }
     const type: string = m.type ?? "";
     const name = getMetricName(m);
     const found = currentMetrics.find((c: any) => {
-      if (c.type !== type) return false;
+      if (c.type !== type) {
+        return false;
+      }
       return getMetricName(c) === name;
     });
-    if (!found) return "<unknown>";
-    if (type === "Resource")
+    if (!found) {
+      return "<unknown>";
+    }
+    if (type === "Resource") {
       return found.resource?.current?.averageUtilization != null
         ? `${found.resource.current.averageUtilization}%`
         : (found.resource?.current?.averageValue ?? "<unknown>");
-    if (type === "Pods") return found.pods?.current?.averageValue ?? "<unknown>";
-    if (type === "Object") return found.object?.current?.value ?? found.object?.current?.averageValue ?? "<unknown>";
-    if (type === "External") return found.external?.current?.value ?? found.external?.current?.averageValue ?? "<unknown>";
+    }
+    if (type === "Pods") {
+      return found.pods?.current?.averageValue ?? "<unknown>";
+    }
+    if (type === "Object") {
+      return found.object?.current?.value ?? found.object?.current?.averageValue ?? "<unknown>";
+    }
+    if (type === "External") {
+      return found.external?.current?.value ?? found.external?.current?.averageValue ?? "<unknown>";
+    }
     return "<unknown>";
   }
 </script>

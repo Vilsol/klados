@@ -42,7 +42,9 @@
       updated.metadata.labels = Object.fromEntries(editLabels.filter(([k]) => k.trim()));
       updated.metadata.annotations = Object.fromEntries(editAnnotations.filter(([k]) => k.trim()));
       const result = await ResourceService.UpdateResource(ctxName, gvr, namespace, updated);
-      if (result) onupdate?.(result);
+      if (result) {
+        onupdate?.(result);
+      }
       editing = false;
       notificationStore.push("Labels and annotations saved.", "success");
     } catch (e: any) {

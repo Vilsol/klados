@@ -11,7 +11,9 @@
   const ctxName = $derived(params.ctx ?? "");
 
   $effect(() => {
-    if (ctxName) clusterStore.setActiveContext(ctxName);
+    if (ctxName) {
+      clusterStore.setActiveContext(ctxName);
+    }
   });
   const gvr = $derived(params.gvr ?? "");
   const ns = $derived(params.ns ?? "");
@@ -24,7 +26,9 @@
   let error = $state<string | null>(null);
 
   async function load() {
-    if (!ctxName || !gvr || !name) return;
+    if (!ctxName || !gvr || !name) {
+      return;
+    }
     loading = true;
     error = null;
     try {

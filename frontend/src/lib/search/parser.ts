@@ -17,7 +17,9 @@ const KLADOS_OPTIONS = {
 };
 
 export function parseSearch(input: string): SearchTerm[] {
-  if (!input.trim()) return [];
+  if (!input.trim()) {
+    return [];
+  }
 
   const parsed = parse(input, KLADOS_OPTIONS);
 

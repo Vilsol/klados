@@ -19,7 +19,9 @@ export function getResolved(): "light" | "dark" {
 }
 
 function applyTheme() {
-  if (typeof document === "undefined") return;
+  if (typeof document === "undefined") {
+    return;
+  }
 
   const html = document.documentElement;
   html.classList.remove("light", "dark");

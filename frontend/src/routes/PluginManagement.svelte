@@ -106,7 +106,9 @@
   }
 
   async function confirmUninstall() {
-    if (!uninstallTarget) return;
+    if (!uninstallTarget) {
+      return;
+    }
     const name = uninstallTarget;
     uninstallTarget = null;
     await withLoading(name, async () => {
@@ -142,7 +144,9 @@
     registryLoading = true;
     try {
       await PluginService.SaveRegistryCredentials(authHost, authUsername, authPassword);
-      if (authInsecure) await PluginService.AddInsecureRegistry(authHost);
+      if (authInsecure) {
+        await PluginService.AddInsecureRegistry(authHost);
+      }
       await PluginService.InstallPlugin(ref);
       showAuthForm = false;
       authUsername = "";
@@ -166,7 +170,9 @@
     installing = true;
     try {
       const path = await AppService.BrowsePluginFile();
-      if (!path) return;
+      if (!path) {
+        return;
+      }
       await PluginService.InstallPlugin(path);
       notificationStore.success("Plugin installed", path.split("/").pop() ?? path);
     } catch (err) {

@@ -27,7 +27,9 @@
         for (const p of all as Array<{name: string}>) {
           try {
             const schema = await PluginService.GetPluginSettingsSchema(p.name);
-            if (schema) withSettings.push(p);
+            if (schema) {
+              withSettings.push(p);
+            }
           } catch {}
         }
         plugins = withSettings;

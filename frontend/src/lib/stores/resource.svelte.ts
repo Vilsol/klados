@@ -47,7 +47,9 @@ class ResourceStore {
     try {
       const tList = performance.now();
       const list = await ResourceService.ListResources(contextName, gvr, namespace);
-      if (gen !== this.generation) return; // superseded by a newer start/stop
+      if (gen !== this.generation) {
+        return; // superseded by a newer start/stop
+      }
       const listMs = performance.now() - tList;
 
       const map = new Map<string, Record<string, any>>();
@@ -60,9 +62,13 @@ class ResourceStore {
       const count = this.items.length;
 
       requestAnimationFrame(() => {
-        if (gen !== this.generation) return;
+        if (gen !== this.generation) {
+          return;
+        }
         requestAnimationFrame(() => {
-          if (gen !== this.generation) return;
+          if (gen !== this.generation) {
+            return;
+          }
           const total = Math.round(performance.now() - t0);
           log.debug("perf", {gvr, count, listMs: Math.round(listMs), interactiveMs: total});
         });
@@ -73,7 +79,9 @@ class ResourceStore {
         log.warn("StartWatch failed", {contextName, gvr, namespace, error: String(e)}),
       );
     } catch (e: any) {
-      if (gen !== this.generation) return;
+      if (gen !== this.generation) {
+        return;
+      }
       this.error = e?.message ?? String(e);
       this.loading = false;
     }
@@ -94,7 +102,9 @@ class ResourceStore {
   }
 
   private handleEvent(event: WatchEvent) {
-    if (!event?.object) return;
+    if (!event?.object) {
+      return;
+    }
     const obj = event.object;
     const key = resourceKey(obj);
 

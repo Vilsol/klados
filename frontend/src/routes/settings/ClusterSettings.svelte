@@ -55,7 +55,9 @@
 
   function toggleReadOnlyOverride(enabled: boolean) {
     readOnlyOverride = enabled;
-    if (!enabled) readOnlyValue = false;
+    if (!enabled) {
+      readOnlyValue = false;
+    }
     save();
   }
 
@@ -66,7 +68,9 @@
 
   function toggleCompactOverride(enabled: boolean) {
     compactOverride = enabled;
-    if (!enabled) compactValue = false;
+    if (!enabled) {
+      compactValue = false;
+    }
     save();
   }
 

@@ -59,7 +59,9 @@
     const _ns = namespace;
     const _name = name;
     const _tail = tailLines;
-    if (!container || !streamingStore.config) return;
+    if (!container || !streamingStore.config) {
+      return;
+    }
 
     let cancelled = false;
     let myID: string | null = null;
@@ -95,13 +97,17 @@
       cancelled = true;
       starting = false;
       streamID = null;
-      if (myID) LogService.StopLogStream(myID);
+      if (myID) {
+        LogService.StopLogStream(myID);
+      }
     };
   });
 
   function handleClickOutside(e: MouseEvent) {
     const t = e.target as HTMLElement;
-    if (!t.closest("[data-download-dropdown]")) downloadDropdownOpen = false;
+    if (!t.closest("[data-download-dropdown]")) {
+      downloadDropdownOpen = false;
+    }
   }
 
   const filename = $derived(`${namespace}-${name}-${selectedContainer || "all"}`);
@@ -109,7 +115,9 @@
   let downloading = $state(false);
 
   async function downloadAll() {
-    if (downloading || !streamingStore.config) return;
+    if (downloading || !streamingStore.config) {
+      return;
+    }
     downloading = true;
     try {
       const id = await LogService.StartLogStream(
@@ -127,7 +135,9 @@
       await new Promise<void>((resolve) => {
         const socket = new WebSocket(`ws://127.0.0.1:${streamingStore.config?.port}/${streamingStore.config?.token}/ws/logs/${id}`);
         socket.onmessage = (e) => {
-          if (typeof e.data !== "string") return;
+          if (typeof e.data !== "string") {
+            return;
+          }
           try {
             const msg = JSON.parse(e.data);
             if (msg.type === "eof" || msg.type === "error") {
@@ -143,7 +153,9 @@
         socket.onerror = () => resolve();
         socket.onclose = () => resolve();
       });
-      if (buf) allLines.push(buf);
+      if (buf) {
+        allLines.push(buf);
+      }
       const blob = new Blob([allLines.join("\n")], {type: "text/plain"});
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -165,7 +177,9 @@
   ]);
 
   onDestroy(() => {
-    if (streamID) LogService.StopLogStream(streamID);
+    if (streamID) {
+      LogService.StopLogStream(streamID);
+    }
   });
 </script>
 

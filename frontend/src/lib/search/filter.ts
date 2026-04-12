@@ -1,7 +1,9 @@
 import type {SearchTerm} from "./parser";
 
 function matchKeyValue(map: Record<string, string> | undefined, filter: string): boolean {
-  if (!map) return false;
+  if (!map) {
+    return false;
+  }
   const eqIdx = filter.indexOf("=");
   if (eqIdx === -1) {
     return filter in map;
@@ -41,6 +43,8 @@ function matchesTerm(item: Record<string, any>, term: SearchTerm): boolean {
 }
 
 export function filterItems(items: Record<string, any>[], terms: SearchTerm[]): Record<string, any>[] {
-  if (terms.length === 0) return items;
+  if (terms.length === 0) {
+    return items;
+  }
   return items.filter((item) => terms.every((term) => matchesTerm(item, term)));
 }

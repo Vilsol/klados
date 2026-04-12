@@ -15,7 +15,9 @@
   let ctxName = $derived(params.ctx ?? "unknown");
 
   $effect(() => {
-    if (ctxName) clusterStore.setActiveContext(ctxName);
+    if (ctxName) {
+      clusterStore.setActiveContext(ctxName);
+    }
   });
 
   let namespaces = $derived(clusterStore.getNamespaces(ctxName));
@@ -24,7 +26,9 @@
   $effect(() => {
     const ns = namespaces;
     untrack(() => {
-      if (selectedNamespace === "" && ns.length > 0) selectedNamespace = ns[0];
+      if (selectedNamespace === "" && ns.length > 0) {
+        selectedNamespace = ns[0];
+      }
     });
   });
 
@@ -54,7 +58,9 @@
 
   $effect(() => {
     const ns = selectedNamespace;
-    if (!ns || !capability?.hasPrometheus) return;
+    if (!ns || !capability?.hasPrometheus) {
+      return;
+    }
 
     const interval = rangeMinutes <= 60 ? 15_000 : 60_000;
 
@@ -62,7 +68,9 @@
       try {
         const res = await MetricsService.GetNamespaceMetrics(ctxName, ns!, rangeMinutes);
         fetchError = null;
-        if (res) response = res as unknown as MetricsResponse;
+        if (res) {
+          response = res as unknown as MetricsResponse;
+        }
       } catch (err: unknown) {
         fetchError = err instanceof Error ? err.message : String(err);
       }
@@ -74,7 +82,9 @@
   });
 
   function getSeriesByUnit(unit: string): TimeSeries[] {
-    if (!response) return [];
+    if (!response) {
+      return [];
+    }
     const metric = response.metrics.find((m) => m.unit === unit || m.name.toLowerCase().includes(unit === "cores" ? "cpu" : "mem"));
     return metric?.series ?? [];
   }
@@ -100,14 +110,22 @@
   let health = $state<ClusterHealth | null>(null);
 
   function statusLabel(s: number): string {
-    if (s === HealthOK) return "OK";
-    if (s === HealthDegraded) return "Degraded";
+    if (s === HealthOK) {
+      return "OK";
+    }
+    if (s === HealthDegraded) {
+      return "Degraded";
+    }
     return "Unknown";
   }
 
   function statusClass(s: number): string {
-    if (s === HealthOK) return "bg-green-500/20 text-green-400 border-green-500/40";
-    if (s === HealthDegraded) return "bg-red-500/20 text-red-400 border-red-500/40";
+    if (s === HealthOK) {
+      return "bg-green-500/20 text-green-400 border-green-500/40";
+    }
+    if (s === HealthDegraded) {
+      return "bg-red-500/20 text-red-400 border-red-500/40";
+    }
     return "bg-surface text-muted border-border";
   }
 
@@ -115,11 +133,15 @@
 
   $effect(() => {
     healthUnsub?.();
-    if (!ctxName) return;
+    if (!ctxName) {
+      return;
+    }
     (async () => {
       try {
         const h = await AppService.GetClusterHealth(ctxName);
-        if (h) health = h as unknown as ClusterHealth;
+        if (h) {
+          health = h as unknown as ClusterHealth;
+        }
       } catch {}
     })();
     healthUnsub = Events.On(`cluster:${ctxName}:health`, (wailsEvent: any) => {

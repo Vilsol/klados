@@ -40,7 +40,9 @@
 
   function getRawValue(expr: string): string {
     const raw = evalExpr(expr, obj);
-    if (raw === null || raw === undefined) return "";
+    if (raw === null || raw === undefined) {
+      return "";
+    }
     return String(raw);
   }
 
@@ -49,7 +51,9 @@
     if (renderType === "age" && raw) {
       return formatAge(String(raw));
     }
-    if (raw === null || raw === undefined) return "—";
+    if (raw === null || raw === undefined) {
+      return "—";
+    }
     return String(raw);
   }
 
@@ -77,7 +81,9 @@
       updated.metadata.labels = Object.fromEntries(editLabels.filter(([k]) => k.trim()));
       updated.metadata.annotations = Object.fromEntries(editAnnotations.filter(([k]) => k.trim()));
       const result = await ResourceService.UpdateResource(ctxName, gvr, namespace, updated);
-      if (result) onupdate?.(result);
+      if (result) {
+        onupdate?.(result);
+      }
       editingLabels = false;
       notificationStore.push("Labels and annotations saved.", "success");
     } catch (e: any) {
@@ -126,10 +132,18 @@
   }
 
   function stateLabel(status: any): string {
-    if (!status) return "Unknown";
-    if (status.state?.running) return "Running";
-    if (status.state?.waiting) return `Waiting: ${status.state.waiting.reason ?? ""}`;
-    if (status.state?.terminated) return `Terminated: ${status.state.terminated.reason ?? ""}`;
+    if (!status) {
+      return "Unknown";
+    }
+    if (status.state?.running) {
+      return "Running";
+    }
+    if (status.state?.waiting) {
+      return `Waiting: ${status.state.waiting.reason ?? ""}`;
+    }
+    if (status.state?.terminated) {
+      return `Terminated: ${status.state.terminated.reason ?? ""}`;
+    }
     return "Unknown";
   }
 
@@ -137,7 +151,9 @@
 
   function isSectionOpen(cname: string, section: string): boolean {
     const key = `${cname}:${section}`;
-    if (key in sectionOverrides) return sectionOverrides[key];
+    if (key in sectionOverrides) {
+      return sectionOverrides[key];
+    }
     return section === "resources" || section === "ports";
   }
 

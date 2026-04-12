@@ -122,7 +122,9 @@
       // WebKitGTK doesn't wire Ctrl+Z/Y to undo/redo for native inputs
       window.addEventListener("keydown", (e: KeyboardEvent) => {
         const el = document.activeElement;
-        if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
+        if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+          return;
+        }
         if (e.ctrlKey && !e.altKey && !e.metaKey) {
           if (e.key === "z" && !e.shiftKey) {
             e.preventDefault();
@@ -136,7 +138,9 @@
     })();
 
     return () => {
-      if (handler) window.removeEventListener("keydown", handler);
+      if (handler) {
+        window.removeEventListener("keydown", handler);
+      }
       unsubPlugins?.();
       preferencesStore.destroy();
     };
@@ -150,7 +154,9 @@
 
   $effect(() => {
     const theme = preferencesStore.prefs.theme;
-    if (theme) setTheme(theme as "light" | "dark" | "system");
+    if (theme) {
+      setTheme(theme as "light" | "dark" | "system");
+    }
   });
 
   $effect(() => {

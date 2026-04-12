@@ -23,7 +23,9 @@ function wailsTransport(logObj: Record<string, unknown>): void {
   // Collect structured attrs — flatten object-valued positional args
   const attrs: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(logObj)) {
-    if (k === "0" || k === "_meta") continue;
+    if (k === "0" || k === "_meta") {
+      continue;
+    }
     if (/^\d+$/.test(k) && typeof v === "object" && v !== null && !Array.isArray(v)) {
       Object.assign(attrs, v);
     } else {

@@ -59,8 +59,12 @@
   // Polling effect — tracks ctxName, gvr, namespace, name, rangeMinutes
   // Reads rollingData via untrack to avoid infinite loop
   $effect(() => {
-    if (!capability) return;
-    if (!capability.hasMetricsServer && !capability.hasPrometheus) return;
+    if (!capability) {
+      return;
+    }
+    if (!capability.hasMetricsServer && !capability.hasPrometheus) {
+      return;
+    }
 
     const interval = rangeMinutes <= 60 ? 15_000 : 60_000;
 
@@ -68,7 +72,9 @@
       try {
         const res = await MetricsService.GetResourceMetrics(ctxName, gvr, namespace, name, rangeMinutes);
         fetchError = null;
-        if (!res) return;
+        if (!res) {
+          return;
+        }
 
         const metricsRes = res as unknown as MetricsResponse;
 
@@ -84,7 +90,9 @@
                 if (latest) {
                   existing.push(latest);
                   // Keep last 60 points (~15min at 15s interval)
-                  if (existing.length > 60) existing.splice(0, existing.length - 60);
+                  if (existing.length > 60) {
+                    existing.splice(0, existing.length - 60);
+                  }
                 }
                 nextMap.set(key, existing);
               }
@@ -107,7 +115,9 @@
 
   // Poll plugin metrics (Prometheus-only)
   $effect(() => {
-    if (!capability?.hasPrometheus) return;
+    if (!capability?.hasPrometheus) {
+      return;
+    }
 
     const interval = rangeMinutes <= 60 ? 15_000 : 60_000;
 
@@ -130,7 +140,9 @@
   });
 
   function getSeriesForMetric(metricName: string): TimeSeries[] {
-    if (!response) return [];
+    if (!response) {
+      return [];
+    }
 
     if (!capability?.hasPrometheus && rollingData.size > 0) {
       // Build series from rolling data for this metric
@@ -154,12 +166,16 @@
   }
 
   function getContainerNames(): string[] {
-    if (!response) return [];
+    if (!response) {
+      return [];
+    }
     const names = new Set<string>();
     for (const metric of response.metrics) {
       for (const s of metric.series) {
         const c = s.labels.container ?? s.labels.pod;
-        if (c) names.add(c);
+        if (c) {
+          names.add(c);
+        }
       }
     }
     return Array.from(names);

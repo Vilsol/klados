@@ -19,9 +19,13 @@
   const wild = $derived(params?.wild ?? "");
 
   const activeSection = $derived((): string => {
-    if (!wild) return "general";
+    if (!wild) {
+      return "general";
+    }
     const parts = wild.split("/");
-    if (parts[0] === "plugins" && parts[1]) return `plugins/${parts[1]}`;
+    if (parts[0] === "plugins" && parts[1]) {
+      return `plugins/${parts[1]}`;
+    }
     return parts[0];
   });
 </script>

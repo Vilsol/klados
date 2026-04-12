@@ -45,10 +45,16 @@ class ClusterStore {
 
   /** Returns false when either the global read-only toggle is on or detected RBAC permits no writes. */
   canMutate(): boolean {
-    if (preferencesStore.prefs.readOnly || this.isReadOnly) return false;
+    if (preferencesStore.prefs.readOnly || this.isReadOnly) {
+      return false;
+    }
     const perms = this.permissions[this.activeContext ?? ""];
-    if (!perms) return true; // not yet fetched — optimistic
-    if (perms.inferred) return true;
+    if (!perms) {
+      return true; // not yet fetched — optimistic
+    }
+    if (perms.inferred) {
+      return true;
+    }
     return perms.rules.some((r) => r.verbs.some((v) => v === "*" || v === "delete" || v === "patch" || v === "update" || v === "create"));
   }
 
@@ -132,7 +138,9 @@ class ClusterStore {
         // activeContext already set by routing (e.g. page refresh) — still load namespaces
         try {
           const saved = await ClusterService.GetActiveNamespace(this.activeContext);
-          if (saved) this.selectedNamespaces[this.activeContext] = [saved];
+          if (saved) {
+            this.selectedNamespaces[this.activeContext] = [saved];
+          }
         } catch (e) {
           log.debug("Could not restore saved namespace", {error: String(e)});
         }
@@ -147,7 +155,9 @@ class ClusterStore {
     this.activeContext = ctxName;
     try {
       const saved = await ClusterService.GetActiveNamespace(ctxName);
-      if (saved) this.selectedNamespaces[ctxName] = [saved];
+      if (saved) {
+        this.selectedNamespaces[ctxName] = [saved];
+      }
     } catch (e) {
       log.debug("Could not restore saved namespace", {error: String(e)});
     }
@@ -161,7 +171,9 @@ class ClusterStore {
       this.connectionStatus[ctxName] = "connected";
       log.info("Cluster connected", {ctxName});
       // Only set activeContext if nothing is currently active
-      if (!this.activeContext) this.activeContext = ctxName;
+      if (!this.activeContext) {
+        this.activeContext = ctxName;
+      }
       await this.loadNamespaces(ctxName);
     } catch (e) {
       log.error("Cluster connect failed", {ctxName, error: String(e)});

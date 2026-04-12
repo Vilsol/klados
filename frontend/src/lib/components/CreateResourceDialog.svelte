@@ -82,7 +82,9 @@
           EditorView.lineWrapping,
           editorTheme,
           EditorView.updateListener.of((update) => {
-            if (update.docChanged) editorDirty = true;
+            if (update.docChanged) {
+              editorDirty = true;
+            }
           }),
         ],
       }),
@@ -114,7 +116,9 @@
       const gvr = selectedGvr;
       ResourceService.GetTemplates(ctxName, gvr)
         .then((t: TemplateItem[]) => {
-          if (selectedGvr !== gvr) return;
+          if (selectedGvr !== gvr) {
+            return;
+          }
           templates = t;
           if (t.length > 0) {
             loadTemplate(t[0]);
@@ -134,9 +138,13 @@
   });
 
   function injectNamespace(content: string, ns: string): string {
-    if (!ns || content.includes("namespace:")) return content;
+    if (!ns || content.includes("namespace:")) {
+      return content;
+    }
     const nameMatch = content.match(/^( +)name:/m);
-    if (!nameMatch) return content;
+    if (!nameMatch) {
+      return content;
+    }
     const indent = nameMatch[1];
     return content.replace(/^( +name:[^\n]*\n)/m, `$1${indent}namespace: ${ns}\n`);
   }
@@ -159,7 +167,9 @@
 
   function onTemplateValueChange(name: string) {
     const tmpl = templates.find((t) => t.name === name);
-    if (!tmpl) return;
+    if (!tmpl) {
+      return;
+    }
     if (editorDirty && !confirm("Replace current YAML with selected template?")) {
       // Revert the Combobox binding back to the previous selection
       selectedTemplateName = selectedTemplateName;
@@ -181,7 +191,9 @@
   }
 
   async function apply() {
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     saving = true;
     try {
       const yamlText = view.state.doc.toString();

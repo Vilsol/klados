@@ -26,7 +26,9 @@
 
   function toggleDropdown() {
     dropdownOpen = !dropdownOpen;
-    if (!dropdownOpen) showSaveForm = false;
+    if (!dropdownOpen) {
+      showSaveForm = false;
+    }
   }
 
   function applyFilter(filter: SavedFilter) {
@@ -45,7 +47,9 @@
   }
 
   async function saveFilter(force = false) {
-    if (!saveName.trim()) return;
+    if (!saveName.trim()) {
+      return;
+    }
 
     if (!force && isDuplicate()) {
       confirmOverwrite = true;

@@ -46,8 +46,12 @@
   let expandChecking = $state(false);
 
   function isDisabled(action: ActionDef): boolean {
-    if (!clusterStore.canMutate()) return true;
-    if (!action.disabledWhen) return false;
+    if (!clusterStore.canMutate()) {
+      return true;
+    }
+    if (!action.disabledWhen) {
+      return false;
+    }
     try {
       return !!evalExpr(action.disabledWhen, obj);
     } catch {
@@ -56,8 +60,12 @@
   }
 
   function disabledReason(action: ActionDef): string | undefined {
-    if (!clusterStore.canMutate()) return "Read-only mode";
-    if (action.disabledWhen && isDisabled(action)) return action.disabledReason;
+    if (!clusterStore.canMutate()) {
+      return "Read-only mode";
+    }
+    if (action.disabledWhen && isDisabled(action)) {
+      return action.disabledReason;
+    }
     return undefined;
   }
 

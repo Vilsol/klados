@@ -60,7 +60,9 @@ class DescriptorRegistry {
       const defs = await ResourceService.GetDescriptors();
       this.builtins.clear();
       for (const d of defs ?? []) {
-        if (!d) continue;
+        if (!d) {
+          continue;
+        }
         const gKey = d.group === "" ? "core" : d.group;
         const gvr = `${gKey}.${d.version}.${d.resource}`;
         this.builtins.set(gvr, {
@@ -112,7 +114,9 @@ class DescriptorRegistry {
     try {
       const pluginDefs = await PluginService.GetPluginDescriptors();
       for (const d of pluginDefs ?? []) {
-        if (!d) continue;
+        if (!d) {
+          continue;
+        }
         const gKey = d.group === "" ? "core" : d.group;
         const gvr = `${gKey}.${d.version}.${d.resource}`;
         if (this.descriptors.has(gvr)) {
@@ -131,7 +135,9 @@ class DescriptorRegistry {
             renderType: (f.renderType ?? "text") as RenderType,
           }));
           const panelSet = new Set(existing.detailPanels);
-          for (const p of d.detailPanels ?? []) panelSet.add(p);
+          for (const p of d.detailPanels ?? []) {
+            panelSet.add(p);
+          }
           const actionNameSet = new Set(existing.actions.map((a) => a.name));
           const mergedActions: ActionDef[] = [...existing.actions];
           for (const a of d.actions ?? []) {
@@ -186,7 +192,9 @@ class DescriptorRegistry {
   }
 
   private withControlledBy(d: DescriptorDef): DescriptorDef {
-    if (d.columns.some((c) => c.name === "Controlled By")) return d;
+    if (d.columns.some((c) => c.name === "Controlled By")) {
+      return d;
+    }
     const insertBefore = d.columns.findIndex((c) => c.renderType === "age");
     const col: ColumnDef = {name: "Controlled By", expr: "metadata.ownerReferences", renderType: "controlledBy"};
     const columns = insertBefore >= 0 ? [...d.columns.slice(0, insertBefore), col, ...d.columns.slice(insertBefore)] : [...d.columns, col];
@@ -242,7 +250,9 @@ class DescriptorRegistry {
    * briefly flashing the entire sidebar as disabled on connect.
    */
   isGVRAvailable(gvr: string): boolean {
-    if (this.availableGVRs.size === 0) return true;
+    if (this.availableGVRs.size === 0) {
+      return true;
+    }
     return this.availableGVRs.has(gvr);
   }
 }
@@ -257,7 +267,9 @@ const exprCache = new Map<string, string[] | CstNode>();
 
 function resolveExpr(expr: string): string[] | CstNode {
   let cached = exprCache.get(expr);
-  if (cached) return cached;
+  if (cached) {
+    return cached;
+  }
   if (simplePath.test(expr)) {
     cached = expr.split(".");
   } else {
@@ -273,7 +285,9 @@ export function evalExpr(expr: string, obj: Record<string, any>): any {
   if (Array.isArray(resolved)) {
     let cur: any = obj;
     for (const p of resolved) {
-      if (cur == null) return "";
+      if (cur == null) {
+        return "";
+      }
       cur = cur[p];
     }
     return cur ?? "";

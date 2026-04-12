@@ -87,9 +87,13 @@
 
   function getSparklinePoints(itemName: string, metricName: string): {t: number; v: number}[] {
     const metrics = sparklineData[itemName];
-    if (!metrics) return [];
+    if (!metrics) {
+      return [];
+    }
     const metric = metrics.find((m) => m.name === metricName);
-    if (!metric?.series?.[0]?.points) return [];
+    if (!metric?.series?.[0]?.points) {
+      return [];
+    }
     return metric.series[0].points;
   }
 
@@ -100,7 +104,9 @@
   );
 
   $effect(() => {
-    if (!ctxMenu) return;
+    if (!ctxMenu) {
+      return;
+    }
     const close = () => {
       ctxMenu = null;
     };
@@ -109,7 +115,9 @@
   });
 
   $effect(() => {
-    if (!ctxMenu || !ctxMenuEl) return;
+    if (!ctxMenu || !ctxMenuEl) {
+      return;
+    }
     const rect = ctxMenuEl.getBoundingClientRect();
     const maxX = window.innerWidth - rect.width - 8;
     const maxY = window.innerHeight - rect.height - 8;
@@ -123,7 +131,9 @@
   });
 
   $effect(() => {
-    if (!columnMenuOpen) return;
+    if (!columnMenuOpen) {
+      return;
+    }
     const close = () => {
       columnMenuOpen = false;
     };
@@ -135,7 +145,9 @@
   });
 
   $effect(() => {
-    if (!exportMenuOpen) return;
+    if (!exportMenuOpen) {
+      return;
+    }
     const close = () => {
       exportMenuOpen = false;
     };
@@ -151,7 +163,9 @@
     gvr;
     searchQuery = "";
     searchTerms = [];
-    if (scrollContainer) scrollContainer.scrollTop = 0;
+    if (scrollContainer) {
+      scrollContainer.scrollTop = 0;
+    }
   });
 
   const filtered = $derived.by(() => {
@@ -229,16 +243,26 @@
   }
 
   function renderValue(value: any, renderType: RenderType): string {
-    if (value == null) return "";
-    if (renderType === "age") return formatAge(String(value), now);
+    if (value == null) {
+      return "";
+    }
+    if (renderType === "age") {
+      return formatAge(String(value), now);
+    }
     return String(value);
   }
 
   function badgeClass(value: any): string {
     const v = String(value ?? "").toLowerCase();
-    if (["running", "active", "bound", "available", "true"].includes(v)) return "bg-accent/20 text-accent border-accent/30";
-    if (["error", "crashloopbackoff", "failed", "oomkilled"].includes(v)) return "bg-destructive/20 text-destructive border-destructive/30";
-    if (["pending", "terminating"].includes(v)) return "bg-muted/20 text-muted border-muted/30";
+    if (["running", "active", "bound", "available", "true"].includes(v)) {
+      return "bg-accent/20 text-accent border-accent/30";
+    }
+    if (["error", "crashloopbackoff", "failed", "oomkilled"].includes(v)) {
+      return "bg-destructive/20 text-destructive border-destructive/30";
+    }
+    if (["pending", "terminating"].includes(v)) {
+      return "bg-muted/20 text-muted border-muted/30";
+    }
     return "bg-muted/10 text-fg border-border";
   }
 
@@ -248,7 +272,9 @@
   }
 
   async function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget) {
+      return;
+    }
     const {namespace, name} = deleteTarget;
     try {
       await ResourceService.DeleteResource(contextName, gvr, namespace, name);
@@ -269,19 +295,27 @@
 
   const gridTemplateCols = $derived.by(() => {
     const parts: string[] = [];
-    if (canMutate) parts.push("36px");
+    if (canMutate) {
+      parts.push("36px");
+    }
     for (const c of columnStore.visibleColumns) {
       parts.push(c.width ? `${c.width}px` : "minmax(20px, 1fr)");
     }
-    for (const _ of pluginColumns) parts.push("1fr");
-    for (const _ of sparklineColumns) parts.push("80px");
+    for (const _ of pluginColumns) {
+      parts.push("1fr");
+    }
+    for (const _ of sparklineColumns) {
+      parts.push("80px");
+    }
     parts.push("36px");
     return parts.join(" ");
   });
 
   function snapAllColumnsToPixels() {
     const headerCells = scrollContainer?.querySelectorAll<HTMLElement>("[data-header-col]");
-    if (!headerCells) return;
+    if (!headerCells) {
+      return;
+    }
     for (const cell of headerCells) {
       const name = cell.dataset.headerCol!;
       const col = columnStore.visibleColumns.find((c) => c.name === name);
@@ -302,7 +336,9 @@
   }
 
   function onResizeMove(e: MouseEvent) {
-    if (!resizing) return;
+    if (!resizing) {
+      return;
+    }
     const delta = e.clientX - resizing.startX;
     const newWidth = Math.max(20, resizing.startWidth + delta);
     columnStore.resizeColumn(resizing.name, newWidth);
@@ -315,7 +351,9 @@
 
   function autoFit(name: string) {
     const cells = scrollContainer?.querySelectorAll(`[data-col="${name}"]`);
-    if (!cells) return;
+    if (!cells) {
+      return;
+    }
     let max = 60;
     for (const cell of cells) {
       max = Math.max(max, (cell as HTMLElement).scrollWidth);

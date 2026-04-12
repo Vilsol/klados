@@ -28,7 +28,9 @@
   // Create / destroy uPlot instance
   $effect(() => {
     const el = container;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
 
     const w = width ?? el.clientWidth;
     const opts: uPlot.Options = {
@@ -62,9 +64,13 @@
 
     const ro = new ResizeObserver((entries) => {
       const entry = entries[0];
-      if (!entry || !chart) return;
+      if (!entry || !chart) {
+        return;
+      }
       const newW = Math.round(entry.contentRect.width);
-      if (newW > 0) chart.setSize({width: newW, height});
+      if (newW > 0) {
+        chart.setSize({width: newW, height});
+      }
     });
     ro.observe(el);
 
@@ -79,7 +85,9 @@
   $effect(() => {
     const data = toColumnar(points);
     untrack(() => {
-      if (!chart) return;
+      if (!chart) {
+        return;
+      }
       chart.setData(data);
     });
   });

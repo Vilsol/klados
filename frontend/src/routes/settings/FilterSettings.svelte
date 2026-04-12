@@ -41,7 +41,9 @@
   }
 
   async function loadClusterFilters() {
-    if (!activeContext) return;
+    if (!activeContext) {
+      return;
+    }
     const prefs = await ConfigService.GetClusterPrefs(activeContext);
     if (prefs && (prefs as any).savedFilters) {
       clusterFiltersByGVR = (prefs as any).savedFilters;
@@ -51,7 +53,9 @@
   }
 
   function parseKV(str: string): Record<string, string> | undefined {
-    if (!str.trim()) return undefined;
+    if (!str.trim()) {
+      return undefined;
+    }
     const result: Record<string, string> = {};
     for (const pair of str.split(",")) {
       const [key, ...rest] = pair.split("=");
@@ -63,7 +67,9 @@
   }
 
   function formatKV(obj?: Record<string, string>): string {
-    if (!obj) return "";
+    if (!obj) {
+      return "";
+    }
     return Object.entries(obj)
       .map(([k, v]) => `${k}=${v}`)
       .join(", ");
@@ -83,7 +89,9 @@
   function openEdit(gvr: string, index: number, scope: FilterScope = "global") {
     const source = scope === "global" ? filtersByGVR : clusterFiltersByGVR;
     const filter = source[gvr]?.[index];
-    if (!filter) return;
+    if (!filter) {
+      return;
+    }
     editingGVR = gvr;
     editingIndex = index;
     editingScope = scope;
@@ -100,7 +108,9 @@
   }
 
   async function saveFilter() {
-    if (!editingGVR || !editName.trim()) return;
+    if (!editingGVR || !editName.trim()) {
+      return;
+    }
     const filter: FilterEntry = {
       name: editName.trim(),
       labels: parseKV(editLabels),

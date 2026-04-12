@@ -13,9 +13,13 @@ export interface APIResource {
 
 export function getControllerRef(obj: any): ControllerRef | null {
   const refs = obj?.metadata?.ownerReferences;
-  if (!Array.isArray(refs)) return null;
+  if (!Array.isArray(refs)) {
+    return null;
+  }
   const controller = refs.find((r: any) => r.controller === true);
-  if (!controller) return null;
+  if (!controller) {
+    return null;
+  }
   return {
     apiVersion: controller.apiVersion,
     kind: controller.kind,
@@ -28,7 +32,9 @@ export function gvrToApiVersion(gvr: string): string {
   const parts = gvr.split(".");
   const version = parts.at(-2) ?? "";
   const group = parts.slice(0, -2).join(".");
-  if (group === "core" || group === "") return version;
+  if (group === "core" || group === "") {
+    return version;
+  }
   return `${group}/${version}`;
 }
 

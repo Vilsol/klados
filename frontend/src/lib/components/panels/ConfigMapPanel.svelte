@@ -11,10 +11,18 @@
 
   function detectLang(value: string): "yaml" | "json" | "toml" | "shell" | "plain" {
     const trimmed = value.trimStart();
-    if (trimmed.startsWith("{") || trimmed.startsWith("[")) return "json";
-    if (trimmed.startsWith("#!") || trimmed.match(/^(if|for|while|case|function|export|source|set -)\b/m)) return "shell";
-    if (trimmed.match(/^\[[a-zA-Z]/m)) return "toml";
-    if (trimmed.match(/^[a-zA-Z_-]+:/m)) return "yaml";
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      return "json";
+    }
+    if (trimmed.startsWith("#!") || trimmed.match(/^(if|for|while|case|function|export|source|set -)\b/m)) {
+      return "shell";
+    }
+    if (trimmed.match(/^\[[a-zA-Z]/m)) {
+      return "toml";
+    }
+    if (trimmed.match(/^[a-zA-Z_-]+:/m)) {
+      return "yaml";
+    }
     return "plain";
   }
 </script>

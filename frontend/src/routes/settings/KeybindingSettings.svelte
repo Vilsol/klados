@@ -17,14 +17,18 @@
   let conflicts = $derived.by(() => {
     const comboCounts = new Map<string, string[]>();
     for (const [id, combo] of effectiveMap) {
-      if (!combo) continue;
+      if (!combo) {
+        continue;
+      }
       const list = comboCounts.get(combo) ?? [];
       list.push(id);
       comboCounts.set(combo, list);
     }
     const conflictIds = new Set<string>();
     for (const ids of comboCounts.values()) {
-      if (ids.length > 1) ids.forEach((id) => conflictIds.add(id));
+      if (ids.length > 1) {
+        ids.forEach((id) => conflictIds.add(id));
+      }
     }
     return conflictIds;
   });
@@ -34,7 +38,9 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (!listeningId) return;
+    if (!listeningId) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
 
@@ -43,16 +49,28 @@
       return;
     }
 
-    if (["Control", "Alt", "Shift", "Meta"].includes(e.key)) return;
+    if (["Control", "Alt", "Shift", "Meta"].includes(e.key)) {
+      return;
+    }
 
     const hasModifier = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey;
-    if (!hasModifier) return;
+    if (!hasModifier) {
+      return;
+    }
 
     const parts: string[] = [];
-    if (e.ctrlKey) parts.push("Control");
-    if (e.altKey) parts.push("Alt");
-    if (e.shiftKey) parts.push("Shift");
-    if (e.metaKey) parts.push("Meta");
+    if (e.ctrlKey) {
+      parts.push("Control");
+    }
+    if (e.altKey) {
+      parts.push("Alt");
+    }
+    if (e.shiftKey) {
+      parts.push("Shift");
+    }
+    if (e.metaKey) {
+      parts.push("Meta");
+    }
     parts.push(e.key);
     const combo = parts.join("+");
 

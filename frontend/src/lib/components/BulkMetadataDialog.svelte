@@ -30,7 +30,9 @@
 
   const commonEntries = $derived.by(() => {
     const items = selectedItems;
-    if (items.length === 0) return [];
+    if (items.length === 0) {
+      return [];
+    }
     const first = items[0].metadata?.[metadataField] ?? {};
     const intersection: [string, string][] = [];
     for (const [k, v] of Object.entries(first)) {
@@ -96,14 +98,20 @@
 
       try {
         const updated = JSON.parse(JSON.stringify(item));
-        if (!updated.metadata) updated.metadata = {};
-        if (!updated.metadata[metadataField]) updated.metadata[metadataField] = {};
+        if (!updated.metadata) {
+          updated.metadata = {};
+        }
+        if (!updated.metadata[metadataField]) {
+          updated.metadata[metadataField] = {};
+        }
 
         for (const k of removeSnapshot) {
           delete updated.metadata[metadataField][k];
         }
         for (const [k, v] of pairsSnapshot) {
-          if (k) updated.metadata[metadataField][k] = v;
+          if (k) {
+            updated.metadata[metadataField][k] = v;
+          }
         }
 
         await ResourceService.UpdateResource(contextName, gvr, ns, updated);

@@ -38,8 +38,12 @@ class SessionStore {
   }
 
   reorderTabs(from: number, to: number) {
-    if (from === to) return;
-    if (from < 0 || from >= this.tabs.length || to < 0 || to >= this.tabs.length) return;
+    if (from === to) {
+      return;
+    }
+    if (from < 0 || from >= this.tabs.length || to < 0 || to >= this.tabs.length) {
+      return;
+    }
     const next = [...this.tabs];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
@@ -55,7 +59,9 @@ class SessionStore {
   }
 
   saveScrollPosition(tabIndex: number, position: number) {
-    if (tabIndex < 0 || tabIndex >= this.tabs.length) return;
+    if (tabIndex < 0 || tabIndex >= this.tabs.length) {
+      return;
+    }
     this.tabs[tabIndex] = {...this.tabs[tabIndex], scrollPosition: position};
   }
 

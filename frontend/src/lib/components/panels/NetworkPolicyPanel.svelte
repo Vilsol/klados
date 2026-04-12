@@ -9,7 +9,9 @@
   const egressRules = $derived<any[] | undefined>(obj.spec?.egress);
 
   function formatPorts(ports: any[]): string {
-    if (!ports || ports.length === 0) return "All ports";
+    if (!ports || ports.length === 0) {
+      return "All ports";
+    }
     return ports.map((p: any) => `${p.port ?? "*"}/${p.protocol ?? "TCP"}`).join(", ");
   }
 </script>

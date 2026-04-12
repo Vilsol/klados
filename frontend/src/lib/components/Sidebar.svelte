@@ -128,8 +128,11 @@
 
   function toggleExpand(fullSuffix: string) {
     const next = new Set(expandedNodes);
-    if (next.has(fullSuffix)) next.delete(fullSuffix);
-    else next.add(fullSuffix);
+    if (next.has(fullSuffix)) {
+      next.delete(fullSuffix);
+    } else {
+      next.add(fullSuffix);
+    }
     expandedNodes = next;
   }
 
@@ -165,7 +168,9 @@
   }
 
   async function loadForwards() {
-    if (!ctx) return;
+    if (!ctx) {
+      return;
+    }
     try {
       const result = await PortForwardService.ListForwards(ctx);
       forwards = (result ?? []) as ForwardSpec[];
@@ -217,7 +222,9 @@
       });
       ResourceService.ListAPIResources(ctx)
         .then((r) => {
-          if (r?.length) handleDiscovery(r as APIResource[]);
+          if (r?.length) {
+            handleDiscovery(r as APIResource[]);
+          }
         })
         .catch((e) => log.warn("ListAPIResources failed", {error: String(e)}));
 
@@ -258,7 +265,9 @@
   }
 
   function navigate(gvr: string) {
-    if (!ctx) return;
+    if (!ctx) {
+      return;
+    }
     push(`/c/${ctx}/${gvr}`);
   }
 

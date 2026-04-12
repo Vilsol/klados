@@ -39,7 +39,9 @@ export class AggregateLogStore {
 
   appendLine(pod: string, text: string) {
     const color = this.streams.get(pod)?.color ?? COLORS[0];
-    if (this.lines.length >= MAX_LINES) this.lines.shift();
+    if (this.lines.length >= MAX_LINES) {
+      this.lines.shift();
+    }
     this.lines.push({pod, text, color, timestamp: Date.now()});
   }
 
@@ -49,7 +51,9 @@ export class AggregateLogStore {
   }
 
   destroy() {
-    for (const {ws} of this.streams.values()) ws.close();
+    for (const {ws} of this.streams.values()) {
+      ws.close();
+    }
     this.streams.clear();
     this.lines = [];
     this.colorIdx = 0;

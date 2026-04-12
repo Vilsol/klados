@@ -23,10 +23,18 @@
   }
 
   function stateLabel(status: any): string {
-    if (!status) return "Unknown";
-    if (status.state?.running) return "Running";
-    if (status.state?.waiting) return `Waiting: ${status.state.waiting.reason ?? ""}`;
-    if (status.state?.terminated) return `Terminated: ${status.state.terminated.reason ?? ""}`;
+    if (!status) {
+      return "Unknown";
+    }
+    if (status.state?.running) {
+      return "Running";
+    }
+    if (status.state?.waiting) {
+      return `Waiting: ${status.state.waiting.reason ?? ""}`;
+    }
+    if (status.state?.terminated) {
+      return `Terminated: ${status.state.terminated.reason ?? ""}`;
+    }
     return "Unknown";
   }
 

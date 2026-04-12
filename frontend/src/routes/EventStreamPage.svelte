@@ -10,14 +10,18 @@
   const ctxName = $derived(params.ctx ?? "");
 
   $effect(() => {
-    if (ctxName) clusterStore.setActiveContext(ctxName);
+    if (ctxName) {
+      clusterStore.setActiveContext(ctxName);
+    }
   });
 
   const store = createResourceStore();
   const EVENTS_GVR = "core.v1.events";
 
   $effect(() => {
-    if (ctxName) store.start(ctxName, EVENTS_GVR, "");
+    if (ctxName) {
+      store.start(ctxName, EVENTS_GVR, "");
+    }
     return () => store.stop();
   });
 
@@ -37,10 +41,18 @@
     return store.items
       .filter((e) => {
         const type = e.type ?? "Normal";
-        if (type === "Warning" && !showWarning) return false;
-        if (type === "Normal" && !showNormal) return false;
-        if (reasonFilter && !(e.reason ?? "").toLowerCase().includes(reasonFilter.toLowerCase())) return false;
-        if (selectedNs.length > 0 && !selectedNs.includes(e.metadata?.namespace ?? "")) return false;
+        if (type === "Warning" && !showWarning) {
+          return false;
+        }
+        if (type === "Normal" && !showNormal) {
+          return false;
+        }
+        if (reasonFilter && !(e.reason ?? "").toLowerCase().includes(reasonFilter.toLowerCase())) {
+          return false;
+        }
+        if (selectedNs.length > 0 && !selectedNs.includes(e.metadata?.namespace ?? "")) {
+          return false;
+        }
         return true;
       })
       .sort((a, b) => {

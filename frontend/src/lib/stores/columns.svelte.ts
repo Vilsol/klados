@@ -57,10 +57,14 @@ class ColumnStore {
   }
 
   setColumnVisible(name: string, visible: boolean): void {
-    if (name === "Name") return;
+    if (name === "Name") {
+      return;
+    }
 
     const entry = this.allColumns.find((e) => e.col.name === name);
-    if (!entry || entry.visible === visible) return;
+    if (!entry || entry.visible === visible) {
+      return;
+    }
 
     const col = entry.col;
     this.allColumns = this.allColumns.map((e) => (e.col.name === name ? {...e, visible} : e));
@@ -74,9 +78,15 @@ class ColumnStore {
 
   moveColumn(name: string, direction: "up" | "down"): void {
     const idx = this.visibleColumns.findIndex((c) => c.name === name);
-    if (idx === -1) return;
-    if (direction === "up" && idx === 0) return;
-    if (direction === "down" && idx === this.visibleColumns.length - 1) return;
+    if (idx === -1) {
+      return;
+    }
+    if (direction === "up" && idx === 0) {
+      return;
+    }
+    if (direction === "down" && idx === this.visibleColumns.length - 1) {
+      return;
+    }
 
     const next = [...this.visibleColumns];
     const swapIdx = direction === "up" ? idx - 1 : idx + 1;
@@ -138,7 +148,9 @@ class ColumnStore {
   }
 
   #debouncedSave(): void {
-    if (this.#saveTimer !== null) clearTimeout(this.#saveTimer);
+    if (this.#saveTimer !== null) {
+      clearTimeout(this.#saveTimer);
+    }
     this.#saveTimer = setTimeout(() => {
       this.#saveTimer = null;
       ConfigService.SetColumnPrefs(this.#gvr, this.#buildPrefs());

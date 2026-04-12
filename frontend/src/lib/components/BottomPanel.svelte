@@ -24,7 +24,9 @@
 
   async function popOutTab(id: string) {
     const tab = bottomPanelStore.tabs.find((t) => t.id === id);
-    if (!tab) return;
+    if (!tab) {
+      return;
+    }
     const title = `${kindLabel[tab.kind]}: ${tab.resourceName}`;
     bottomPanelStore.popOut(id);
     await WindowService.OpenPanelWindow(id, title);
@@ -38,7 +40,9 @@
     const unsubReady = Events.On("panel:ready", (event: {data: string}) => {
       const id = event.data;
       const tab = bottomPanelStore.tabs.find((t) => t.id === id);
-      if (!tab) return;
+      if (!tab) {
+        return;
+      }
       Events.Emit(`panel:init:${id}`, {
         kind: tab.kind,
         resourceKind: tab.resourceKind,

@@ -14,10 +14,18 @@ export interface ShortcutDef {
 
 function buildKeyCombo(e: KeyboardEvent): string {
   const parts: string[] = [];
-  if (e.ctrlKey) parts.push("Control");
-  if (e.altKey) parts.push("Alt");
-  if (e.shiftKey) parts.push("Shift");
-  if (e.metaKey) parts.push("Meta");
+  if (e.ctrlKey) {
+    parts.push("Control");
+  }
+  if (e.altKey) {
+    parts.push("Alt");
+  }
+  if (e.shiftKey) {
+    parts.push("Shift");
+  }
+  if (e.metaKey) {
+    parts.push("Meta");
+  }
   if (!["Control", "Alt", "Shift", "Meta"].includes(e.key)) {
     parts.push(e.key);
   }
@@ -34,13 +42,18 @@ export class ShortcutStore {
 
   register(def: ShortcutDef) {
     const idx = this._shortcuts.findIndex((s) => s.id === def.id);
-    if (idx >= 0) this._shortcuts[idx] = def;
-    else this._shortcuts.push(def);
+    if (idx >= 0) {
+      this._shortcuts[idx] = def;
+    } else {
+      this._shortcuts.push(def);
+    }
   }
 
   unregister(id: string) {
     const idx = this._shortcuts.findIndex((s) => s.id === id);
-    if (idx >= 0) this._shortcuts.splice(idx, 1);
+    if (idx >= 0) {
+      this._shortcuts.splice(idx, 1);
+    }
   }
 
   getEffectiveKeys(def: ShortcutDef): string {
@@ -65,9 +78,13 @@ export class ShortcutStore {
     }
 
     for (const def of this._shortcuts) {
-      if (combo !== this.getEffectiveKeys(def)) continue;
+      if (combo !== this.getEffectiveKeys(def)) {
+        continue;
+      }
       const modes = def.modes ?? ["normal"];
-      if (!modes.includes(this.focusMode)) continue;
+      if (!modes.includes(this.focusMode)) {
+        continue;
+      }
       e.preventDefault();
       def.action();
       return;

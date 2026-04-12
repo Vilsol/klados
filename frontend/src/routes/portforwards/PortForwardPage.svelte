@@ -38,7 +38,9 @@
   const ctxName = $derived(params.ctx ?? "");
 
   $effect(() => {
-    if (ctxName) clusterStore.setActiveContext(ctxName);
+    if (ctxName) {
+      clusterStore.setActiveContext(ctxName);
+    }
   });
 
   let items = $state<Record<string, any>[]>([]);
@@ -46,7 +48,9 @@
   let dialogOpen = $state(false);
 
   async function refresh() {
-    if (!ctxName) return;
+    if (!ctxName) {
+      return;
+    }
     loading = true;
     try {
       const [saved, active] = await Promise.all([
@@ -57,7 +61,9 @@
       const savedIds = new Set((saved ?? []).map((s: any) => s?.id).filter(Boolean));
       const activeMap = new Map<string, any>();
       for (const f of active ?? []) {
-        if (f?.id) activeMap.set(f.id, f);
+        if (f?.id) {
+          activeMap.set(f.id, f);
+        }
       }
 
       const savedItems = (saved ?? []).map((s: any) => {
@@ -168,7 +174,9 @@
         onClick: async () => {
           try {
             // Stop the tunnel first if running, then remove from config
-            if (isActive) await PortForwardService.StopForward(item.id).catch(() => {});
+            if (isActive) {
+              await PortForwardService.StopForward(item.id).catch(() => {});
+            }
             await PortForwardService.RemoveSavedPortForward(ctxName, item.id);
           } catch (e: any) {
             notificationStore.error(e?.message ?? String(e));
@@ -188,7 +196,9 @@
   });
 
   $effect(() => {
-    if (!ctxName) return;
+    if (!ctxName) {
+      return;
+    }
     unsub?.();
     unsub = Events.On(`portforward:${ctxName}:updated`, () => {
       refresh();

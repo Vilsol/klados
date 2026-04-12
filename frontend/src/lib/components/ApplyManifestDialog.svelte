@@ -69,7 +69,9 @@
           EditorView.lineWrapping,
           editorTheme,
           EditorView.updateListener.of((update) => {
-            if (update.docChanged) editorContent = update.state.doc.toString();
+            if (update.docChanged) {
+              editorContent = update.state.doc.toString();
+            }
           }),
         ],
       }),
@@ -104,7 +106,9 @@
   async function openFile() {
     try {
       const content = await AppService.BrowseManifestFile();
-      if (content) loadContent(content);
+      if (content) {
+        loadContent(content);
+      }
     } catch (e: any) {
       notificationStore.push(e?.message ?? "Could not open file", "error");
     }
@@ -113,7 +117,9 @@
   async function pasteFromClipboard() {
     try {
       const text = await navigator.clipboard.readText();
-      if (text.trim()) loadContent(text);
+      if (text.trim()) {
+        loadContent(text);
+      }
     } catch {
       notificationStore.push("Could not read clipboard", "error");
     }
@@ -126,7 +132,9 @@
   const editorEmpty = $derived(!editorContent.trim());
 
   async function applyManifest() {
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     applying = true;
     hasApplied = false;
     try {
@@ -142,9 +150,15 @@
   }
 
   function actionClass(action: string, error: string): string {
-    if (error) return "text-destructive";
-    if (action === "created") return "text-green-400";
-    if (action === "configured") return "text-blue-400";
+    if (error) {
+      return "text-destructive";
+    }
+    if (action === "created") {
+      return "text-green-400";
+    }
+    if (action === "configured") {
+      return "text-blue-400";
+    }
     return "text-muted";
   }
 </script>

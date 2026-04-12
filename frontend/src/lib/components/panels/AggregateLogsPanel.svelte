@@ -54,7 +54,9 @@
       if (sticky && scrollEl) {
         programmaticScroll = true;
         requestAnimationFrame(() => {
-          if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
+          if (scrollEl) {
+            scrollEl.scrollTop = scrollEl.scrollHeight;
+          }
         });
       }
     });
@@ -71,7 +73,9 @@
   }
 
   async function startStreams() {
-    if (!streamingStore.config) return;
+    if (!streamingStore.config) {
+      return;
+    }
     loading = true;
     error = null;
     try {
@@ -88,7 +92,9 @@
 
       for (const pod of matched) {
         const podName: string = pod.metadata?.name ?? "";
-        if (!podName) continue;
+        if (!podName) {
+          continue;
+        }
 
         const id = await LogService.StartLogStream(
           ctxName,
@@ -108,7 +114,9 @@
 
         let buf = "";
         ws.onmessage = (e) => {
-          if (typeof e.data !== "string") return;
+          if (typeof e.data !== "string") {
+            return;
+          }
           try {
             const msg = JSON.parse(e.data);
             if (msg.type === "eof" || msg.type === "error") {
@@ -119,7 +127,9 @@
           const parts = (buf + e.data).split("\n");
           buf = parts.pop() ?? "";
           for (const line of parts) {
-            if (line) store.appendLine(podName, line);
+            if (line) {
+              store.appendLine(podName, line);
+            }
           }
         };
         ws.onclose = () => {
@@ -145,7 +155,9 @@
   });
 
   onDestroy(() => {
-    for (const id of streamIds) LogService.StopLogStream(id);
+    for (const id of streamIds) {
+      LogService.StopLogStream(id);
+    }
     store.destroy();
   });
 </script>

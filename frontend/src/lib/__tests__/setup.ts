@@ -64,9 +64,13 @@ vi.mock("@wailsio/runtime", () => ({
     Any: (v: any) => v,
     Nullable: (fn: any) => (v: any) => (v == null ? null : fn(v)),
     Map: (_kfn: any, vfn: any) => (obj: any) => {
-      if (obj == null) return {};
+      if (obj == null) {
+        return {};
+      }
       const result: any = {};
-      for (const k of Object.keys(obj)) result[k] = vfn(obj[k]);
+      for (const k of Object.keys(obj)) {
+        result[k] = vfn(obj[k]);
+      }
       return result;
     },
   },

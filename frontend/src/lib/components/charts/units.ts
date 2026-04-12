@@ -1,5 +1,7 @@
 export function formatCPU(cores: number): string {
-  if (cores === 0) return "0m";
+  if (cores === 0) {
+    return "0m";
+  }
   const m = cores * 1000;
   if (m < 1) {
     // sub-millicores: keep 2 significant digits (e.g. 0.35m)

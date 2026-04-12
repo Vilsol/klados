@@ -23,8 +23,12 @@ const svelteSharedRuntime = () => {
     },
 
     resolveId(id: string, importer: string | undefined) {
-      if (!isBuild || process.env.VITEST) return;
-      if (importer === runtimePath) return; // let runtime file import real svelte
+      if (!isBuild || process.env.VITEST) {
+        return;
+      }
+      if (importer === runtimePath) {
+        return; // let runtime file import real svelte
+      }
       if (id === "svelte" || id === "svelte/internal/client" || id === "svelte/internal") {
         return runtimePath;
       }
@@ -72,7 +76,9 @@ export default defineConfig({
       preserveEntrySignatures: "exports-only",
       output: {
         entryFileNames(chunk) {
-          if (chunk.name === "plugin-shared/svelte-runtime") return "[name].js";
+          if (chunk.name === "plugin-shared/svelte-runtime") {
+            return "[name].js";
+          }
           return "assets/[name]-[hash].js";
         },
         chunkFileNames: "assets/[name]-[hash].js",

@@ -22,7 +22,9 @@
   async function browse() {
     try {
       const path = await AppService.BrowseKubeconfigFile();
-      if (path) filePath = path;
+      if (path) {
+        filePath = path;
+      }
     } catch (e: any) {
       error = e?.message ?? String(e);
     }

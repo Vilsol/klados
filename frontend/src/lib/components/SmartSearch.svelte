@@ -30,8 +30,12 @@
 
   // Chips are completed terms (all except the trailing incomplete token)
   let chips = $derived.by(() => {
-    if (!value.trim()) return [];
-    if (value.endsWith(" ")) return terms;
+    if (!value.trim()) {
+      return [];
+    }
+    if (value.endsWith(" ")) {
+      return terms;
+    }
     return terms.slice(0, -1);
   });
 
@@ -60,7 +64,9 @@
   });
 
   function updateAutocomplete() {
-    if (!inputEl) return;
+    if (!inputEl) {
+      return;
+    }
     const pool = preferencesStore.prefs.contextualAutocomplete ? filterItems(items, chips) : items;
     suggestions = getSuggestions(value, value.length, pool);
     selectedIndex = 0;
@@ -178,8 +184,12 @@
 
   function serializeTerm(t: SearchTerm): string {
     const neg = t.negated ? "-" : "";
-    if (t.type === "text") return `${neg}${t.value}`;
-    if (t.type === "phrase") return `${neg}"${t.value}"`;
+    if (t.type === "text") {
+      return `${neg}${t.value}`;
+    }
+    if (t.type === "phrase") {
+      return `${neg}"${t.value}"`;
+    }
     return `${neg}${t.type}:${t.value}`;
   }
 

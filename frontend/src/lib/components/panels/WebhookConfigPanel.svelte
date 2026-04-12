@@ -13,8 +13,12 @@
   });
 
   function failurePolicyClass(policy: string): string {
-    if (policy === "Fail") return "bg-red-500/20 text-red-400 border border-red-500/30";
-    if (policy === "Ignore") return "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30";
+    if (policy === "Fail") {
+      return "bg-red-500/20 text-red-400 border border-red-500/30";
+    }
+    if (policy === "Ignore") {
+      return "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30";
+    }
     return "bg-surface border border-border text-muted";
   }
 </script>

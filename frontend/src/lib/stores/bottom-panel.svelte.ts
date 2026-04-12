@@ -64,7 +64,9 @@ class BottomPanelStore {
 
   popOut(id: string) {
     const tab = this.tabs.find((t) => t.id === id);
-    if (!tab) return;
+    if (!tab) {
+      return;
+    }
     tab.poppedOut = true;
     this.tabs = [...this.tabs];
     if (this.activeTabId === id) {
@@ -75,7 +77,9 @@ class BottomPanelStore {
 
   popIn(id: string) {
     const tab = this.tabs.find((t) => t.id === id);
-    if (!tab) return;
+    if (!tab) {
+      return;
+    }
     tab.poppedOut = false;
     this.tabs = [...this.tabs];
     this.activeTabId = id;

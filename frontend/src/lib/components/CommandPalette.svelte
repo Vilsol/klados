@@ -118,7 +118,9 @@
 
   const filtered = $derived.by(() => {
     const all = buildItems();
-    if (!query.trim()) return all.slice(0, 20);
+    if (!query.trim()) {
+      return all.slice(0, 20);
+    }
     const q = query.toLowerCase();
     return all.filter((i) => i.label.toLowerCase().includes(q) || (i.subtitle ?? "").toLowerCase().includes(q)).slice(0, 20);
   });

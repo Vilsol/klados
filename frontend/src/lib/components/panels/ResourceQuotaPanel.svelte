@@ -10,9 +10,13 @@
 
   function parseQuantity(q: string): number | null {
     const s = String(q).trim();
-    if (/^\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+    if (/^\d+(\.\d+)?$/.test(s)) {
+      return parseFloat(s);
+    }
     const mMatch = s.match(/^(\d+(?:\.\d+)?)m$/);
-    if (mMatch) return parseFloat(mMatch[1]) / 1000;
+    if (mMatch) {
+      return parseFloat(mMatch[1]) / 1000;
+    }
     const binMatch = s.match(/^(\d+(?:\.\d+)?)(Ki|Mi|Gi|Ti)$/);
     if (binMatch) {
       const mult: Record<string, number> = {Ki: 1024, Mi: 1024 ** 2, Gi: 1024 ** 3, Ti: 1024 ** 4};
@@ -22,8 +26,12 @@
   }
 
   function barColor(pct: number): string {
-    if (pct >= 90) return "bg-red-500";
-    if (pct >= 70) return "bg-yellow-500";
+    if (pct >= 90) {
+      return "bg-red-500";
+    }
+    if (pct >= 70) {
+      return "bg-yellow-500";
+    }
     return "bg-green-500";
   }
 </script>

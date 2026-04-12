@@ -97,7 +97,9 @@
   }
 
   $effect(() => {
-    if (!container || loading) return;
+    if (!container || loading) {
+      return;
+    }
 
     // Read series with untrack so data changes don't recreate the chart — setData handles updates
     const initialSeries = untrack(() => series);
@@ -146,7 +148,9 @@
       hooks: {
         setCursor: [
           (u) => {
-            if (!tooltip) return;
+            if (!tooltip) {
+              return;
+            }
             const idx = u.cursor.idx;
             if (idx == null) {
               tooltip.style.display = "none";
@@ -162,9 +166,13 @@
             let minDist = Infinity;
             for (let i = 1; i < u.series.length; i++) {
               const s = u.series[i];
-              if (!s.show) continue;
+              if (!s.show) {
+                continue;
+              }
               const val = u.data[i][idx] as number | null;
-              if (val == null) continue;
+              if (val == null) {
+                continue;
+              }
               const seriesY = u.valToPos(val, s.scale ?? "y");
               const dist = Math.abs(seriesY - cursorY);
               if (dist < minDist) {
@@ -177,7 +185,9 @@
             const visibleSeries = [];
             for (let i = 1; i < u.series.length; i++) {
               const s = u.series[i];
-              if (!s.show) continue;
+              if (!s.show) {
+                continue;
+              }
               visibleSeries.push({i, s, val: u.data[i][idx] as number | null, color: COLORS[(i - 1) % COLORS.length]});
             }
             visibleSeries.sort((a, b) => (b.val ?? -Infinity) - (a.val ?? -Infinity));
@@ -213,7 +223,9 @@
             if (thresholds.length) {
               html += `<div style="margin-top:4px;padding-top:4px;border-top:1px solid ${borderColor}">`;
               for (const t of thresholds) {
-                if (!t.series.length) continue;
+                if (!t.series.length) {
+                  continue;
+                }
                 // Find value at cursor time
                 let val = t.series[0].v;
                 for (let i = t.series.length - 1; i >= 0; i--) {
@@ -243,7 +255,9 @@
               const arr = u.data[i] as (number | null)[];
               for (let j = 0; j < (u.data[0] as number[]).length; j++) {
                 const t = (u.data[0] as number[])[j];
-                if (t >= lo && t <= hi && arr[j] != null) allVals.push(arr[j] as number);
+                if (t >= lo && t <= hi && arr[j] != null) {
+                  allVals.push(arr[j] as number);
+                }
               }
             }
             if (allVals.length) {
@@ -293,13 +307,17 @@
               }
             });
             u.over.addEventListener("mouseleave", () => {
-              if (tooltip) tooltip.style.display = "none";
+              if (tooltip) {
+                tooltip.style.display = "none";
+              }
             });
           },
         ],
         drawSeries: [
           (u) => {
-            if (!thresholds.length) return;
+            if (!thresholds.length) {
+              return;
+            }
             const ctx = u.ctx;
             // u.bbox is in canvas (physical) pixels; valToPos(..., true) also returns canvas pixels
             const left = u.bbox.left;
@@ -316,7 +334,9 @@
             ctx.setLineDash([4 * devicePixelRatio, 4 * devicePixelRatio]);
 
             for (const t of thresholds) {
-              if (!t.series.length) continue;
+              if (!t.series.length) {
+                continue;
+              }
               // Find the value nearest to the right edge of the visible range
               let val: number | null = null;
               for (let i = t.series.length - 1; i >= 0; i--) {
@@ -325,7 +345,9 @@
                   break;
                 }
               }
-              if (val == null) val = t.series[0].v;
+              if (val == null) {
+                val = t.series[0].v;
+              }
 
               const y = Math.round(u.valToPos(val, "y", true));
               const isLimit = t.label.toLowerCase().includes("limit");
@@ -341,7 +363,9 @@
         drawAxes: [
           (u) => {
             const ann = sortedAnnotations;
-            if (!ann.length) return;
+            if (!ann.length) {
+              return;
+            }
             const ctx = u.ctx;
             const top = u.bbox.top;
             const bottom = u.bbox.top + u.bbox.height;
@@ -353,8 +377,11 @@
               hi = ann.length;
             while (lo < hi) {
               const mid = (lo + hi) >> 1;
-              if (ann[mid].t < xMin) lo = mid + 1;
-              else hi = mid;
+              if (ann[mid].t < xMin) {
+                lo = mid + 1;
+              } else {
+                hi = mid;
+              }
             }
 
             const triSize = 4 * devicePixelRatio;
@@ -413,13 +440,17 @@
   $effect(() => {
     const range = zoomRange;
     untrack(() => {
-      if (!chart) return;
+      if (!chart) {
+        return;
+      }
       isProgrammaticScale = true;
       if (range) {
         chart.setScale("x", {min: range.min, max: range.max});
       } else {
         const data = chart.data[0] as number[];
-        if (data?.length) chart.setScale("x", {min: data[0], max: data[data.length - 1]});
+        if (data?.length) {
+          chart.setScale("x", {min: data[0], max: data[data.length - 1]});
+        }
       }
       isProgrammaticScale = false;
     });
@@ -429,7 +460,9 @@
     // Reactive data update — do NOT recreate chart
     const newData = toColumnar(series);
     untrack(() => {
-      if (!chart) return;
+      if (!chart) {
+        return;
+      }
       // Pad missing value arrays to match chart's series count (x + N series).
       // Mismatch happens when switching resources and series resets to [] before
       // the chart is recreated — uPlot crashes on undefined data[i].
