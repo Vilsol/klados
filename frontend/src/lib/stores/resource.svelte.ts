@@ -1,6 +1,5 @@
 import { Events } from '@wailsio/runtime'
 import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
-import { perfMark, perfEnd } from '../utils/perf'
 
 interface WatchEvent {
   type: 'ADDED' | 'MODIFIED' | 'DELETED'
@@ -15,6 +14,7 @@ class ResourceStore {
   items = $state<Record<string, any>[]>([])
   loading = $state(false)
   error = $state<string | null>(null)
+  lastLoadMs = $state<number | null>(null)
 
   private contextName = ''
   private gvr = ''
@@ -26,6 +26,7 @@ class ResourceStore {
   async start(contextName: string, gvr: string, namespace: string) {
     this.stop()
     const gen = this.generation  // captured after stop() bumped it
+    const t0 = performance.now()
 
     this.contextName = contextName
     this.gvr = gvr
@@ -33,8 +34,7 @@ class ResourceStore {
     this.eventName = `watch:${contextName}:${gvr}:${namespace}`
     this.loading = true
     this.error = null
-
-    perfMark('resource-page', 'store.start() called — subscribing to events')
+    this.lastLoadMs = null
 
     // Events.On returns an unsubscribe fn; callback receives WailsEvent { name, data }
     this.unsub = Events.On(this.eventName, (wailsEvent: any) => {
@@ -42,10 +42,10 @@ class ResourceStore {
     })
 
     try {
-      perfMark('resource-page', 'ListResources RPC start')
+      const tList = performance.now()
       const list = await ResourceService.ListResources(contextName, gvr, namespace)
       if (gen !== this.generation) return  // superseded by a newer start/stop
-      perfMark('resource-page', `ListResources RPC done — ${list?.length ?? 0} items`)
+      const listMs = performance.now() - tList
 
       const map = new Map<string, Record<string, any>>()
       for (const obj of list ?? []) {
@@ -53,26 +53,20 @@ class ResourceStore {
       }
       this.items = Array.from(map.values())
       this.loading = false
+      this.lastLoadMs = Math.round(listMs)
       const count = this.items.length
-      perfMark('resource-page', `loading = false (data ready, ${count} items)`)
 
-      if (count > 0) {
+      requestAnimationFrame(() => {
+        if (gen !== this.generation) return
         requestAnimationFrame(() => {
           if (gen !== this.generation) return
-          requestAnimationFrame(() => {
-            if (gen !== this.generation) return
-            perfEnd('resource-page', `interactive — ${count} items painted`)
-          })
+          const total = Math.round(performance.now() - t0)
+          console.debug(`[perf] ${gvr}: ${count} items, list=${Math.round(listMs)}ms, interactive=${total}ms`)
         })
-      } else {
-        perfEnd('resource-page', 'interactive — empty list painted')
-      }
+      })
 
       // Start watch in background — event listener is already subscribed
-      perfMark('resource-page', 'StartWatch RPC start (background)')
-      ResourceService.StartWatch(contextName, gvr, namespace)
-        .then(() => { perfMark('resource-page', 'StartWatch RPC done') })
-        .catch(() => {})
+      ResourceService.StartWatch(contextName, gvr, namespace).catch(() => {})
     } catch (e: any) {
       if (gen !== this.generation) return
       this.error = e?.message ?? String(e)

@@ -22,7 +22,6 @@
   import { filterItems } from '$lib/search/filter'
   import type { SearchTerm } from '$lib/search/parser'
   import { exportItems } from '$lib/utils/export'
-  import { perfMark } from '$lib/utils/perf'
 
   function itemKey(obj: Record<string, any>): string {
     const ns = obj.metadata?.namespace ?? ''
@@ -32,7 +31,6 @@
 
   let now = $state(Date.now())
   onMount(() => {
-    perfMark('resource-page', 'ResourceList mounted')
     const id = setInterval(() => { now = Date.now() }, 1_000)
     return () => clearInterval(id)
   })

@@ -18,19 +18,13 @@
   import { notificationStore } from '$lib/stores/notification.svelte'
   import type { ControllerRef } from '$lib/utils/relationships'
   import { selectionStore } from '$lib/stores/selection.svelte'
-  import { perfStart, perfMark } from '$lib/utils/perf'
 
   let { params = {} }: { params?: Record<string, string> } = $props()
 
   const ctxName = $derived(params.ctx ?? '')
   const gvr = $derived(params.gvr ?? '')
   const selectedNamespaces = $derived(clusterStore.getSelectedNamespaces(ctxName))
-  const descriptor = $derived.by(() => {
-    if (!registryLoaded()) return null
-    const d = descriptorRegistry.get(gvr)
-    if (d) perfMark('resource-page', 'descriptor resolved')
-    return d
-  })
+  const descriptor = $derived(registryLoaded() ? descriptorRegistry.get(gvr) : null)
   let selectedGVR = $state('')
   const selectedDescriptor = $derived(selectedGVR && registryLoaded() ? descriptorRegistry.get(selectedGVR) : descriptor)
   const rawWatchNamespace = $derived(selectedNamespaces.length === 1 ? selectedNamespaces[0] : '')
@@ -40,13 +34,7 @@
   $effect(() => { if (ctxName) clusterStore.setActiveContext(ctxName) })
 
   // Initialize column store whenever GVR changes
-  $effect(() => {
-    if (gvr) {
-      perfStart('resource-page')
-      perfMark('resource-page', `navigated to ${gvr}`)
-      columnStore.loadForGVR(gvr)
-    }
-  })
+  $effect(() => { if (gvr) columnStore.loadForGVR(gvr) })
 
   // Set GVR on selection store (auto-clears on GVR change)
   $effect(() => {
@@ -166,6 +154,9 @@
 <div class="flex flex-col h-full">
   <div class="shrink-0 px-4 py-3 border-b border-border flex items-center gap-2">
     <h1 class="text-sm font-semibold">{gvr.split('.').at(-1) ?? gvr}</h1>
+    {#if store.lastLoadMs != null}
+      <span class="text-xs text-muted" title="API response time">{store.lastLoadMs}ms</span>
+    {/if}
     {#if !descriptor?.clusterScoped}
       {#if selectedNamespaces.length === 1}
         <span class="text-xs text-muted border border-border rounded px-1.5 py-0.5">{selectedNamespaces[0]}</span>

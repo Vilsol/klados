@@ -3,7 +3,6 @@ import * as PluginService from '../../../bindings/github.com/Vilsol/klados/inter
 import { evaluate, parse } from 'cel-js'
 import type { CstNode } from '@chevrotain/types'
 import { setRegistryLoaded } from './loaded.svelte'
-import { perfStart, perfMark, perfEnd } from '../utils/perf'
 
 export type RenderType = 'text' | 'badge' | 'age' | 'progress' | 'controlledBy'
 
@@ -54,9 +53,7 @@ class DescriptorRegistry {
   private availableGVRs = new Set<string>()
 
   async load() {
-    perfStart('registry-load')
     try {
-      perfMark('registry-load', 'GetDescriptors RPC start')
       const defs = await ResourceService.GetDescriptors()
       this.builtins.clear()
       for (const d of defs ?? []) {
@@ -92,16 +89,12 @@ class DescriptorRegistry {
           })),
         })
       }
-      perfMark('registry-load', `GetDescriptors done — ${this.builtins.size} builtins`)
       this.descriptors = new Map(this.builtins)
-      perfMark('registry-load', 'mergePluginDescriptors start')
       await this.mergePluginDescriptors()
-      perfMark('registry-load', 'mergePluginDescriptors done')
     } catch (e) {
       console.error('Failed to load descriptors:', e)
     } finally {
       setRegistryLoaded()
-      perfEnd('registry-load', 'registry loaded')
     }
   }
 

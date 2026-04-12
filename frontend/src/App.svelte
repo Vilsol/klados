@@ -49,8 +49,10 @@
   }
 
   onMount(() => {
+    const origDebug = console.debug.bind(console)
     const origError = console.error.bind(console)
     const origWarn = console.warn.bind(console)
+    console.debug = (...args) => { const [m] = argsToLog(args); logToBackend('debug', m, '') }
     console.error = (...args) => { origError(...args); const [m, e] = argsToLog(args); logError(m, e) }
     console.warn = (...args) => { origWarn(...args); const [m, e] = argsToLog(args); logToBackend('warn', m, e?.stack ?? '') }
     window.onerror = (_msg, _src, _line, _col, err) => { logError(String(_msg), err) }

@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { Sun, Moon, Monitor, Lock, LockOpen } from 'lucide-svelte'
-  import { getTheme, setTheme } from '$lib/theme.svelte'
+  import { Lock, LockOpen } from 'lucide-svelte'
   import { clusterStore } from '$lib/stores/cluster.svelte'
   import ConnectionIndicator from './ConnectionIndicator.svelte'
   import { Combobox } from '@klados/ui'
@@ -10,15 +9,6 @@
   import { streamingStore } from '$lib/stores/streaming.svelte.js'
   import { Events } from '@wailsio/runtime'
   import * as DrainService from '../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js'
-  import { unwrapError } from '$lib/utils/async.js'
-
-  function cycleTheme() {
-    const current = getTheme()
-    const next = current === 'system' ? 'dark' : current === 'dark' ? 'light' : 'system'
-    setTheme(next)
-  }
-
-  let currentTheme = $derived(getTheme())
 
   const ctx = $derived(clusterStore.activeContext)
   const selected = $derived(ctx ? clusterStore.getSelectedNamespaces(ctx) : [])
@@ -119,21 +109,6 @@
         <span>Read-only</span>
       {:else}
         <LockOpen size={13} />
-      {/if}
-    </button>
-
-    <button
-      onclick={cycleTheme}
-      class="p-1.5 rounded hover:bg-surface-hover transition-colors"
-      title="Theme: {currentTheme}"
-      aria-label="Switch theme (current: {currentTheme})"
-    >
-      {#if currentTheme === 'dark'}
-        <Moon size={16} />
-      {:else if currentTheme === 'light'}
-        <Sun size={16} />
-      {:else}
-        <Monitor size={16} />
       {/if}
     </button>
   </div>

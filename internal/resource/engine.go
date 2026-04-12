@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -12,6 +13,7 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	"github.com/Vilsol/klados/internal/cluster"
+	"github.com/Vilsol/slox"
 )
 
 type ConnectionProvider interface {
@@ -81,21 +83,37 @@ func (e *ResourceEngine) enrich(contextName, gvr string, item *unstructured.Unst
 }
 
 func (e *ResourceEngine) List(ctx context.Context, contextName, gvr, namespace string) ([]map[string]any, error) {
+	t0 := time.Now()
+
 	client, err := e.client(ctx, contextName, gvr, namespace)
 	if err != nil {
 		return nil, err
 	}
+	tClient := time.Since(t0)
 
 	list, err := client.List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("listing %s: %w", gvr, err)
 	}
+	tList := time.Since(t0)
 
 	result := make([]map[string]any, len(list.Items))
 	for i := range list.Items {
 		e.enrich(contextName, gvr, &list.Items[i])
 		result[i] = list.Items[i].Object
 	}
+	tEnrich := time.Since(t0)
+
+	slox.Debug(ctx, "ResourceEngine.List",
+		"gvr", gvr,
+		"namespace", namespace,
+		"items", len(result),
+		"client_ms", tClient.Milliseconds(),
+		"k8s_list_ms", (tList - tClient).Milliseconds(),
+		"enrich_ms", (tEnrich - tList).Milliseconds(),
+		"total_ms", tEnrich.Milliseconds(),
+	)
+
 	return result, nil
 }
 

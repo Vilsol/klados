@@ -188,6 +188,8 @@ func (a *AppService) LogFrontend(level, message, detail string) {
 		args = append(args, "detail", detail)
 	}
 	switch level {
+	case "debug":
+		slox.Debug(a.ctx, message, args...)
 	case "warn":
 		slox.Warn(a.ctx, message, args...)
 	case "error":

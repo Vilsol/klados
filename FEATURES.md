@@ -17,7 +17,6 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Multi-cluster support — add/remove/switch clusters
 - [x] `MVP` Kubeconfig auto-detection (~/.kube/config, KUBECONFIG env)
 - [x] `MVP` Kubeconfig manual import (file picker, paste)
-- [ ] `Future` In-cluster context detection (when running inside a pod)
 - [x] `MVP` Cluster connection status indicators (connected, degraded, unreachable)
 - [x] `v2` Cluster health overview (API server health, component statuses)
 - [x] `MVP` Cluster metadata display (version, platform, provider detection)
