@@ -108,3 +108,39 @@ describe('getSuggestions', () => {
     expect(result[0].value).toBe('label:')
   })
 })
+
+describe('contextual autocomplete (pre-filtered items)', () => {
+  const allItems = [
+    makeItem('nginx-proxy', 'default', { app: 'web', env: 'prod' }),
+    makeItem('nginx-ingress', 'kube-system', { app: 'web', env: 'dev' }),
+    makeItem('redis-master', 'default', { app: 'cache', env: 'prod' }),
+  ]
+
+  // Simulate pre-filtering: only items with env=prod
+  const filtered = allItems.filter((i) => i.metadata.labels.env === 'prod')
+
+  it('suggests only label values present in filtered subset', () => {
+    const result = getSuggestions('label:app=', 10, filtered)
+    const values = result.map((s: Suggestion) => s.value)
+    expect(values).toContain('web')
+    expect(values).toContain('cache')
+    expect(result.find((s: Suggestion) => s.value === 'web')?.count).toBe(1)
+  })
+
+  it('does not suggest label keys absent from filtered subset', () => {
+    const redisOnly = allItems.filter((i) => i.metadata.name === 'redis-master')
+    const result = getSuggestions('label:', 6, redisOnly)
+    const keys = result.map((s: Suggestion) => s.value)
+    expect(keys).toContain('app')
+    expect(keys).toContain('env')
+    expect(result.find((s: Suggestion) => s.value === 'app')?.count).toBe(1)
+  })
+
+  it('suggests only namespaces present in filtered subset', () => {
+    const defaultOnly = allItems.filter((i) => i.metadata.namespace === 'default')
+    const result = getSuggestions('ns:', 3, defaultOnly)
+    const ns = result.map((s: Suggestion) => s.value)
+    expect(ns).toContain('default')
+    expect(ns).not.toContain('kube-system')
+  })
+})

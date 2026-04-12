@@ -7,10 +7,12 @@
 
   let accentColor = $state<string>('')
   let compactRows = $state<boolean>(false)
+  let contextualAutocomplete = $state<boolean>(true)
 
   onMount(() => {
     accentColor = preferencesStore.prefs.accentColor || ''
     compactRows = preferencesStore.prefs.compactRows
+    contextualAutocomplete = preferencesStore.prefs.contextualAutocomplete
   })
 
   function setAccent(color: string) {
@@ -21,6 +23,11 @@
   function setCompact(checked: boolean) {
     compactRows = checked
     ConfigService.SetCompactRows(checked)
+  }
+
+  function setContextualAutocomplete(checked: boolean) {
+    contextualAutocomplete = checked
+    ConfigService.SetContextualAutocomplete(checked)
   }
 
   let isPreset = $derived(presetColors.includes(accentColor))
@@ -70,6 +77,19 @@
         class="accent-accent"
       />
       <span class="text-sm text-fg">Reduce row height in resource lists</span>
+    </label>
+  </div>
+
+  <div>
+    <h2 class="text-base font-medium text-fg mb-4">Contextual Autocomplete</h2>
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={contextualAutocomplete}
+        onchange={(e) => setContextualAutocomplete((e.target as HTMLInputElement).checked)}
+        class="accent-accent"
+      />
+      <span class="text-sm text-fg">Autocomplete suggestions reflect active search filters</span>
     </label>
   </div>
 </div>

@@ -14,6 +14,7 @@ export interface ResolvedPrefs {
   keybindings: Record<string, string> | null
   savedFilters: Record<string, SavedFilter[]> | null
   favoriteNamespaces: string[] | null
+  contextualAutocomplete: boolean
 }
 
 export interface SavedFilter {
@@ -34,6 +35,7 @@ class PreferencesStore {
     keybindings: null,
     savedFilters: null,
     favoriteNamespaces: null,
+    contextualAutocomplete: true,
   })
 
   private activeContext = ''

@@ -2,6 +2,8 @@
   import { X } from 'lucide-svelte'
   import { parseSearch, type SearchTerm } from '$lib/search/parser'
   import { getSuggestions, type Suggestion } from '$lib/search/autocomplete'
+  import { filterItems } from '$lib/search/filter'
+  import { preferencesStore } from '$lib/stores/preferences.svelte'
   import SmartSearchAutocomplete from './SmartSearchAutocomplete.svelte'
 
   let {
@@ -59,7 +61,10 @@
 
   function updateAutocomplete() {
     if (!inputEl) return
-    suggestions = getSuggestions(value, value.length, items)
+    const pool = preferencesStore.prefs.contextualAutocomplete
+      ? filterItems(items, chips)
+      : items
+    suggestions = getSuggestions(value, value.length, pool)
     selectedIndex = 0
     showAutocomplete = suggestions.length > 0
   }
