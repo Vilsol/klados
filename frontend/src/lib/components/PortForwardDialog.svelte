@@ -61,10 +61,16 @@
       const kind = isQuickMode ? prefillTargetKind : targetKind;
       const name = isQuickMode ? prefillTarget : targetName;
       const gvr = isQuickMode ? prefillGVR : targetGVR;
-      const remote = isQuickMode ? prefillRemotePort : parseInt(remotePort);
-      const local = isQuickMode ? (localPortMode === "auto" ? 0 : parseInt(customLocalPort) || 0) : localPort ? parseInt(localPort) : 0;
+      const remote = isQuickMode ? prefillRemotePort : parseInt(remotePort, 10);
+      const local = isQuickMode
+        ? localPortMode === "auto"
+          ? 0
+          : parseInt(customLocalPort, 10) || 0
+        : localPort
+          ? parseInt(localPort, 10)
+          : 0;
 
-      if (!name || isNaN(remote) || remote <= 0 || !ns) return;
+      if (!name || Number.isNaN(remote) || remote <= 0 || !ns) return;
 
       const spec = await PortForwardService.StartForward(ctx, ns, kind as TargetKind, name, gvr, local, remote);
       log.info("Port forward started", {localPort: local, remotePort: remote});

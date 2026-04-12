@@ -38,8 +38,8 @@ describe("clusterStore", () => {
     await clusterStore.loadContexts();
 
     expect(clusterStore.contexts).toHaveLength(2);
-    expect(clusterStore.connectionStatus["ctx1"]).toBe("connected");
-    expect(clusterStore.connectionStatus["ctx2"]).toBe("disconnected");
+    expect(clusterStore.connectionStatus.ctx1).toBe("connected");
+    expect(clusterStore.connectionStatus.ctx2).toBe("disconnected");
   });
 
   it("connect updates status and sets active context", async () => {
@@ -49,7 +49,7 @@ describe("clusterStore", () => {
     await clusterStore.connect("ctx1");
 
     expect(mockedConnect).toHaveBeenCalledWith("ctx1");
-    expect(clusterStore.connectionStatus["ctx1"]).toBe("connected");
+    expect(clusterStore.connectionStatus.ctx1).toBe("connected");
     expect(clusterStore.activeContext).toBe("ctx1");
     expect(clusterStore.getNamespaces("ctx1")).toEqual(["default", "kube-system"]);
   });
@@ -62,7 +62,7 @@ describe("clusterStore", () => {
     await clusterStore.connect("ctx2");
 
     expect(clusterStore.activeContext).toBe("ctx1");
-    expect(clusterStore.connectionStatus["ctx2"]).toBe("connected");
+    expect(clusterStore.connectionStatus.ctx2).toBe("connected");
   });
 
   it("connect sets error status on failure", async () => {
@@ -70,7 +70,7 @@ describe("clusterStore", () => {
 
     await clusterStore.connect("ctx1");
 
-    expect(clusterStore.connectionStatus["ctx1"]).toBe("error");
+    expect(clusterStore.connectionStatus.ctx1).toBe("error");
   });
 
   it("disconnect clears active context", async () => {
@@ -81,7 +81,7 @@ describe("clusterStore", () => {
     await clusterStore.disconnect("ctx1");
 
     expect(mockedDisconnect).toHaveBeenCalledWith("ctx1");
-    expect(clusterStore.connectionStatus["ctx1"]).toBe("disconnected");
+    expect(clusterStore.connectionStatus.ctx1).toBe("disconnected");
     expect(clusterStore.activeContext).toBeNull();
     expect(clusterStore.getNamespaces("ctx1")).toEqual([]);
   });

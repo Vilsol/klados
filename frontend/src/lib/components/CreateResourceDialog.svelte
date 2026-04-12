@@ -172,7 +172,7 @@
     try {
       const text = await navigator.clipboard.readText();
       if (text.trim()) {
-        view?.dispatch({changes: {from: 0, to: view!.state.doc.length, insert: text}});
+        view?.dispatch({changes: {from: 0, to: view?.state.doc.length, insert: text}});
         editorDirty = true;
       }
     } catch {

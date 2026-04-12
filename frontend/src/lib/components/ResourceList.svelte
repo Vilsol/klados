@@ -455,7 +455,6 @@
                 {isSelected ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-surface-hover border-l-2 border-transparent'}
                 {onselect ? 'cursor-pointer' : ''}"
               style="transform: translateY({row.start}px); height: {rowHeight}px;"
-              role={onselect ? 'button' : undefined}
               tabindex={onselect ? 0 : undefined}
               onclick={() => onselect?.(item)}
               onkeydown={(e) => { if (e.key === 'Enter') onselect?.(item) }}
@@ -491,7 +490,6 @@
                       {col.name === 'Namespace' ? 'cursor-pointer hover:text-accent' : ''}"
                     data-col={col.name}
                     onclick={col.name === 'Namespace' ? (e) => { e.stopPropagation(); clusterStore.setNamespaces(contextName, [String(value)]) } : undefined}
-                    role={col.name === 'Namespace' ? 'button' : undefined}
                   >
                     {#if col.renderType === 'controlledBy'}
                       {@const ref = getControllerRef(item)}

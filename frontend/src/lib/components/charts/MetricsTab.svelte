@@ -78,7 +78,7 @@
             const nextMap = new Map(rollingData);
             for (const metric of metricsRes.metrics) {
               for (const series of metric.series) {
-                const key = `${metric.name}:${series.labels["container"] ?? series.labels["pod"] ?? ""}`;
+                const key = `${metric.name}:${series.labels.container ?? series.labels.pod ?? ""}`;
                 const existing = nextMap.get(key) ?? [];
                 const latest = series.points[series.points.length - 1];
                 if (latest) {
@@ -158,7 +158,7 @@
     const names = new Set<string>();
     for (const metric of response.metrics) {
       for (const s of metric.series) {
-        const c = s.labels["container"] ?? s.labels["pod"];
+        const c = s.labels.container ?? s.labels.pod;
         if (c) names.add(c);
       }
     }
@@ -166,7 +166,7 @@
   }
 
   function getContainerSeries(container: string, metricName: string): TimeSeries[] {
-    return getSeriesForMetric(metricName).filter((s) => (s.labels["container"] ?? s.labels["pod"]) === container);
+    return getSeriesForMetric(metricName).filter((s) => (s.labels.container ?? s.labels.pod) === container);
   }
 </script>
 

@@ -1,7 +1,7 @@
 export function formatAge(timestamp: string, now = Date.now()): string {
   if (!timestamp) return "";
   const created = new Date(timestamp);
-  if (isNaN(created.getTime())) return timestamp;
+  if (Number.isNaN(created.getTime())) return timestamp;
 
   const seconds = Math.floor((now - created.getTime()) / 1000);
   if (seconds < 0) return "0s";

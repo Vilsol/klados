@@ -102,7 +102,7 @@
         );
         streamIds.push(id);
 
-        const ws = new WebSocket(`ws://127.0.0.1:${streamingStore.config!.port}/${streamingStore.config!.token}/ws/logs/${id}`);
+        const ws = new WebSocket(`ws://127.0.0.1:${streamingStore.config?.port}/${streamingStore.config?.token}/ws/logs/${id}`);
 
         store.addStream(podName, id, ws);
 

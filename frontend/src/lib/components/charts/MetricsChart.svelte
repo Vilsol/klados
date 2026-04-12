@@ -75,9 +75,9 @@
 
   function seriesLabel(s: TimeSeries, i: number): string {
     return (
-      s.labels["container"] ||
-      s.labels["pod"] ||
-      s.labels["node"] ||
+      s.labels.container ||
+      s.labels.pod ||
+      s.labels.node ||
       Object.values(s.labels).find((v) => v) ||
       (series.length === 1 ? title : `series${i + 1}`)
     );
@@ -224,7 +224,7 @@
                 }
                 const isLimit = t.label.toLowerCase().includes("limit");
                 const color = isLimit ? "#ef4444" : "#3b82f6";
-                const shortLabel = t.label.replace(/:(.*?)$/, ' <span style="color:' + mutedColor + '">$1</span>');
+                const shortLabel = t.label.replace(/:(.*?)$/, ` <span style="color:${mutedColor}">$1</span>`);
                 html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;opacity:0.85">`;
                 html += `<span style="display:inline-block;width:12px;border-top:2px dashed ${color};flex-shrink:0"></span>`;
                 html += `<span style="color:${color}">${shortLabel}</span>`;
@@ -260,7 +260,7 @@
             tooltip.innerHTML = html;
 
             const overRect = u.over.getBoundingClientRect();
-            const parentRect = tooltip.parentElement!.getBoundingClientRect();
+            const parentRect = tooltip.parentElement?.getBoundingClientRect();
             const absX = overRect.left - parentRect.left + x;
             const absY = overRect.top - parentRect.top + y;
 

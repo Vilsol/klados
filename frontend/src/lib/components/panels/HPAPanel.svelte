@@ -27,7 +27,7 @@
     const slashIdx = apiVersion.indexOf("/");
     const group = slashIdx >= 0 ? apiVersion.slice(0, slashIdx) : "core";
     const version = slashIdx >= 0 ? apiVersion.slice(slashIdx + 1) : apiVersion;
-    const plural = kindPluralMap[kind] ?? kind.toLowerCase() + "s";
+    const plural = kindPluralMap[kind] ?? `${kind.toLowerCase()}s`;
     const ns = obj.metadata?.namespace ?? "_";
     return `/c/${ctxName}/${group}.${version}.${plural}/${ns}/${scaleTargetRef.name}`;
   }

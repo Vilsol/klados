@@ -98,7 +98,7 @@ import ResourceList from "$lib/components/ResourceList.svelte";
 
 const textCol: ColumnDef = {name: "Name", expr: "metadata.name", renderType: "text"};
 const ageCol: ColumnDef = {name: "Age", expr: "metadata.creationTimestamp", renderType: "age"};
-const nsCol: ColumnDef = {name: "Namespace", expr: "metadata.namespace", renderType: "text"};
+const _nsCol: ColumnDef = {name: "Namespace", expr: "metadata.namespace", renderType: "text"};
 
 const testItem = {
   metadata: {name: "my-pod", namespace: "default", creationTimestamp: "2024-01-01T00:00:00Z"},

@@ -125,7 +125,7 @@
       const allLines: string[] = [];
       let buf = "";
       await new Promise<void>((resolve) => {
-        const socket = new WebSocket(`ws://127.0.0.1:${streamingStore.config!.port}/${streamingStore.config!.token}/ws/logs/${id}`);
+        const socket = new WebSocket(`ws://127.0.0.1:${streamingStore.config?.port}/${streamingStore.config?.token}/ws/logs/${id}`);
         socket.onmessage = (e) => {
           if (typeof e.data !== "string") return;
           try {

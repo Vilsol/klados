@@ -6,7 +6,7 @@ import {getLogger} from "$lib/logger";
 import {preferencesStore} from "./preferences.svelte";
 
 const log = getLogger("cluster");
-import {KubeContext, ConnectionStatus} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js";
+import {type KubeContext, ConnectionStatus} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js";
 import {buildKindGVRMap, resolveGVR, type APIResource} from "$lib/utils/relationships";
 
 export type {KubeContext};

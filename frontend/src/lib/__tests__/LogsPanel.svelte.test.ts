@@ -1,5 +1,5 @@
 import {describe, it, expect, vi, beforeEach} from "vitest";
-import {render, screen, waitFor, fireEvent} from "@testing-library/svelte";
+import {render, screen, waitFor} from "@testing-library/svelte";
 
 const {mockStartLogStream, mockStopLogStream} = vi.hoisted(() => ({
   mockStartLogStream: vi.fn().mockResolvedValue("stream-id-123"),

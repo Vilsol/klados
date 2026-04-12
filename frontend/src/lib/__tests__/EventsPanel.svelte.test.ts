@@ -1,4 +1,4 @@
-import {describe, it, expect, vi, beforeEach} from "vitest";
+import {describe, it, expect, vi} from "vitest";
 import {render, screen, waitFor} from "@testing-library/svelte";
 
 vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js", () => ({

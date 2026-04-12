@@ -42,7 +42,7 @@
     value = parts.join(" ");
     // Ensure trailing space after chips if there are chips and no trailing text
     if (chips.length > 0 && !inputText) {
-      value = chipParts.join(" ") + " ";
+      value = `${chipParts.join(" ")} `;
     }
   }
 
@@ -112,12 +112,12 @@
       const isPlainValue = qualifier === "namespace:" || qualifier === "ns:" || qualifier === "name:" || qualifier === "n:";
 
       if (eqIdx === -1 && isPlainValue) {
-        replacement = negPrefix + qualifier + suggestion.value + " ";
+        replacement = `${negPrefix + qualifier + suggestion.value} `;
       } else if (eqIdx === -1) {
-        replacement = negPrefix + qualifier + suggestion.value + "=";
+        replacement = `${negPrefix + qualifier + suggestion.value}=`;
       } else {
         const key = afterColon.substring(0, eqIdx);
-        replacement = negPrefix + qualifier + key + "=" + suggestion.value + " ";
+        replacement = `${negPrefix + qualifier + key}=${suggestion.value} `;
       }
     }
 
@@ -125,7 +125,7 @@
     // Rebuild with the completed token
     const chipParts = chips.map((t) => serializeTerm(t));
     if (replacement.endsWith(" ")) {
-      value = [...chipParts, replacement.trimEnd()].join(" ") + " ";
+      value = `${[...chipParts, replacement.trimEnd()].join(" ")} `;
     } else {
       value = [...chipParts, replacement].join(" ");
     }
@@ -171,7 +171,7 @@
   function removeChip(index: number) {
     const remaining = chips.filter((_, i) => i !== index);
     const parts = remaining.map((t) => serializeTerm(t));
-    value = parts.length > 0 ? parts.join(" ") + " " + inputText : inputText;
+    value = parts.length > 0 ? `${parts.join(" ")} ${inputText}` : inputText;
     lastExternalValue = value;
     requestAnimationFrame(() => inputEl?.focus());
   }

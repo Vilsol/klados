@@ -2,7 +2,7 @@ import {defineConfig} from "vite";
 import {svelte} from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
 import wails from "@wailsio/runtime/plugins/vite";
-import path from "path";
+import path from "node:path";
 
 // Public URL used in the import map — both dev and prod serve Svelte here.
 const SHARED_URL = "/plugin-shared/svelte-runtime.js";

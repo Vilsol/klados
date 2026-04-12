@@ -46,7 +46,7 @@ describe("TabBar", () => {
 
     render(TabBar);
 
-    const closeBtn = screen.getByText("only-tab").parentElement!.querySelector("button")!;
+    const closeBtn = screen.getByText("only-tab").parentElement?.querySelector("button")!;
     await fireEvent.click(closeBtn);
 
     expect(sessionStore.tabs).toHaveLength(0);

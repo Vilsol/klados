@@ -40,6 +40,9 @@
       "expand": "auto",
       "operatorLinebreak": "after",
       "trailingNewline": true
+    },
+    "linter": {
+      "enabled": true
     }
   },
   "json": {
@@ -53,6 +56,9 @@
       "bracketSpacing": false,
       "expand": "auto",
       "trailingNewline": true
+    },
+    "linter": {
+      "enabled": true
     }
   },
   "css": {
@@ -66,6 +72,9 @@
       "lineEnding": "lf",
       "lineWidth": 140,
       "trailingNewline": true
+    },
+    "linter": {
+      "enabled": true
     }
   },
   "html": {
@@ -81,6 +90,9 @@
       "indentScriptAndStyle": true,
       "selfCloseVoidElements": "never",
       "trailingNewline": true
+    },
+    "linter": {
+      "enabled": true
     }
   },
   "assist": {
@@ -90,5 +102,22 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.svelte"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useConst": "off",
+            "useImportType": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "off",
+            "noUnusedImports": "off"
+          }
+        }
+      }
+    }
+  ]
 }

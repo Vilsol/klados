@@ -51,7 +51,7 @@
         {},
         {
           stroke: color,
-          fill: color + "33",
+          fill: `${color}33`,
           width: 1,
         },
       ],

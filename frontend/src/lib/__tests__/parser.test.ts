@@ -1,5 +1,5 @@
 import {describe, it, expect} from "vitest";
-import {parseSearch, type SearchTerm} from "$lib/search/parser";
+import {parseSearch} from "$lib/search/parser";
 
 describe("parseSearch", () => {
   it("parses bare text as name filter", () => {
