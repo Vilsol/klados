@@ -11,7 +11,8 @@ type ResolvedPrefs struct {
 	ColumnPrefs   map[string]*GVRColumnPrefs `json:"columnPrefs,omitempty"`
 	FavoriteNS    []string                   `json:"favoriteNamespaces,omitempty"`
 	Keybindings   map[string]string          `json:"keybindings,omitempty"`
-	SavedFilters  map[string][]SavedFilter   `json:"savedFilters,omitempty"`
+	SavedFilters           map[string][]SavedFilter   `json:"savedFilters,omitempty"`
+	ContextualAutocomplete bool                       `json:"contextualAutocomplete"`
 }
 
 func (c *Config) ResolveForCluster(ctxName string) ResolvedPrefs {
@@ -28,6 +29,12 @@ func (c *Config) ResolveForCluster(ctxName string) ResolvedPrefs {
 		ColumnPrefs:   copyColumnPrefs(c.ColumnPrefs),
 		Keybindings:   copyStringMap(c.Keybindings),
 		SavedFilters:  copySavedFilters(c.SavedFilters),
+	}
+
+	if c.ContextualAutocomplete != nil {
+		r.ContextualAutocomplete = *c.ContextualAutocomplete
+	} else {
+		r.ContextualAutocomplete = true
 	}
 
 	if c.Metrics != nil {

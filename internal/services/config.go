@@ -88,6 +88,12 @@ func (c *ConfigService) SetCompactRows(compact bool) error {
 	})
 }
 
+func (c *ConfigService) SetContextualAutocomplete(enabled bool) error {
+	return c.config.Update(func(cfg *config.Config) {
+		cfg.ContextualAutocomplete = &enabled
+	})
+}
+
 func (c *ConfigService) GetConfig() *config.Config {
 	return c.config
 }

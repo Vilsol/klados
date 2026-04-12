@@ -79,6 +79,7 @@ type Config struct {
 	StartupCluster        string                       `json:"startupCluster,omitempty"`
 	AccentColor           string                       `json:"accentColor,omitempty"`
 	FontSize              int                          `json:"fontSize,omitempty"`
+	ContextualAutocomplete *bool                        `json:"contextualAutocomplete,omitempty"`
 
 	mu   deadlock.Mutex
 	path string
