@@ -43,9 +43,15 @@ Object.defineProperty(window, "matchMedia", {
 // jsdom doesn't provide ResizeObserver
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    observe() {
+      /* empty */
+    }
+    unobserve() {
+      /* empty */
+    }
+    disconnect() {
+      /* empty */
+    }
   } as unknown as typeof ResizeObserver;
 }
 

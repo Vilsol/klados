@@ -38,7 +38,7 @@
           <tr class="border-b border-border/50">
             <td class="py-1.5 pr-4 font-mono">{v.name}</td>
             <td class="py-1.5 pr-4">
-              <StatusBadge status={v.served !== false} mode="pill">{v.served !== false ? 'True' : 'False'}</StatusBadge>
+              <StatusBadge status={v.served !== false} mode="pill">{v.served === false ? 'False' : 'True'}</StatusBadge>
             </td>
             <td class="py-1.5 pr-4">
               <StatusBadge status={v.storage === true} mode="pill">{v.storage === true ? 'True' : 'False'}</StatusBadge>

@@ -146,7 +146,9 @@ vi.mock("@tanstack/svelte-virtual", () => ({
         getTotalSize: () => count * 36,
         getVirtualItems: () => Array.from({length: count}, (_, i) => ({index: i, start: i * 36, size: 36})),
       });
-      return () => {};
+      return () => {
+        /* empty */
+      };
     },
   }),
 }));

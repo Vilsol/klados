@@ -146,7 +146,9 @@
               resolve();
               return;
             }
-          } catch {}
+          } catch {
+            /* empty */
+          }
           const parts = (buf + e.data).split("\n");
           buf = parts.pop() ?? "";
           allLines.push(...parts);

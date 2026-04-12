@@ -168,7 +168,7 @@
       <div class="flex justify-between text-xs text-muted">
         <span>min: {minReplicas}</span>
         <span class="font-semibold text-fg"
-          >current: {currentReplicas}{desiredReplicas !== currentReplicas ? ` (desired: ${desiredReplicas})` : ''}</span
+          >current: {currentReplicas}{desiredReplicas === currentReplicas ? '' : ` (desired: ${desiredReplicas})`}</span
         >
         <span>max: {maxReplicas}</span>
       </div>

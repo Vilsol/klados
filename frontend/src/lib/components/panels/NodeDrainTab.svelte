@@ -97,7 +97,13 @@
       <span
         class="text-xs px-2 py-0.5 rounded font-medium {terminalState === 'complete' ? 'bg-green-500/20 text-green-400' : terminalState === 'error' ? 'bg-red-500/20 text-red-400' : 'bg-muted/30 text-muted'}"
       >
-        {terminalState === 'complete' ? 'Completed' : terminalState === 'error' ? 'Failed' : 'Cancelled'}
+        {#if terminalState === 'complete'}
+          Completed
+        {:else if terminalState === 'error'}
+          Failed
+        {:else}
+          Cancelled
+        {/if}
       </span>
     {/if}
   </div>

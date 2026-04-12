@@ -26,6 +26,7 @@ const svelteSharedRuntime = (): Plugin => {
     },
 
     resolveId(id: string, importer: string | undefined) {
+      // biome-ignore lint/style/noProcessEnv: build config legitimately needs process.env
       if (!isBuild || process.env.VITEST) {
         return;
       }

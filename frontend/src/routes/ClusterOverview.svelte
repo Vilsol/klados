@@ -43,7 +43,9 @@
       .then((cap) => {
         capability = cap as unknown as MetricsCapability;
       })
-      .catch(() => {});
+      .catch(() => {
+        /* empty */
+      });
   });
 
   $effect(() => {
@@ -142,7 +144,9 @@
         if (h) {
           health = h as unknown as ClusterHealth;
         }
-      } catch {}
+      } catch {
+        /* empty */
+      }
     })();
     healthUnsub = Events.On(`cluster:${ctxName}:health`, (wailsEvent: {data?: ClusterHealth}) => {
       health = (wailsEvent.data ?? wailsEvent) as ClusterHealth;
@@ -270,7 +274,7 @@
         title="CPU Usage"
         unit="cores"
         series={getSeriesByUnit('cores')}
-        loading={!response && !fetchError}
+        loading={!(response || fetchError)}
         {zoomRange}
         onzoom={(r) => (zoomRange = r)}
       />
@@ -278,7 +282,7 @@
         title="Memory Usage"
         unit="bytes"
         series={getSeriesByUnit('bytes')}
-        loading={!response && !fetchError}
+        loading={!(response || fetchError)}
         {zoomRange}
         onzoom={(r) => (zoomRange = r)}
       />

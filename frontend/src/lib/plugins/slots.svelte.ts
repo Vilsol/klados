@@ -13,6 +13,7 @@ import {
 import {getLogger} from "$lib/logger";
 
 const log = getLogger("plugins");
+// biome-ignore lint/style/noExportedImports: re-exported for consumers
 import type {PermsSummary} from "../../../bindings/github.com/Vilsol/klados/internal/plugin/models.js";
 import {notificationStore} from "$lib/stores/notification.svelte.js";
 import {streamingStore} from "$lib/stores/streaming.svelte.js";

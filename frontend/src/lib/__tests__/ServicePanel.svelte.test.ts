@@ -55,7 +55,11 @@ describe("ServicePanel", () => {
 
   it("shows loading state while fetching endpoints", async () => {
     const {EmptyState} = await import("@klados/ui");
-    mockGetResource.mockReturnValue(new Promise(() => {})); // never resolves
+    mockGetResource.mockReturnValue(
+      new Promise(() => {
+        /* empty */
+      }),
+    ); // never resolves
     render(ServicePanel, {props: {obj, ctxName: "ctx1"}});
     expect(EmptyState).toHaveBeenCalled();
   });

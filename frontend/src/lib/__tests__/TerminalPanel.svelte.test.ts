@@ -61,7 +61,7 @@ describe("TerminalPanel", () => {
     expect(screen.getByText("Connect")).toBeTruthy();
   });
 
-  async function getConnectBtn() {
+  function getConnectBtn() {
     return waitFor(() => {
       const b = screen.getByText("Connect") as HTMLButtonElement;
       expect(b.disabled).toBe(false);

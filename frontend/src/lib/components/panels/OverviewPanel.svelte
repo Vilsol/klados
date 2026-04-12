@@ -346,10 +346,10 @@
                 {#if status?.restartCount > 0}
                   <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-600 dark:text-yellow-400">
                     {status.restartCount}
-                    restart{status.restartCount !== 1 ? 's' : ''}
+                    restart{status.restartCount === 1 ? '' : 's'}
                   </span>
                 {/if}
-                <StatusBadge status={!!status?.ready} mode="pill">{stateLabel(status)}</StatusBadge>
+                <StatusBadge status={Boolean(status?.ready)} mode="pill">{stateLabel(status)}</StatusBadge>
               </div>
             </div>
             <CopyableValue value={c.image} class="text-xs font-mono text-muted break-all mb-3" />

@@ -198,7 +198,7 @@
     <span class="text-destructive font-medium">Failed to load metrics capabilities</span>
     <span class="text-muted font-mono">{capabilityError}</span>
   </div>
-{:else if !capability || (!capability.hasMetricsServer && !capability.hasPrometheus)}
+{:else if !capability || (!(capability.hasMetricsServer || capability.hasPrometheus))}
   <div class="flex flex-col items-center justify-center h-full gap-1 text-xs text-muted">
     <span>No metrics sources available</span>
     <span>Install metrics-server or configure a Prometheus endpoint to enable metrics.</span>
@@ -240,7 +240,7 @@
       series={getSeriesForMetric(cpuName)}
       thresholds={response?.thresholds?.filter((t) => t.label.toLowerCase().includes('cpu')) ?? []}
       annotations={response?.annotations ?? []}
-      loading={!response && !fetchError}
+      loading={!(response || fetchError)}
       {forceZero}
       {zoomRange}
       onzoom={(r) => (zoomRange = r)}
@@ -252,7 +252,7 @@
       series={getSeriesForMetric(memName)}
       thresholds={response?.thresholds?.filter((t) => t.label.toLowerCase().includes('memory') || t.label.toLowerCase().includes('mem')) ?? []}
       annotations={response?.annotations ?? []}
-      loading={!response && !fetchError}
+      loading={!(response || fetchError)}
       {forceZero}
       {zoomRange}
       onzoom={(r) => (zoomRange = r)}

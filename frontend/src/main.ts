@@ -16,18 +16,26 @@ function send(msg: string) {
   }
   while (queue.length > 0) {
     const m = queue.shift() as string;
-    fetch(`http://127.0.0.1:${cfg.port}/${cfg.token}/log`, {method: "POST", body: m}).catch(() => {});
+    fetch(`http://127.0.0.1:${cfg.port}/${cfg.token}/log`, {method: "POST", body: m}).catch(() => {
+      /* empty */
+    });
   }
-  fetch(`http://127.0.0.1:${cfg.port}/${cfg.token}/log`, {method: "POST", body: msg}).catch(() => {});
+  fetch(`http://127.0.0.1:${cfg.port}/${cfg.token}/log`, {method: "POST", body: msg}).catch(() => {
+    /* empty */
+  });
 }
 
 function fmt(prefix: string, args: unknown[]) {
   return prefix + args.map((a) => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ");
 }
 
+// biome-ignore lint/suspicious/noConsole: intentional console override
 const _log = console.log.bind(console);
+// biome-ignore lint/suspicious/noConsole: intentional console override
 const _warn = console.warn.bind(console);
+// biome-ignore lint/suspicious/noConsole: intentional console override
 const _error = console.error.bind(console);
+// biome-ignore lint/suspicious/noConsole: intentional console override
 const _debug = console.debug.bind(console);
 
 console.log = (...a) => {

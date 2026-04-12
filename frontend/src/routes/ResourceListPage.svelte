@@ -53,7 +53,7 @@
 
   // Clear selection on namespace change
   $effect(() => {
-    selectedNamespaces;
+    void selectedNamespaces;
     selectionStore.deselectAll();
   });
 
@@ -92,7 +92,7 @@
 
   // Close drawer when GVR changes
   $effect(() => {
-    gvr;
+    void gvr;
     selectedItem = null;
     selectedGVR = gvr;
   });
@@ -128,7 +128,7 @@
 
   // Reset sparkline columns when GVR changes
   $effect(() => {
-    gvr;
+    void gvr;
     sparklineColumns = [];
     sparklineData = {};
   });

@@ -56,7 +56,7 @@
                   {@const svc = wh.clientConfig.service}
                   <span class="text-muted">Service</span>
                   <span class="font-mono"
-                    >{svc.namespace}/{svc.name}{svc.port != null ? `:${svc.port}` : ''}{svc.path ? svc.path : ''}</span
+                    >{svc.namespace}/{svc.name}{svc.port == null ? '' : `:${svc.port}`}{svc.path ? svc.path : ''}</span
                   >
                 {:else if wh.clientConfig?.url}
                   <span class="text-muted">URL</span>

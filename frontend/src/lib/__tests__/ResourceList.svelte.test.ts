@@ -89,7 +89,9 @@ vi.mock("@tanstack/svelte-virtual", () => ({
         getTotalSize: () => count * 36,
         getVirtualItems: () => Array.from({length: count}, (_, i) => ({index: i, start: i * 36, size: 36})),
       });
-      return () => {};
+      return () => {
+        /* empty */
+      };
     },
   }),
 }));
@@ -166,7 +168,7 @@ describe("ResourceList", () => {
     }
   });
 
-  it("sorts numeric values numerically", async () => {
+  it("sorts numeric values numerically", () => {
     const restartsCol: ColumnDef = {name: "Restarts", expr: "status.restartCount", renderType: "text", width: 80};
     mockVisibleColumns.value = [textCol, restartsCol];
     mockSortState.value = {column: "Restarts", direction: "asc"};

@@ -4,6 +4,7 @@ import {getLogger} from "$lib/logger";
 
 const log = getLogger("registry");
 import {evaluate, parse} from "cel-js";
+// biome-ignore lint/correctness/noUndeclaredDependencies: transitive dep of cel-js
 import type {CstNode} from "@chevrotain/types";
 import {setRegistryLoaded} from "./loaded.svelte";
 

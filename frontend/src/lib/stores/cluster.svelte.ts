@@ -15,6 +15,7 @@ import {getLogger} from "$lib/logger";
 import {preferencesStore} from "./preferences.svelte";
 
 const log = getLogger("cluster");
+// biome-ignore lint/style/noExportedImports: re-exported for consumers
 import {type KubeContext, ConnectionStatus} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js";
 import {buildKindGVRMap, resolveGVR, type APIResource} from "$lib/utils/relationships";
 
@@ -104,17 +105,17 @@ class ClusterStore {
       const result = await ListContexts();
       this.contexts = result ?? [];
 
-      this.statusUnsubs.forEach((u) => {
+      for (const u of this.statusUnsubs) {
         u();
-      });
+      }
       this.statusUnsubs = [];
-      this.metaUnsubs.forEach((u) => {
+      for (const u of this.metaUnsubs) {
         u();
-      });
+      }
       this.metaUnsubs = [];
-      this.permUnsubs.forEach((u) => {
+      for (const u of this.permUnsubs) {
         u();
-      });
+      }
       this.permUnsubs = [];
 
       // Load read-only state from persisted config

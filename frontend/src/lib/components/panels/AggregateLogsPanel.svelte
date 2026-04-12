@@ -127,7 +127,9 @@
               store.markEnded(podName);
               return;
             }
-          } catch {}
+          } catch {
+            /* empty */
+          }
           const parts = (buf + e.data).split("\n");
           buf = parts.pop() ?? "";
           for (const line of parts) {
@@ -179,7 +181,7 @@
           <span class="text-destructive">{error}</span>
         {:else}
           {podCount}
-          pod{podCount !== 1 ? 's' : ''}
+          pod{podCount === 1 ? '' : 's'}
         {/if}
       </span>
 

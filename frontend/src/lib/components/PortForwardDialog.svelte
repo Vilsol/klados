@@ -62,13 +62,12 @@
       const name = isQuickMode ? prefillTarget : targetName;
       const gvr = isQuickMode ? prefillGVR : targetGVR;
       const remote = isQuickMode ? prefillRemotePort : Number.parseInt(remotePort, 10);
-      const local = isQuickMode
-        ? localPortMode === "auto"
-          ? 0
-          : Number.parseInt(customLocalPort, 10) || 0
-        : localPort
-          ? Number.parseInt(localPort, 10)
-          : 0;
+      let local: number;
+      if (isQuickMode) {
+        local = localPortMode === "auto" ? 0 : Number.parseInt(customLocalPort, 10) || 0;
+      } else {
+        local = localPort ? Number.parseInt(localPort, 10) : 0;
+      }
 
       if (!name || Number.isNaN(remote) || remote <= 0 || !ns) {
         return;
@@ -214,7 +213,7 @@
       <button
         type="button"
         onclick={submit}
-        disabled={submitting || (!isQuickMode && (!targetName || !remotePort))}
+        disabled={submitting || (!isQuickMode && (!(targetName && remotePort)))}
         class="px-3 py-1.5 text-xs rounded bg-accent text-white hover:bg-accent/90 transition-colors disabled:opacity-50"
       >
         {submitting ? 'Starting…' : 'Start'}

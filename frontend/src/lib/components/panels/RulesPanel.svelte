@@ -29,7 +29,7 @@
                 <td class="px-3 py-2 font-mono">{(rule.apiGroups ?? []).map((g: string) => g === '' ? '""' : g).join(', ')}</td>
                 <td class="px-3 py-2">{(rule.resources ?? []).join(', ')}</td>
                 <td class="px-3 py-2">{(rule.verbs ?? []).join(', ')}</td>
-                <td class="px-3 py-2 text-muted">{rule.resourceNames?.length ? rule.resourceNames.join(', ') : '*'}</td>
+                <td class="px-3 py-2 text-muted">{rule.resourceNames?.length > 0 ? rule.resourceNames.join(', ') : '*'}</td>
               </tr>
             {/each}
           </tbody>

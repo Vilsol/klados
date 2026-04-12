@@ -91,7 +91,7 @@
                       <div class="bg-muted/40 h-full rounded-full" style="width: 0%"></div>
                     {/if}
                   </div>
-                  <span class="text-muted w-10 text-right">{pct !== null ? `${Math.round(pct)}%` : '—'}</span>
+                  <span class="text-muted w-10 text-right">{pct === null ? '—' : `${Math.round(pct)}%`}</span>
                 </div>
               </td>
             </tr>

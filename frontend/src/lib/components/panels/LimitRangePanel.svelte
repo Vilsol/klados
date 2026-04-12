@@ -10,9 +10,9 @@
     const all = new Set<string>();
     for (const field of ["default", "defaultRequest", "min", "max", "maxLimitRequestRatio"]) {
       if (entry[field]) {
-        Object.keys(entry[field]).forEach((k) => {
+        for (const k of Object.keys(entry[field])) {
           all.add(k);
-        });
+        }
       }
     }
     if (entry.type === "PersistentVolumeClaim") {

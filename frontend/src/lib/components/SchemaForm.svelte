@@ -12,6 +12,16 @@
 
   let properties = $derived(schema?.properties ?? {});
   let propertyKeys = $derived(Object.keys(properties));
+
+  function defaultForType(type: string): unknown {
+    if (type === "boolean") {
+      return false;
+    }
+    if (type === "number" || type === "integer") {
+      return 0;
+    }
+    return "";
+  }
 </script>
 
 <div class="space-y-4">
@@ -19,7 +29,7 @@
     {@const prop = properties[key]}
     {@const label = prop.title ?? key}
     {@const desc = prop.description}
-    {@const value = values[key] ?? prop.default ?? (prop.type === 'boolean' ? false : prop.type === 'number' || prop.type === 'integer' ? 0 : '')}
+    {@const value = values[key] ?? prop.default ?? defaultForType(prop.type)}
 
     <div>
       {#if prop.type === 'boolean'}

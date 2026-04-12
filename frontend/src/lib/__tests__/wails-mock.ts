@@ -78,22 +78,22 @@ export const mockPluginService = {
 };
 
 export function resetMocks() {
-  Object.values(mockClusterService).forEach((fn) => {
+  for (const fn of Object.values(mockClusterService)) {
     fn.mockClear();
-  });
-  Object.values(mockConfigService).forEach((fn) => {
+  }
+  for (const fn of Object.values(mockConfigService)) {
     fn.mockClear();
-  });
-  Object.values(mockEvents).forEach((fn) => {
+  }
+  for (const fn of Object.values(mockEvents)) {
     fn.mockClear();
-  });
-  Object.values(mockResourceService).forEach((fn) => {
+  }
+  for (const fn of Object.values(mockResourceService)) {
     fn.mockClear();
-  });
-  Object.values(mockSchemaService).forEach((fn) => {
+  }
+  for (const fn of Object.values(mockSchemaService)) {
     fn.mockClear();
-  });
-  Object.values(mockPluginService).forEach((fn) => {
+  }
+  for (const fn of Object.values(mockPluginService)) {
     fn.mockClear();
-  });
+  }
 }

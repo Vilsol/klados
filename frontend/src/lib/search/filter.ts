@@ -8,8 +8,8 @@ function matchKeyValue(map: Record<string, string> | undefined, filter: string):
   if (eqIdx === -1) {
     return filter in map;
   }
-  const key = filter.substring(0, eqIdx);
-  const val = filter.substring(eqIdx + 1);
+  const key = filter.slice(0, eqIdx);
+  const val = filter.slice(eqIdx + 1);
   return map[key] === val;
 }
 

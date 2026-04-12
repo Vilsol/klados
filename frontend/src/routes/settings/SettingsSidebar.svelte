@@ -31,10 +31,14 @@
             if (schema) {
               withSettings.push(p);
             }
-          } catch {}
+          } catch {
+            /* empty */
+          }
         }
         plugins = withSettings;
-      } catch {}
+      } catch {
+        /* empty */
+      }
     })();
   });
 

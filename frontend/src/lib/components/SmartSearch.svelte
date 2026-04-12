@@ -87,7 +87,7 @@
       inputText = "";
     } else {
       const lastSpace = raw.lastIndexOf(" ");
-      inputText = raw.substring(lastSpace + 1);
+      inputText = raw.slice(lastSpace + 1);
     }
   }
 
@@ -101,7 +101,7 @@
 
   function applySuggestion(suggestion: Suggestion) {
     const token = inputText;
-    const stripped = token.startsWith("-") ? token.substring(1) : token;
+    const stripped = token.startsWith("-") ? token.slice(1) : token;
     const negPrefix = token.startsWith("-") ? "-" : "";
     const colonIdx = stripped.indexOf(":");
 
@@ -110,8 +110,8 @@
     if (colonIdx === -1) {
       replacement = negPrefix + suggestion.value;
     } else {
-      const qualifier = stripped.substring(0, colonIdx + 1);
-      const afterColon = stripped.substring(colonIdx + 1);
+      const qualifier = stripped.slice(0, colonIdx + 1);
+      const afterColon = stripped.slice(colonIdx + 1);
       const eqIdx = afterColon.indexOf("=");
       // namespace: and name: take plain values, not key=value
       const isPlainValue = qualifier === "namespace:" || qualifier === "ns:" || qualifier === "name:" || qualifier === "n:";
@@ -121,7 +121,7 @@
       } else if (eqIdx === -1) {
         replacement = `${negPrefix + qualifier + suggestion.value}=`;
       } else {
-        const key = afterColon.substring(0, eqIdx);
+        const key = afterColon.slice(0, eqIdx);
         replacement = `${negPrefix + qualifier + key}=${suggestion.value} `;
       }
     }

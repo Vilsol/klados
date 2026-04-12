@@ -19,9 +19,9 @@ const QUALIFIER_ALIASES: Record<string, string> = {
 };
 
 function extractCurrentToken(input: string, cursor: number): string {
-  const before = input.substring(0, cursor);
+  const before = input.slice(0, cursor);
   const lastSpace = before.lastIndexOf(" ");
-  return before.substring(lastSpace + 1);
+  return before.slice(lastSpace + 1);
 }
 
 function collectDistinct(
@@ -76,7 +76,7 @@ function mapToSuggestions(counts: Map<string, number>, prefix: string): Suggesti
 
 export function getSuggestions(input: string, cursor: number, items: Record<string, unknown>[]): Suggestion[] {
   const token = extractCurrentToken(input, cursor);
-  const stripped = token.startsWith("-") ? token.substring(1) : token;
+  const stripped = token.startsWith("-") ? token.slice(1) : token;
   const colonIdx = stripped.indexOf(":");
 
   if (colonIdx === -1) {
@@ -91,9 +91,9 @@ export function getSuggestions(input: string, cursor: number, items: Record<stri
     return [];
   }
 
-  let qualifier = stripped.substring(0, colonIdx + 1);
+  let qualifier = stripped.slice(0, colonIdx + 1);
   qualifier = QUALIFIER_ALIASES[qualifier] ?? qualifier;
-  const afterColon = stripped.substring(colonIdx + 1);
+  const afterColon = stripped.slice(colonIdx + 1);
   const eqIdx = afterColon.indexOf("=");
 
   if (qualifier === "label:") {
@@ -102,8 +102,8 @@ export function getSuggestions(input: string, cursor: number, items: Record<stri
     if (eqIdx === -1) {
       return mapToSuggestions(collectDistinct(items, extractor), afterColon);
     }
-    const key = afterColon.substring(0, eqIdx);
-    const valPrefix = afterColon.substring(eqIdx + 1);
+    const key = afterColon.slice(0, eqIdx);
+    const valPrefix = afterColon.slice(eqIdx + 1);
     return mapToSuggestions(collectValues(items, extractor, key), valPrefix);
   }
 
@@ -113,8 +113,8 @@ export function getSuggestions(input: string, cursor: number, items: Record<stri
     if (eqIdx === -1) {
       return mapToSuggestions(collectDistinct(items, extractor), afterColon);
     }
-    const key = afterColon.substring(0, eqIdx);
-    const valPrefix = afterColon.substring(eqIdx + 1);
+    const key = afterColon.slice(0, eqIdx);
+    const valPrefix = afterColon.slice(eqIdx + 1);
     return mapToSuggestions(collectValues(items, extractor, key), valPrefix);
   }
 

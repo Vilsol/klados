@@ -122,7 +122,7 @@
 
   let expandedNodes = $state(new Set<string>());
   $effect(() => {
-    clusterStore.activeContext; // track
+    void clusterStore.activeContext; // track
     expandedNodes = new Set();
   });
 
@@ -321,8 +321,8 @@
                 <button
                   type="button"
                   onclick={() => { if (!unavailable) { navigate(gvr); } }}
-                  disabled={!!unavailable}
-                  title={unavailable ? `API group not available on this cluster` : undefined}
+                  disabled={Boolean(unavailable)}
+                  title={unavailable ? "API group not available on this cluster" : undefined}
                   class="w-full text-left px-3 py-1 text-sm transition-colors rounded-sm {unavailable ? 'opacity-40 cursor-not-allowed text-muted' : isGVRActive(gvr) ? 'bg-surface-hover text-accent font-medium' : 'hover:bg-surface-hover'}"
                 >
                   {kindByGvr[gvr] ?? gvr.split('.').at(-1)}

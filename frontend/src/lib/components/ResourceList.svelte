@@ -161,7 +161,7 @@
 
   // Scroll to top when GVR changes
   $effect(() => {
-    gvr;
+    void gvr;
     searchQuery = "";
     searchTerms = [];
     if (scrollContainer) {
@@ -269,7 +269,13 @@
 
   function alignClass(col: ColumnDef): string {
     const align = col.align ?? defaultAlign(col.renderType);
-    return align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left";
+    if (align === "right") {
+      return "text-right";
+    }
+    if (align === "center") {
+      return "text-center";
+    }
+    return "text-left";
   }
 
   async function confirmDelete() {

@@ -109,7 +109,13 @@
             onclick={() => (mode = m)}
             class="flex-1 px-3 py-1.5 text-sm border-r border-border last:border-r-0 transition-colors capitalize {mode === m ? 'bg-accent text-accent-fg border-accent' : 'hover:bg-surface-hover'}"
           >
-            {m === 'set' ? 'Set to' : m === 'increase' ? 'Increase by' : 'Decrease by'}
+            {#if m === 'set'}
+              Set to
+            {:else if m === 'increase'}
+              Increase by
+            {:else}
+              Decrease by
+            {/if}
           </button>
         {/each}
       </div>

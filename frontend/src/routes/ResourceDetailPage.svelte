@@ -41,10 +41,10 @@
   }
 
   $effect(() => {
-    ctxName;
-    gvr;
-    ns;
-    name;
+    void ctxName;
+    void gvr;
+    void ns;
+    void name;
     load();
   });
 

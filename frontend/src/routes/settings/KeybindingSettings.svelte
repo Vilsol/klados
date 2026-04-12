@@ -27,9 +27,9 @@
     const conflictIds = new Set<string>();
     for (const ids of comboCounts.values()) {
       if (ids.length > 1) {
-        ids.forEach((id) => {
+        for (const id of ids) {
           conflictIds.add(id);
-        });
+        }
       }
     }
     return conflictIds;

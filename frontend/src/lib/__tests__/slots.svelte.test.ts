@@ -15,7 +15,7 @@ import type {PermsSummary} from "../../../bindings/github.com/Vilsol/klados/inte
 import {slotRegistry} from "$lib/plugins/slots.svelte.js";
 
 describe("SlotRegistry", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     // Reset state
     slotRegistry.detailTabs = [];
     slotRegistry.commands = [];

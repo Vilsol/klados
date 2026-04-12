@@ -44,7 +44,9 @@ function wailsTransport(logObj: Record<string, unknown>): void {
     }
   }
 
-  LogFrontend(level, message, attrsJSON).catch(() => {});
+  LogFrontend(level, message, attrsJSON).catch(() => {
+    /* empty */
+  });
 }
 
 const rootLogger = new Logger({

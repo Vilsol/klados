@@ -149,7 +149,8 @@
             "useNamingConvention": "off",
             "useFilenamingConvention": "off",
             "useExportsLast": "off",
-            "useDefaultSwitchClause": "off"
+            "useDefaultSwitchClause": "off",
+            "noMagicNumbers": "off"
           },
           "suspicious": {
             "noBitwiseOperators": "off"

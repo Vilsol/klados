@@ -195,7 +195,14 @@
           disabled={applying || editorEmpty}
           class="text-xs px-2.5 py-1 rounded bg-accent text-accent-fg hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {applying ? 'Applying…' : docCount > 0 ? `Apply (${docCount} resource${docCount === 1 ? '' : 's'})` : 'Apply'}
+          {#if applying}
+            Applying…
+          {:else if docCount > 0}
+            Apply ({docCount}
+            resource{docCount === 1 ? '' : 's'})
+          {:else}
+            Apply
+          {/if}
         </button>
       </div>
 

@@ -54,7 +54,7 @@
         <div class="bg-surface border border-border rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm font-medium">{c.name}</span>
-            <StatusBadge status={!!status?.ready} mode="pill">{stateLabel(status)}</StatusBadge>
+            <StatusBadge status={Boolean(status?.ready)} mode="pill">{stateLabel(status)}</StatusBadge>
           </div>
           <p class="text-xs font-mono text-muted truncate mb-2">{c.image}</p>
 
@@ -89,7 +89,7 @@
               onclick={() => expandedEnv = toggleSet(expandedEnv, c.name)}
               class="text-xs text-accent hover:underline mt-1"
             >
-              {expandedEnv.has(c.name) ? '▾' : '▸'} {c.env.length} env var{c.env.length !== 1 ? 's' : ''}
+              {expandedEnv.has(c.name) ? '▾' : '▸'} {c.env.length} env var{c.env.length === 1 ? '' : 's'}
             </button>
             {#if expandedEnv.has(c.name)}
               <div class="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 pl-3">

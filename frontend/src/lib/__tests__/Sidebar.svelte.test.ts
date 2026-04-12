@@ -37,7 +37,7 @@ describe("Sidebar", () => {
     expect(screen.getByText("StatefulSets")).toBeTruthy();
   });
 
-  it("collapse toggles sidebar state", async () => {
+  it("collapse toggles sidebar state", () => {
     sessionStore.sidebarCollapsed = false;
 
     sessionStore.toggleSidebar();

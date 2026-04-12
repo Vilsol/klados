@@ -420,7 +420,7 @@
         <Dialog.Close class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors"
           >Cancel</Dialog.Close
         >
-        {#if !expandChecking && !expandError}
+        {#if !(expandChecking || expandError)}
           <button
             type="button"
             onclick={doExpand}

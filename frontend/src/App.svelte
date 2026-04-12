@@ -25,7 +25,9 @@
   let paletteOpen = $state(false);
 
   function logToBackend(level: string, message: string, detail: string) {
-    LogFrontend(level, message, detail).catch(() => {});
+    LogFrontend(level, message, detail).catch(() => {
+      /* empty */
+    });
   }
 
   async function logError(msg: string, err: Error | undefined) {
@@ -50,8 +52,11 @@
   }
 
   onMount(() => {
+    // biome-ignore lint/suspicious/noConsole: intentional console override
     const origDebug = console.debug.bind(console);
+    // biome-ignore lint/suspicious/noConsole: intentional console override
     const origError = console.error.bind(console);
+    // biome-ignore lint/suspicious/noConsole: intentional console override
     const origWarn = console.warn.bind(console);
     console.debug = (...args) => {
       const [m] = argsToLog(args);
@@ -193,7 +198,9 @@
       activeTab,
       sidebarCollapsed,
       terminalFontSize,
-    ).catch(() => {});
+    ).catch(() => {
+      /* empty */
+    });
   });
 </script>
 

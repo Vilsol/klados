@@ -199,7 +199,9 @@
           try {
             // Stop the tunnel first if running, then remove from config
             if (isActive) {
-              await StopForward(item.id).catch(() => {});
+              await StopForward(item.id).catch(() => {
+                /* empty */
+              });
             }
             await RemoveSavedPortForward(ctxName, item.id);
           } catch (e: unknown) {

@@ -179,6 +179,7 @@
     if (!tmpl) {
       return;
     }
+    // biome-ignore lint/suspicious/noAlert: intentional browser confirm for destructive action
     if (editorDirty && !confirm("Replace current YAML with selected template?")) {
       selectedTemplateName = prevSelectedTemplateName;
       return;

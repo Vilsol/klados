@@ -184,7 +184,7 @@
             }
 
             // Build visible series list and sort by descending value (matches chart visual order)
-            const visibleSeries = [];
+            const visibleSeries: {i: number; s: (typeof u.series)[number]; val: number | null; color: string}[] = [];
             for (let i = 1; i < u.series.length; i++) {
               const s = u.series[i];
               if (!s.show) {
