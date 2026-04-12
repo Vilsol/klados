@@ -25,7 +25,7 @@ export function createPluginContext(manifest: PluginManifest, host: HostServices
     namespace: host.namespace,
   };
 
-  if (manifest.permissions?.resources?.length) {
+  if (manifest.permissions?.resources?.length > 0) {
     ctx.k8s = Object.freeze({
       list: (gvr: string, ns?: string) => {
         assertGVRPermission(manifest, gvr, "list");

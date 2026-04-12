@@ -12,13 +12,13 @@
   import {ApplyManifest} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte";
 
-  type ApplyResult = {
+  interface ApplyResult {
     gvr: string;
     namespace: string;
     name: string;
     action: string;
     error: string;
-  };
+  }
 
   let {
     open = $bindable(false),

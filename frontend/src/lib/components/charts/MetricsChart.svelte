@@ -65,7 +65,7 @@
   });
 
   function toColumnar(series: TimeSeries[]): uPlot.AlignedData {
-    if (!(series.length && series[0].points.length)) {
+    if (!(series.length > 0 && series[0].points.length > 0)) {
       return [new Float64Array(), ...series.map(() => new Float64Array())];
     }
 
@@ -200,7 +200,7 @@
             const nearAnnotations = ann.filter((a) => Math.abs(u.valToPos(a.t, "x") - (u.cursor.left ?? 0)) < 8);
 
             let html = `<div style="font-size:11px;color:${fgColor}">`;
-            if (nearAnnotations.length) {
+            if (nearAnnotations.length > 0) {
               for (const a of nearAnnotations) {
                 const color = ANNOTATION_COLORS[a.severity] ?? "#3b82f6";
                 html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid ${borderColor}">`;
@@ -222,10 +222,10 @@
               html += "</div>";
             }
 
-            if (thresholds.length) {
+            if (thresholds.length > 0) {
               html += `<div style="margin-top:4px;padding-top:4px;border-top:1px solid ${borderColor}">`;
               for (const t of thresholds) {
-                if (!t.series.length) {
+                if (t.series.length === 0) {
                   continue;
                 }
                 // Find value at cursor time
@@ -262,7 +262,7 @@
                 }
               }
             }
-            if (allVals.length) {
+            if (allVals.length > 0) {
               const min = Math.min(...allVals);
               const max = Math.max(...allVals);
               html += `<div style="color:${mutedColor};margin-top:4px;padding-top:4px;border-top:1px solid ${borderColor};font-family:monospace">min: ${fmt(min)} / max: ${fmt(max)}</div>`;
@@ -302,9 +302,9 @@
               onzoom?.(null);
               // Also reset locally — the $effect will cover other charts
               const data = u.data[0] as number[];
-              if (data.length) {
+              if (data.length > 0) {
                 isProgrammaticScale = true;
-                u.setScale("x", {min: data[0], max: data[data.length - 1]});
+                u.setScale("x", {min: data[0], max: data.at(-1)});
                 isProgrammaticScale = false;
               }
             });
@@ -317,7 +317,7 @@
         ],
         drawSeries: [
           (u) => {
-            if (!thresholds.length) {
+            if (thresholds.length === 0) {
               return;
             }
             const ctx = u.ctx;
@@ -336,7 +336,7 @@
             ctx.setLineDash([4 * devicePixelRatio, 4 * devicePixelRatio]);
 
             for (const t of thresholds) {
-              if (!t.series.length) {
+              if (t.series.length === 0) {
                 continue;
               }
               // Find the value nearest to the right edge of the visible range
@@ -365,7 +365,7 @@
         drawAxes: [
           (u) => {
             const ann = sortedAnnotations;
-            if (!ann.length) {
+            if (ann.length === 0) {
               return;
             }
             const ctx = u.ctx;
@@ -375,8 +375,8 @@
             const xMax = u.scales.x.max ?? 0;
 
             // Binary search for first annotation in visible range
-            let lo = 0,
-              hi = ann.length;
+            let lo = 0;
+            let hi = ann.length;
             while (lo < hi) {
               const mid = (lo + hi) >> 1;
               if (ann[mid].t < xMin) {
@@ -450,8 +450,8 @@
         chart.setScale("x", {min: range.min, max: range.max});
       } else {
         const data = chart.data[0] as number[];
-        if (data?.length) {
-          chart.setScale("x", {min: data[0], max: data[data.length - 1]});
+        if (data?.length > 0) {
+          chart.setScale("x", {min: data[0], max: data.at(-1)});
         }
       }
       isProgrammaticScale = false;

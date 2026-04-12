@@ -14,7 +14,7 @@ function send(msg: string) {
     queue.push(msg);
     return;
   }
-  while (queue.length) {
+  while (queue.length > 0) {
     const m = queue.shift() as string;
     fetch(`http://127.0.0.1:${cfg.port}/${cfg.token}/log`, {method: "POST", body: m}).catch(() => {});
   }

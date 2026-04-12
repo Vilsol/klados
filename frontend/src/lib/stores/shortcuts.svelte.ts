@@ -34,7 +34,7 @@ function buildKeyCombo(e: KeyboardEvent): string {
 
 export class ShortcutStore {
   focusMode = $state<FocusMode>("normal");
-  private _shortcuts: ShortcutDef[] = [];
+  private readonly _shortcuts: ShortcutDef[] = [];
 
   setMode(mode: FocusMode) {
     this.focusMode = mode;

@@ -93,7 +93,7 @@
               for (const series of metric.series) {
                 const key = `${metric.name}:${series.labels.container ?? series.labels.pod ?? ""}`;
                 const existing = nextMap.get(key) ?? [];
-                const latest = series.points[series.points.length - 1];
+                const latest = series.points.at(-1);
                 if (latest) {
                   existing.push(latest);
                   // Keep last 60 points (~15min at 15s interval)

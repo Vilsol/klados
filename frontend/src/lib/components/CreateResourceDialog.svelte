@@ -23,13 +23,13 @@
   const NAME_LINE_RE = /^( +)name:/m;
   const NAME_NS_INJECT_RE = /^( +name:[^\n]*\n)/m;
 
-  type TemplateItem = {
+  interface TemplateItem {
     gvr: string;
     name: string;
     description: string;
     content: string;
     source: string;
-  };
+  }
 
   let {
     open = $bindable(false),

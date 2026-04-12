@@ -25,7 +25,7 @@
           try {
             // biome-ignore lint/performance/noAwaitInLoops: sequential schema fetch with per-plugin error isolation
             const schema = await GetPluginSettingsSchema(p.name);
-            hasSettings = !!schema && schema !== "" && schema !== "{}";
+            hasSettings = Boolean(schema) && schema !== "" && schema !== "{}";
           } catch {
             // no settings schema
           }

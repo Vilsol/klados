@@ -222,7 +222,7 @@
       });
       ListAPIResources(ctx)
         .then((r) => {
-          if (r?.length) {
+          if (r?.length > 0) {
             handleDiscovery(r as APIResource[]);
           }
         })

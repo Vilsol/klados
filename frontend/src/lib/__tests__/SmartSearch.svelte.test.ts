@@ -25,7 +25,7 @@ describe("SmartSearch", () => {
     await tick();
 
     expect(ontermschange).toHaveBeenCalled();
-    const lastCall = ontermschange.mock.calls[ontermschange.mock.calls.length - 1];
+    const lastCall = ontermschange.mock.calls.at(-1);
     expect(lastCall[0]).toEqual([{type: "text", value: "nginx", negated: false}]);
   });
 

@@ -68,7 +68,7 @@
       return false;
     }
     try {
-      return !!evalExpr(action.disabledWhen, obj);
+      return Boolean(evalExpr(action.disabledWhen, obj));
     } catch {
       return false;
     }

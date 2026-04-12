@@ -52,7 +52,7 @@ export interface DescriptorDef {
 
 class DescriptorRegistry {
   private descriptors = new Map<string, DescriptorDef>();
-  private builtins = new Map<string, DescriptorDef>();
+  private readonly builtins = new Map<string, DescriptorDef>();
   private availableGVRs = new Set<string>();
 
   async load() {

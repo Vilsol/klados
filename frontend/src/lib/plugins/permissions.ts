@@ -7,8 +7,8 @@ function parseGVR(gvr: string): {group: string; version: string; resource: strin
   if (parts.length < 3) {
     throw new Error(`invalid GVR: ${gvr}`);
   }
-  const resource = parts[parts.length - 1];
-  const version = parts[parts.length - 2];
+  const resource = parts.at(-1);
+  const version = parts.at(-2);
   const group = parts.slice(0, parts.length - 2).join(".");
   // "core" is the display name for the empty group
   return {group: group === "core" ? "" : group, version, resource};

@@ -32,7 +32,7 @@
     prefillRemotePort?: number;
   } = $props();
 
-  const isQuickMode = $derived(!!prefillTarget && prefillRemotePort > 0);
+  const isQuickMode = $derived(Boolean(prefillTarget) && prefillRemotePort > 0);
 
   // Quick mode state
   let localPortMode = $state<"auto" | "custom">("auto");
