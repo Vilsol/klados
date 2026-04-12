@@ -1,12 +1,14 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"github.com/sasha-s/go-deadlock"
 
+	"github.com/Vilsol/slox"
 	"github.com/adrg/xdg"
+	"github.com/sasha-s/go-deadlock"
 )
 
 type MetricsConfig struct {
@@ -103,6 +105,7 @@ func Load() (*Config, error) {
 	data, err := os.ReadFile(p)
 	if err != nil {
 		if os.IsNotExist(err) {
+			slox.Info(context.Background(), "config not found, using defaults", "path", p)
 			cfg := DefaultConfig()
 			cfg.path = p
 			return cfg, nil
@@ -115,6 +118,7 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 	cfg.path = p
+	slox.Debug(context.Background(), "config loaded", "path", p)
 	return cfg, nil
 }
 
@@ -143,6 +147,7 @@ func (c *Config) saveLocked() error {
 	}
 
 	if err := os.WriteFile(c.path, data, 0o644); err != nil {
+		slox.Error(context.Background(), "config save failed", "path", c.path, "error", err)
 		return err
 	}
 	if c.emit != nil {

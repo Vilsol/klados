@@ -81,6 +81,8 @@ func (s *Streamer) StartStream(ctxName, ns, podName string, opts LogOptions) (st
 	s.streams[id] = stream
 	s.mu.Unlock()
 
+	slox.Debug(s.ctx, "log stream started", "id", id, "pod", podName, "container", opts.Container, "ns", ns)
+
 	if opts.Container == "" {
 		go s.readAllContainers(streamCtx, stream, id)
 	} else {
@@ -213,6 +215,7 @@ func (s *Streamer) HandleConn(streamID string, conn *fiberws.Conn) {
 			if req.Type == "load_history" && req.Count > 0 {
 				lines, hasMore, err := s.fetchHistory(stream, req.Count, req.AlreadyHave)
 				if err != nil {
+					slox.Debug(s.ctx, "log history fetch failed", "id", streamID, "error", err)
 					continue
 				}
 				resp, _ := json.Marshal(map[string]any{
@@ -227,11 +230,13 @@ func (s *Streamer) HandleConn(streamID string, conn *fiberws.Conn) {
 
 	for chunk := range stream.buf {
 		if err := conn.WriteMessage(fiberws.TextMessage, chunk); err != nil {
+			slox.Warn(s.ctx, "log ws write error", "id", streamID, "error", err)
 			return
 		}
 	}
 	_ = conn.WriteMessage(fiberws.TextMessage, []byte(`{"type":"eof"}`))
 
+	slox.Debug(s.ctx, "log stream closed", "id", streamID)
 	s.mu.Lock()
 	delete(s.streams, streamID)
 	s.mu.Unlock()

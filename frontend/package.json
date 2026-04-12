@@ -43,6 +43,7 @@
     "stacktrace-js": "^2.0.2",
     "strip-ansi": "^7.2.0",
     "svelte-spa-router": "^5",
+    "tslog": "^4.10.2",
     "uplot": "^1.6.32",
     "yaml": "^2.8.3"
   },

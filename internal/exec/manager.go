@@ -97,6 +97,7 @@ func (m *Manager) OpenSession(ctxName, ns, podName, container, shell string) (st
 	m.sessions[id] = session
 	m.mu.Unlock()
 
+	slox.Info(m.ctx, "exec session opened", "id", id, "pod", podName, "container", container)
 	return id, nil
 }
 
@@ -122,6 +123,7 @@ func (m *Manager) HandleConn(sessionID string, conn *fiberws.Conn) {
 	m.mu.Unlock()
 
 	if !ok {
+		slox.Warn(m.ctx, "exec session not found", "id", sessionID)
 		_ = conn.WriteMessage(fiberws.TextMessage, []byte(`{"type":"error","message":"session not found"}`))
 		return
 	}
@@ -169,6 +171,7 @@ func (m *Manager) HandleConn(sessionID string, conn *fiberws.Conn) {
 					select {
 					case sq.ch <- remotecommand.TerminalSize{Width: rm.Cols, Height: rm.Rows}:
 					default:
+						slox.Debug(m.ctx, "exec resize dropped", "id", sessionID)
 					}
 				}
 			}
@@ -181,13 +184,15 @@ func (m *Manager) HandleConn(sessionID string, conn *fiberws.Conn) {
 	execCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	_ = executor.StreamWithContext(execCtx, remotecommand.StreamOptions{
+	if err := executor.StreamWithContext(execCtx, remotecommand.StreamOptions{
 		Stdin:             stdinR,
 		Stdout:            wsWriter,
 		Stderr:            wsWriter,
 		Tty:               true,
 		TerminalSizeQueue: sq,
-	})
+	}); err != nil {
+		slox.Warn(m.ctx, "exec stream ended with error", "id", sessionID, "error", err)
+	}
 }
 
 func (m *Manager) CloseSession(sessionID string) {
@@ -199,6 +204,7 @@ func (m *Manager) CloseSession(sessionID string) {
 	m.mu.Unlock()
 
 	if ok {
+		slox.Debug(m.ctx, "exec session closed", "id", sessionID)
 		session.cancel()
 	}
 }

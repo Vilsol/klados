@@ -53,7 +53,7 @@ func newTestPluginService(t *testing.T) (*PluginService, *config.Config) {
 		appService:  appSvc,
 		resourceSvc: resourceSvc,
 		loader:      loader,
-		registry:    plugin.NewRegistry(),
+		registry:    plugin.NewRegistry(context.Background()),
 		pluginDirs:  make(map[string]string),
 		pluginPerms: make(map[string]plugin.PermissionSet),
 		storages:    make(map[string]*plugin.PluginStorage),

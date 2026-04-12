@@ -41,6 +41,7 @@ func NewPluginWatcher(ctx context.Context, onReload func(name string)) (*PluginW
 
 // Watch adds a plugin directory and all its subdirectories to the watch list.
 func (w *PluginWatcher) Watch(pluginName, pluginDir string) error {
+	slox.Debug(w.ctx, "plugin watcher watching", "plugin", pluginName, "dir", pluginDir)
 	w.mu.Lock()
 	w.dirs[pluginDir] = pluginName
 	w.mu.Unlock()

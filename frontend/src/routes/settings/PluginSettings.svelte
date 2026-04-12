@@ -2,6 +2,9 @@
   import { onMount } from 'svelte'
   import * as PluginService from '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
   import SchemaForm from '$lib/components/SchemaForm.svelte'
+  import { getLogger } from '$lib/logger'
+
+  const log = getLogger('settings')
 
   interface Props {
     pluginName: string
@@ -25,7 +28,7 @@
           values = JSON.parse(settingsStr)
         }
       } catch (e) {
-        console.error('Failed to load plugin settings:', e)
+        log.error('Failed to load plugin settings', { error: String(e) })
       } finally {
         loading = false
       }

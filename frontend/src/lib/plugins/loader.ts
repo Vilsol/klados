@@ -2,6 +2,9 @@ import { Events } from '@wailsio/runtime'
 import type { Component } from 'svelte'
 import { notificationStore } from '$lib/stores/notification.svelte.js'
 import * as PluginService from '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
+import { getLogger } from '$lib/logger'
+
+const log = getLogger('plugins')
 
 const moduleCache = new Map<string, Component<any>>()
 
@@ -25,7 +28,7 @@ export async function loadPluginComponent(
       `Plugin "${pluginName}" component failed to load`,
       err instanceof Error ? err.message : String(err)
     )
-    PluginService.DisablePlugin(pluginName).catch(() => {})
+    PluginService.DisablePlugin(pluginName).catch((e) => log.warn('Failed to auto-disable broken plugin', { pluginName, error: String(e) }))
     return null
   }
 }

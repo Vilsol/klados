@@ -1,8 +1,11 @@
 package plugin
 
 import (
+	"context"
 	"fmt"
 	"github.com/sasha-s/go-deadlock"
+
+	"github.com/Vilsol/slox"
 
 	"github.com/Vilsol/klados/internal/plugin/types"
 	"github.com/Vilsol/klados/internal/resource"
@@ -127,10 +130,11 @@ type Registry struct {
 	statusBarWidgets []StatusBarEntry
 	metricQueries    []MetricQueryEntry
 	pluginNames     map[string]struct{}
+	ctx             context.Context
 }
 
-func NewRegistry() *Registry {
-	return &Registry{pluginNames: make(map[string]struct{})}
+func NewRegistry(ctx context.Context) *Registry {
+	return &Registry{pluginNames: make(map[string]struct{}), ctx: ctx}
 }
 
 // Register validates a plugin's descriptors and collects sidebar entries.
@@ -226,12 +230,14 @@ func (r *Registry) Register(p *LoadedPlugin, descReg *resource.Registry) error {
 	p.Status = StatusActive
 	r.pluginNames[name] = struct{}{}
 	r.plugins = append(r.plugins, p)
+	slox.Info(r.ctx, "plugin registered", "plugin", name)
 	return nil
 }
 
 // Deactivate removes a plugin's extension points (sidebar, tabs, commands, enrichers)
 // but keeps its entry in the registry for management UI display.
 func (r *Registry) Deactivate(name string, enricherReg *resource.EnricherRegistry) {
+	slox.Info(r.ctx, "plugin deactivated", "plugin", name)
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

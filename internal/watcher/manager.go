@@ -71,6 +71,8 @@ func (m *WatchManager) StartWatch(contextName, gvr, namespace string) error {
 		return nil
 	}
 
+	slox.Debug(m.ctx, "watch started", "context", contextName, "gvr", gvr, "namespace", namespace)
+
 	conn, err := m.clusterMgr.GetConnection(contextName)
 	if err != nil {
 		return err
@@ -153,7 +155,9 @@ func (m *WatchManager) processEvents(
 			}
 
 			for _, enricher := range enrichers {
-				_ = enricher.Enrich(contextName, obj)
+				if err := enricher.Enrich(contextName, obj); err != nil {
+					slox.Debug(m.ctx, "enricher error on watch event", "error", err)
+				}
 			}
 
 			m.emitEvent(eventName, WatchEvent{
@@ -183,6 +187,7 @@ func (m *WatchManager) StopWatch(contextName, gvr, namespace string) {
 		m.mu.Lock()
 		defer m.mu.Unlock()
 		if s, ok := m.watches[key]; ok && s.graceTimer != nil {
+			slox.Debug(m.ctx, "watch stopped", "context", contextName, "gvr", gvr)
 			s.cancel()
 			delete(m.watches, key)
 		}

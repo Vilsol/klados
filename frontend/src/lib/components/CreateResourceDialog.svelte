@@ -12,6 +12,9 @@
   import { parse } from 'yaml'
   import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
   import { notificationStore } from '$lib/stores/notification.svelte'
+  import { getLogger } from '$lib/logger'
+
+  const log = getLogger('resources')
 
   type TemplateItem = {
     gvr: string
@@ -80,7 +83,7 @@
     if (open && ctxName) {
       ResourceService.GetAllTemplateGVRs(ctxName).then((gvrs: string[]) => {
         allGvrs = gvrs
-      }).catch(() => {})
+      }).catch((e) => log.warn('Failed to fetch template GVRs', { error: String(e) }))
     }
   })
 
@@ -99,7 +102,7 @@
         if (t.length > 0) {
           loadTemplate(t[0])
         }
-      }).catch(() => {})
+      }).catch((e) => log.warn('Failed to fetch templates', { error: String(e) }))
     } else {
       templates = []
       selectedTemplateName = ''

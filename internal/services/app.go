@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -182,10 +183,15 @@ func (a *AppService) SaveUIState(openTabs []session.TabState, activeTab int, sid
 	a.session.SaveDebounced()
 }
 
-func (a *AppService) LogFrontend(level, message, detail string) {
+func (a *AppService) LogFrontend(level, message, attrsJSON string) {
 	args := []any{"source", "frontend"}
-	if detail != "" {
-		args = append(args, "detail", detail)
+	if attrsJSON != "" {
+		var attrs map[string]any
+		if err := json.Unmarshal([]byte(attrsJSON), &attrs); err == nil {
+			for k, v := range attrs {
+				args = append(args, k, v)
+			}
+		}
 	}
 	switch level {
 	case "debug":

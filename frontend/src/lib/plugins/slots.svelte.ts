@@ -1,6 +1,9 @@
 import { Events } from '@wailsio/runtime'
 import { mount } from 'svelte'
 import * as PluginService from '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
+import { getLogger } from '$lib/logger'
+
+const log = getLogger('plugins')
 import type { PermsSummary } from '../../../bindings/github.com/Vilsol/klados/internal/plugin/models.js'
 import { notificationStore } from '$lib/stores/notification.svelte.js'
 import { streamingStore } from '$lib/stores/streaming.svelte.js'
@@ -154,11 +157,11 @@ class SlotRegistry {
           : () => {
               const pluginName = c.pluginName ?? ''
               const id = c.id ?? ''
-              console.log('[wasm-cmd] calling InvokeCommand', { pluginName, id })
+              log.info('Calling InvokeCommand', { pluginName, id })
               PluginService.InvokeCommand(pluginName, id)
-                .then(() => console.log('[wasm-cmd] InvokeCommand resolved ok'))
+                .then(() => log.info('InvokeCommand resolved ok'))
                 .catch((e) => {
-                  console.error('[wasm-cmd] InvokeCommand rejected', e)
+                  log.error('InvokeCommand rejected', { error: String(e) })
                   notificationStore.error(`Plugin "${pluginName}" failed`, String(e))
                 })
             },

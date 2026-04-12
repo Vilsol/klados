@@ -362,6 +362,7 @@ func (m *Manager) Cfg() *config.Config {
 }
 
 func (m *Manager) StopAll() {
+	slox.Info(m.ctx, "stopping all port forwards")
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

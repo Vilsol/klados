@@ -7,6 +7,9 @@
   import { notificationStore } from '$lib/stores/notification.svelte'
   import { unwrapError } from '$lib/utils/async.js'
   import { clusterStore } from '$lib/stores/cluster.svelte'
+  import { getLogger } from '$lib/logger'
+
+  const log = getLogger('portforward')
 
   let {
     onclose,
@@ -66,6 +69,7 @@
       if (!name || isNaN(remote) || remote <= 0 || !ns) return
 
       const spec = await PortForwardService.StartForward(ctx, ns, kind as TargetKind, name, gvr, local, remote)
+      log.info('Port forward started', { localPort: local, remotePort: remote })
       oncreated?.(spec)
       if (openInBrowser) {
         const unsub = Events.On(`portforward:${ctx}:${spec.id}`, (e: any) => {

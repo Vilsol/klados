@@ -1,5 +1,8 @@
 import { Events } from '@wailsio/runtime'
 import * as ConfigService from '../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js'
+import { getLogger } from '$lib/logger'
+
+const log = getLogger('preferences')
 
 export interface ResolvedPrefs {
   theme: string
@@ -44,7 +47,7 @@ class PreferencesStore {
         this.prefs = resolved as ResolvedPrefs
       }
     } catch (e) {
-      console.error('Failed to load preferences:', e)
+      log.error('Failed to load preferences', { error: String(e) })
     }
   }
 

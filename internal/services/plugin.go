@@ -53,7 +53,7 @@ func (s *PluginService) ServiceStartup(ctx context.Context, _ application.Servic
 	if err != nil {
 		slox.Warn(ctx, "plugin loader init failed", "error", err)
 		s.loader = nil
-		s.registry = plugin.NewRegistry()
+		s.registry = plugin.NewRegistry(ctx)
 		return nil
 	}
 	s.loader = loader
@@ -63,7 +63,7 @@ func (s *PluginService) ServiceStartup(ctx context.Context, _ application.Servic
 		slox.Warn(ctx, "plugin load error", "error", e)
 	}
 
-	reg := plugin.NewRegistry()
+	reg := plugin.NewRegistry(ctx)
 	descReg := s.resourceSvc.Registry()
 	for _, p := range loaded {
 		if err := reg.Register(p, descReg); err != nil {

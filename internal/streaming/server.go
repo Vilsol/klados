@@ -74,6 +74,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 	s.app.Use("/:token", func(c *fiber.Ctx) error {
 		if c.Params("token") != s.token {
+			slox.Warn(s.ctx, "streaming auth failure", "path", c.Path())
 			return c.SendStatus(fiber.StatusUnauthorized)
 		}
 		return c.Next()
@@ -149,6 +150,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 func (s *Server) Stop() error {
 	if s.app != nil {
+		slox.Info(s.ctx, "streaming server stopped")
 		return s.app.Shutdown()
 	}
 	return nil

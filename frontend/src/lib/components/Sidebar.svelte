@@ -14,6 +14,9 @@
   import { registryLoaded } from '$lib/registry/loaded.svelte'
   import { buildCRDTree } from '$lib/utils/crdTree'
   import CRDTreeNode from './CRDTreeNode.svelte'
+  import { getLogger } from '$lib/logger'
+
+  const log = getLogger('sidebar')
 
   interface APIResource {
     gvr: string
@@ -205,7 +208,7 @@
       })
       ResourceService.ListAPIResources(ctx)
         .then((r) => { if (r?.length) handleDiscovery(r as APIResource[]) })
-        .catch(() => {})
+        .catch((e) => log.warn('ListAPIResources failed', { error: String(e) }))
 
       loadForwards()
       unsubPF = Events.On(`portforward:${ctx}:updated`, () => { loadForwards() })

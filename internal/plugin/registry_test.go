@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"context"
 	"testing"
 
 	"github.com/MarvinJWendt/testza"
@@ -11,7 +12,7 @@ import (
 
 func newDescReg(t *testing.T) *resource.Registry {
 	t.Helper()
-	reg, err := resource.NewRegistry()
+	reg, err := resource.NewRegistry(context.Background())
 	testza.AssertNoError(t, err)
 	return reg
 }
@@ -36,7 +37,7 @@ func makePlugin(name string, descriptors []*resource.Descriptor, sidebar []types
 }
 
 func TestRegistryRegisterDescriptors(t *testing.T) {
-	reg := NewRegistry()
+	reg := NewRegistry(context.Background())
 	descReg := newDescReg(t)
 
 	p := makePlugin("myplugin", []*resource.Descriptor{
@@ -60,7 +61,7 @@ func TestRegistryRegisterDescriptors(t *testing.T) {
 }
 
 func TestRegistryDoesNotMutateBuiltins(t *testing.T) {
-	reg := NewRegistry()
+	reg := NewRegistry(context.Background())
 	descReg := newDescReg(t)
 
 	// Register built-in first
@@ -92,7 +93,7 @@ func TestRegistryDoesNotMutateBuiltins(t *testing.T) {
 }
 
 func TestRegistryDuplicatePluginRejected(t *testing.T) {
-	reg := NewRegistry()
+	reg := NewRegistry(context.Background())
 	descReg := newDescReg(t)
 
 	p := makePlugin("myplugin", nil, nil)
@@ -105,7 +106,7 @@ func TestRegistryDuplicatePluginRejected(t *testing.T) {
 }
 
 func TestRegistryDeactivate(t *testing.T) {
-	reg := NewRegistry()
+	reg := NewRegistry(context.Background())
 	descReg := newDescReg(t)
 	enricherReg := resource.NewEnricherRegistry()
 
@@ -123,7 +124,7 @@ func TestRegistryDeactivate(t *testing.T) {
 }
 
 func TestRegistryRemove(t *testing.T) {
-	reg := NewRegistry()
+	reg := NewRegistry(context.Background())
 	descReg := newDescReg(t)
 
 	p := makePlugin("myplugin", nil, []types.SidebarEntry{
@@ -142,7 +143,7 @@ func TestRegistryRemove(t *testing.T) {
 }
 
 func TestRegistrySetStatus(t *testing.T) {
-	reg := NewRegistry()
+	reg := NewRegistry(context.Background())
 	descReg := newDescReg(t)
 
 	p := makePlugin("myplugin", nil, nil)
@@ -181,7 +182,7 @@ func makePluginWithMetrics(name string, metricsGroups []types.MetricTemplateGrou
 }
 
 func TestRegistryMetricQueries(t *testing.T) {
-	reg := NewRegistry()
+	reg := NewRegistry(context.Background())
 	descReg := newDescReg(t)
 
 	p := makePluginWithMetrics("istio-metrics", []types.MetricTemplateGroup{
@@ -208,7 +209,7 @@ func TestRegistryMetricQueries(t *testing.T) {
 }
 
 func TestRegistryMetricQueriesNoField(t *testing.T) {
-	reg := NewRegistry()
+	reg := NewRegistry(context.Background())
 	descReg := newDescReg(t)
 
 	p := makePlugin("plain-plugin", nil, nil)
@@ -217,7 +218,7 @@ func TestRegistryMetricQueriesNoField(t *testing.T) {
 }
 
 func TestRegistryMetricQueriesDeactivate(t *testing.T) {
-	reg := NewRegistry()
+	reg := NewRegistry(context.Background())
 	descReg := newDescReg(t)
 	enricherReg := resource.NewEnricherRegistry()
 
@@ -236,7 +237,7 @@ func TestRegistryMetricQueriesDeactivate(t *testing.T) {
 }
 
 func TestRegistryMetricQueriesMultiplePlugins(t *testing.T) {
-	reg := NewRegistry()
+	reg := NewRegistry(context.Background())
 	descReg := newDescReg(t)
 
 	p1 := makePluginWithMetrics("istio-metrics", []types.MetricTemplateGroup{
@@ -265,7 +266,7 @@ func TestRegistryMetricQueriesMultiplePlugins(t *testing.T) {
 }
 
 func TestRegistrySidebarEntries(t *testing.T) {
-	reg := NewRegistry()
+	reg := NewRegistry(context.Background())
 	descReg := newDescReg(t)
 
 	icon := "shield"

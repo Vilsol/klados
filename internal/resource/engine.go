@@ -159,9 +159,13 @@ func (e *ResourceEngine) Delete(ctx context.Context, contextName, gvr, namespace
 	}
 
 	policy := metav1.DeletePropagationBackground
-	return client.Delete(ctx, name, metav1.DeleteOptions{
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{
 		PropagationPolicy: &policy,
-	})
+	}); err != nil {
+		return err
+	}
+	slox.Info(ctx, "resource deleted", "gvr", gvr, "namespace", namespace, "name", name)
+	return nil
 }
 
 func (e *ResourceEngine) ForceDelete(ctx context.Context, contextName, gvr, namespace, name string) error {
@@ -172,10 +176,14 @@ func (e *ResourceEngine) ForceDelete(ctx context.Context, contextName, gvr, name
 
 	grace := int64(0)
 	policy := metav1.DeletePropagationBackground
-	return client.Delete(ctx, name, metav1.DeleteOptions{
+	if err := client.Delete(ctx, name, metav1.DeleteOptions{
 		GracePeriodSeconds: &grace,
 		PropagationPolicy:  &policy,
-	})
+	}); err != nil {
+		return err
+	}
+	slox.Info(ctx, "resource force-deleted", "gvr", gvr, "namespace", namespace, "name", name)
+	return nil
 }
 
 type ApplyResult struct {

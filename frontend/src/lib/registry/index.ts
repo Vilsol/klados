@@ -1,5 +1,8 @@
 import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
 import * as PluginService from '../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js'
+import { getLogger } from '$lib/logger'
+
+const log = getLogger('registry')
 import { evaluate, parse } from 'cel-js'
 import type { CstNode } from '@chevrotain/types'
 import { setRegistryLoaded } from './loaded.svelte'
@@ -92,7 +95,7 @@ class DescriptorRegistry {
       this.descriptors = new Map(this.builtins)
       await this.mergePluginDescriptors()
     } catch (e) {
-      console.error('Failed to load descriptors:', e)
+      log.error('Failed to load descriptors', { error: String(e) })
     } finally {
       setRegistryLoaded()
     }
@@ -178,7 +181,7 @@ class DescriptorRegistry {
         }
       }
     } catch (e) {
-      console.error('Failed to load plugin descriptors:', e)
+      log.error('Failed to load plugin descriptors', { error: String(e) })
     }
   }
 

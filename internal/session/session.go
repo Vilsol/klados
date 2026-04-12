@@ -1,13 +1,15 @@
 package session
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"github.com/sasha-s/go-deadlock"
 	"time"
 
+	"github.com/Vilsol/slox"
 	"github.com/adrg/xdg"
+	"github.com/sasha-s/go-deadlock"
 )
 
 type Session struct {
@@ -64,6 +66,7 @@ func Load() (*Session, error) {
 	data, err := os.ReadFile(p)
 	if err != nil {
 		if os.IsNotExist(err) {
+			slox.Info(context.Background(), "session not found, using defaults", "path", p)
 			s := defaultSession()
 			s.path = p
 			return s, nil
@@ -76,6 +79,7 @@ func Load() (*Session, error) {
 		return nil, err
 	}
 	s.path = p
+	slox.Debug(context.Background(), "session loaded", "path", p)
 	return s, nil
 }
 
@@ -103,7 +107,11 @@ func (s *Session) saveLocked() error {
 		return err
 	}
 
-	return os.WriteFile(s.path, data, 0o644)
+	if err := os.WriteFile(s.path, data, 0o644); err != nil {
+		slox.Error(context.Background(), "session save failed", "path", s.path, "error", err)
+		return err
+	}
+	return nil
 }
 
 func (s *Session) SaveDebounced() {
@@ -115,6 +123,7 @@ func (s *Session) SaveDebounced() {
 	}
 
 	s.debounce = time.AfterFunc(500*time.Millisecond, func() {
+		slox.Debug(context.Background(), "session debounced save triggered")
 		_ = s.Save()
 	})
 }

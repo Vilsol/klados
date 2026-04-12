@@ -5,6 +5,9 @@
   import { streamingStore } from '$lib/stores/streaming.svelte'
   import { sessionStore } from '$lib/stores/session.svelte'
   import { LogViewer, Combobox } from '@klados/ui'
+  import { getLogger } from '$lib/logger'
+
+  const log = getLogger('logs')
 
   let { obj, ctxName, namespace, name }: {
     obj: Record<string, any>
@@ -72,7 +75,7 @@
       myID = id
       streamID = id
       starting = false
-    }).catch(() => { starting = false })
+    }).catch((e) => { log.warn('Log stream start failed', { error: String(e) }); starting = false })
 
     return () => {
       cancelled = true

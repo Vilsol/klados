@@ -2,7 +2,10 @@ import { Events } from '@wailsio/runtime'
 import * as ClusterService from '../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js'
 import * as AppService from '../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js'
 import * as ConfigService from '../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js'
+import { getLogger } from '$lib/logger'
 import { preferencesStore } from './preferences.svelte'
+
+const log = getLogger('cluster')
 import { KubeContext, ConnectionStatus } from '../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js'
 import { buildKindGVRMap, resolveGVR, type APIResource } from '$lib/utils/relationships'
 
@@ -56,7 +59,7 @@ class ClusterStore {
     try {
       await AppService.SetReadOnly(enabled)
     } catch (e) {
-      console.error('Failed to save read-only state:', e)
+      log.error('Failed to save read-only state', { error: String(e) })
     }
   }
 
@@ -99,7 +102,7 @@ class ClusterStore {
       try {
         const cfg = await ConfigService.GetConfig()
         this.isReadOnly = cfg?.readOnly ?? false
-      } catch {}
+      } catch (e) { log.warn('Failed to load persisted config', { error: String(e) }) }
 
       for (const ctx of this.contexts) {
         this.connectionStatus[ctx.name] = statusToString[ctx.status] ?? 'disconnected'
@@ -132,11 +135,11 @@ class ClusterStore {
         try {
           const saved = await ClusterService.GetActiveNamespace(this.activeContext)
           if (saved) this.selectedNamespaces[this.activeContext] = [saved]
-        } catch {}
+        } catch (e) { log.debug('Could not restore saved namespace', { error: String(e) }) }
         await this.loadNamespaces(this.activeContext)
       }
     } catch (e) {
-      console.error('Failed to load contexts:', e)
+      log.error('Failed to load contexts', { error: String(e) })
     }
   }
 
@@ -145,7 +148,7 @@ class ClusterStore {
     try {
       const saved = await ClusterService.GetActiveNamespace(ctxName)
       if (saved) this.selectedNamespaces[ctxName] = [saved]
-    } catch {}
+    } catch (e) { log.debug('Could not restore saved namespace', { error: String(e) }) }
     await this.loadNamespaces(ctxName)
   }
 
@@ -154,10 +157,12 @@ class ClusterStore {
     try {
       await ClusterService.Connect(ctxName)
       this.connectionStatus[ctxName] = 'connected'
+      log.info('Cluster connected', { ctxName })
       // Only set activeContext if nothing is currently active
       if (!this.activeContext) this.activeContext = ctxName
       await this.loadNamespaces(ctxName)
-    } catch {
+    } catch (e) {
+      log.error('Cluster connect failed', { ctxName, error: String(e) })
       this.connectionStatus[ctxName] = 'error'
     }
   }
@@ -166,6 +171,7 @@ class ClusterStore {
     try {
       await ClusterService.Disconnect(ctxName)
       this.connectionStatus[ctxName] = 'disconnected'
+      log.info('Cluster disconnected', { ctxName })
       delete this.namespaces[ctxName]
       delete this.selectedNamespaces[ctxName]
       if (this.activeContext === ctxName) {
@@ -176,7 +182,7 @@ class ClusterStore {
         this.activeContext = other ? other[0] : null
       }
     } catch (e) {
-      console.error('Failed to disconnect:', e)
+      log.error('Failed to disconnect', { error: String(e) })
     }
   }
 
@@ -185,7 +191,7 @@ class ClusterStore {
       const result = await ClusterService.ListNamespaces(ctxName)
       this.namespaces[ctxName] = result ?? []
     } catch (e) {
-      console.error('Failed to load namespaces:', e)
+      log.error('Failed to load namespaces', { error: String(e) })
     }
   }
 
@@ -206,7 +212,7 @@ class ClusterStore {
     try {
       await ClusterService.SwitchNamespace(ctxName, persist)
     } catch (e) {
-      console.error('Failed to switch namespace:', e)
+      log.error('Failed to switch namespace', { error: String(e) })
     }
   }
 }

@@ -82,8 +82,8 @@ export function GetStreamingConfig(): $CancellablePromise<streaming$0.StreamingC
     });
 }
 
-export function LogFrontend(level: string, message: string, detail: string): $CancellablePromise<void> {
-    return $Call.ByID(4188773513, level, message, detail);
+export function LogFrontend(level: string, message: string, attrsJSON: string): $CancellablePromise<void> {
+    return $Call.ByID(4188773513, level, message, attrsJSON);
 }
 
 export function LogStreamer(): $CancellablePromise<logs$0.Streamer | null> {

@@ -1,5 +1,8 @@
 import { Events } from '@wailsio/runtime'
 import * as ResourceService from '../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js'
+import { getLogger } from '$lib/logger'
+
+const log = getLogger('resource')
 
 interface WatchEvent {
   type: 'ADDED' | 'MODIFIED' | 'DELETED'
@@ -61,12 +64,12 @@ class ResourceStore {
         requestAnimationFrame(() => {
           if (gen !== this.generation) return
           const total = Math.round(performance.now() - t0)
-          console.debug(`[perf] ${gvr}: ${count} items, list=${Math.round(listMs)}ms, interactive=${total}ms`)
+          log.debug('perf', { gvr, count, listMs: Math.round(listMs), interactiveMs: total })
         })
       })
 
       // Start watch in background — event listener is already subscribed
-      ResourceService.StartWatch(contextName, gvr, namespace).catch(() => {})
+      ResourceService.StartWatch(contextName, gvr, namespace).catch((e) => log.warn('StartWatch failed', { contextName, gvr, namespace, error: String(e) }))
     } catch (e: any) {
       if (gen !== this.generation) return
       this.error = e?.message ?? String(e)
@@ -81,7 +84,7 @@ class ResourceStore {
       this.unsub = null
     }
     if (this.contextName && this.gvr) {
-      ResourceService.StopWatch(this.contextName, this.gvr, this.namespace).catch(() => {})
+      ResourceService.StopWatch(this.contextName, this.gvr, this.namespace).catch((e) => log.warn('StopWatch failed', { error: String(e) }))
     }
     this.items = []
     this.loading = false

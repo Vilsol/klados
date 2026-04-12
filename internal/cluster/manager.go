@@ -252,19 +252,22 @@ func (m *Manager) Connect(ctx context.Context, contextName string) error {
 	go m.startHealthPoller(connCtx, contextName, conn)
 	go m.emitDiscovery(contextName)
 	go func() {
-		if sv, err := conn.Clientset.Discovery().ServerVersion(); err == nil {
-			provider := detectProvider(rawCtx.Cluster, sv.GitVersion)
-			m.mu.Lock()
-			if c, ok := m.connections[contextName]; ok {
-				c.ServerVersion = sv.GitVersion
-				c.Provider = provider
-			}
-			m.mu.Unlock()
-			m.emitEvent(fmt.Sprintf("metadata:%s:cluster", contextName), map[string]string{
-				"serverVersion": sv.GitVersion,
-				"provider":      provider,
-			})
+		sv, err := conn.Clientset.Discovery().ServerVersion()
+		if err != nil {
+			slox.Warn(m.ctx, "server version fetch failed", "context", contextName, "error", err)
+			return
 		}
+		provider := detectProvider(rawCtx.Cluster, sv.GitVersion)
+		m.mu.Lock()
+		if c, ok := m.connections[contextName]; ok {
+			c.ServerVersion = sv.GitVersion
+			c.Provider = provider
+		}
+		m.mu.Unlock()
+		m.emitEvent(fmt.Sprintf("metadata:%s:cluster", contextName), map[string]string{
+			"serverVersion": sv.GitVersion,
+			"provider":      provider,
+		})
 	}()
 	go func() {
 		mc, err := metricsClientset.NewForConfig(restCfg)
@@ -321,6 +324,7 @@ func (m *Manager) Disconnect(contextName string) error {
 	delete(m.connections, contextName)
 	m.mu.Unlock()
 
+	slox.Info(m.ctx, "cluster disconnecting", "context", contextName)
 	conn.cancel()
 	m.emitStatus(contextName, StatusDisconnected)
 	return nil
@@ -380,6 +384,9 @@ func (m *Manager) CreateNamespace(ctx context.Context, contextName, name string)
 	_, err = conn.Clientset.CoreV1().Namespaces().Create(ctx,
 		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}},
 		metav1.CreateOptions{})
+	if err == nil {
+		slox.Info(m.ctx, "namespace created", "context", contextName, "namespace", name)
+	}
 	return err
 }
 
@@ -388,7 +395,11 @@ func (m *Manager) DeleteNamespace(ctx context.Context, contextName, name string)
 	if err != nil {
 		return err
 	}
-	return conn.Clientset.CoreV1().Namespaces().Delete(ctx, name, metav1.DeleteOptions{})
+	err = conn.Clientset.CoreV1().Namespaces().Delete(ctx, name, metav1.DeleteOptions{})
+	if err == nil {
+		slox.Info(m.ctx, "namespace deleted", "context", contextName, "namespace", name)
+	}
+	return err
 }
 
 type APIResource struct {
