@@ -107,19 +107,33 @@ function resolveByIndent(
 
   const candidates: Candidate[] = []
 
+  // Build a map from pointer → parent key position for gap detection
+  const parentKeyPos = new Map<string, number>()
   for (const m of maps) {
-    if (m.range[0] > pos) continue
+    for (const pair of m.map.items) {
+      if (!isPair(pair) || !isScalar(pair.key)) continue
+      const keyRange = (pair.key as any).range as [number, number, number] | undefined
+      if (!keyRange) continue
+      const keyName = String((pair.key as any).value)
+      const childPointer = m.pointer ? m.pointer + '/' + keyName : '/' + keyName
+      parentKeyPos.set(childPointer, keyRange[0])
+    }
+  }
+
+  for (const m of maps) {
+    // Allow maps whose range starts after cursor IF the parent key is before cursor
+    // (cursor is in the gap between `key:` and its map value on the next line)
+    const keyPos = parentKeyPos.get(m.pointer)
+    const effectiveKeyPos = keyPos ?? m.range[0]
+    if (effectiveKeyPos > pos) continue
 
     if (m.contentIndent === cursorIndent) {
-      // This map has children at cursor's indent level — it's a direct match
-      // Use the map's own start as the key position
-      candidates.push({ mapInfo: m, keyPos: m.range[0] })
+      candidates.push({ mapInfo: m, keyPos: effectiveKeyPos })
     }
 
     // Also check pairs in this map that might own the cursor's indent level
     // but don't have a map value yet
     if (cursorIndent > m.contentIndent) {
-      // Find the pair closest before cursor
       let closestKey: string | null = null
       let closestKeyPos = -1
 
@@ -130,7 +144,6 @@ function resolveByIndent(
 
         const keyName = String((pair.key as any).value)
 
-        // Check if this pair's value is already a map we've collected
         const hasChildMap = maps.some(
           (child) =>
             child.pointer === (m.pointer ? m.pointer + '/' + keyName : '/' + keyName)

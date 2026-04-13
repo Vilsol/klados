@@ -166,6 +166,48 @@ describe('resolvePosition', () => {
     expect(result!.pointer).toBe('/spec/template')
   })
 
+  // === Gap between key and value map (cursor on blank line before first child) ===
+
+  it('resolves to spec when cursor is on empty line between spec: and containers:', () => {
+    const doc = [
+      'apiVersion: v1',
+      'kind: Pod',
+      'metadata:',
+      '  name: ""',
+      '  namespace: default',
+      'spec:',
+      '  |',
+      '  containers:',
+      '    - name: ""',
+      '      image: ""',
+      '      resources:',
+      '        requests:',
+      '          cpu: 100m',
+      '          memory: 128Mi',
+    ].join('\n')
+    const { state, pos } = stateAt(doc)
+    const result = resolvePosition(state, pos)
+    expect(result).not.toBeNull()
+    expect(result!.pointer).toBe('/spec')
+    expect(result!.existingKeys).toContain('containers')
+  })
+
+  it('resolves to metadata when cursor is on empty line between metadata: and name:', () => {
+    const doc = [
+      'apiVersion: v1',
+      'metadata:',
+      '  |',
+      '  name: test',
+      '  namespace: default',
+    ].join('\n')
+    const { state, pos } = stateAt(doc)
+    const result = resolvePosition(state, pos)
+    expect(result).not.toBeNull()
+    expect(result!.pointer).toBe('/metadata')
+    expect(result!.existingKeys).toContain('name')
+    expect(result!.existingKeys).toContain('namespace')
+  })
+
   // === Realistic Kubernetes YAML ===
 
   it('resolves inside a Pod spec with multiple sections', () => {
