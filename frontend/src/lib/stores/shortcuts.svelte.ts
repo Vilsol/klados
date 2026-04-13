@@ -88,15 +88,22 @@ export class ShortcutStore {
       return;
     }
 
-    // Skip unmodified single-key shortcuts when focus is on a text input
-    const hasModifier = e.ctrlKey || e.altKey || e.metaKey;
-    if (!hasModifier) {
-      const el = document.activeElement;
-      if (
-        el instanceof HTMLInputElement ||
-        el instanceof HTMLTextAreaElement ||
-        (el instanceof HTMLElement && el.isContentEditable)
-      ) {
+    // Skip shortcuts when focus is on a text input and the key combo is a
+    // standard text-editing operation (select-all, copy, paste, cut, undo, redo)
+    // or an unmodified single key.
+    const el = document.activeElement;
+    const inTextInput =
+      el instanceof HTMLInputElement ||
+      el instanceof HTMLTextAreaElement ||
+      (el instanceof HTMLElement && el.isContentEditable);
+
+    if (inTextInput) {
+      const hasModifier = e.ctrlKey || e.altKey || e.metaKey;
+      if (!hasModifier) {
+        return;
+      }
+      const textEditKeys = new Set(["a", "c", "v", "x", "z"]);
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && textEditKeys.has(e.key.toLowerCase())) {
         return;
       }
     }

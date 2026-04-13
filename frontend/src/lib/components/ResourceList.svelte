@@ -7,7 +7,7 @@
   import {getControllerRef, type ControllerRef} from "$lib/utils/relationships";
   import {DeleteResource} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {formatAge} from "$lib/utils/age";
-  import {onMount} from "svelte";
+  import {onMount, untrack} from "svelte";
   import {slotRegistry} from "$lib/plugins/slots.svelte.js";
   import {loadPluginComponent} from "$lib/plugins/loader.js";
   import {streamingStore} from "$lib/stores/streaming.svelte.js";
@@ -257,11 +257,13 @@
   $effect(() => {
     shortcutActions.selectAll;
     if (shortcutActions.selectAll > 0) {
-      if (allVisibleSelected) {
-        selectionStore.deselectAll();
-      } else {
-        selectionStore.selectAll(filteredKeys, filteredItemsByKey);
-      }
+      untrack(() => {
+        if (allVisibleSelected) {
+          selectionStore.deselectAll();
+        } else {
+          selectionStore.selectAll(filteredKeys, filteredItemsByKey);
+        }
+      });
     }
   });
 
