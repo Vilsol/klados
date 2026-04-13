@@ -6,7 +6,7 @@ import {
   highlightActiveLineGutter,
   tooltips,
 } from '@codemirror/view'
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { yaml as yamlLang } from '@codemirror/lang-yaml'
 import { searchKeymap, search } from '@codemirror/search'
 import { syntaxHighlighting, foldGutter, foldKeymap } from '@codemirror/language'
@@ -59,7 +59,7 @@ export function cmYamlExtensions(opts?: {
     syntaxHighlighting(oneDarkHighlightStyle),
     opts?.lang ?? yamlLang(),
     search({ top: true }),
-    keymap.of([...closeBracketsKeymap, ...completionKeymap, ...defaultKeymap, ...historyKeymap, ...searchKeymap, ...foldKeymap]),
+    keymap.of([...closeBracketsKeymap, ...completionKeymap, indentWithTab, ...defaultKeymap, ...historyKeymap, ...searchKeymap, ...foldKeymap]),
     tooltips({ parent: document.body }),
     cmEditorTheme,
   ]
