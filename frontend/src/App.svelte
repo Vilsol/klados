@@ -20,9 +20,13 @@
   import ApplyManifestDialog from "$lib/components/ApplyManifestDialog.svelte";
   import {applyManifestStore} from "$lib/stores/applyManifest.svelte";
   import {preferencesStore} from "$lib/stores/preferences.svelte";
+  import ShortcutHelpDialog from "$lib/components/ShortcutHelpDialog.svelte";
+  import {shortcutActions} from "$lib/stores/shortcutActions.svelte";
+  import {push} from "svelte-spa-router";
 
   const panelId = new URLSearchParams(window.location.search).get("panel");
   let paletteOpen = $state(false);
+  let shortcutsHelpOpen = $state(false);
 
   function logToBackend(level: string, message: string, detail: string) {
     LogFrontend(level, message, detail).catch(() => {
@@ -115,8 +119,114 @@
         keys: "Control+k",
         description: "Open command palette",
         modes: ["normal", "editor"],
+        category: "General",
         action: () => {
           paletteOpen = true;
+        },
+      });
+
+      shortcutStore.register({
+        id: "shortcut-help",
+        keys: "?",
+        description: "Show keyboard shortcuts",
+        category: "General",
+        action: () => {
+          shortcutsHelpOpen = true;
+        },
+      });
+
+      shortcutStore.register({
+        id: "focus-search",
+        keys: "/",
+        description: "Focus search / filter bar",
+        category: "General",
+        action: () => {
+          shortcutActions.focusSearch++;
+        },
+      });
+
+      shortcutStore.register({
+        id: "focus-search-ctrl",
+        keys: "Control+f",
+        description: "Focus search / filter bar",
+        category: "General",
+        hidden: true,
+        action: () => {
+          shortcutActions.focusSearch++;
+        },
+      });
+
+      shortcutStore.register({
+        id: "escape",
+        keys: "Escape",
+        description: "Close dialog / go back",
+        modes: ["normal", "editor"],
+        category: "General",
+        action: () => {
+          if (shortcutsHelpOpen) {
+            shortcutsHelpOpen = false;
+          } else if (paletteOpen) {
+            paletteOpen = false;
+          } else if (createResourceStore.open) {
+            createResourceStore.close();
+          } else if (applyManifestStore.open) {
+            applyManifestStore.close();
+          } else if (location.hash.match(/^#\/c\/[^/]+\/[^/]+\/[^/]+\/[^/]+$/)) {
+            // On detail page — navigate back to resource list
+            const parts = location.hash.slice(2).split("/");
+            push(`/c/${parts[1]}/${parts[2]}`);
+          }
+        },
+      });
+
+      shortcutStore.register({
+        id: "confirm-dialog",
+        keys: "Control+Enter",
+        description: "Confirm / submit dialog",
+        modes: ["normal", "editor"],
+        category: "General",
+        action: () => {
+          shortcutActions.confirmDialog++;
+        },
+      });
+
+      shortcutStore.register({
+        id: "toggle-sidebar",
+        keys: "Control+b",
+        description: "Toggle sidebar",
+        category: "Navigation",
+        action: () => {
+          sessionStore.toggleSidebar();
+        },
+      });
+
+      shortcutStore.register({
+        id: "create-resource",
+        keys: "Control+Shift+N",
+        description: "Create new resource",
+        category: "Resources",
+        action: () => {
+          createResourceStore.openDialog();
+        },
+      });
+
+      shortcutStore.register({
+        id: "apply-manifest",
+        keys: "Control+Shift+A",
+        description: "Apply manifest",
+        category: "Resources",
+        action: () => {
+          applyManifestStore.openDialog();
+        },
+      });
+
+      shortcutStore.register({
+        id: "refresh",
+        keys: "F5",
+        description: "Refresh resource list",
+        category: "Resources",
+        action: () => {
+          shortcutActions.refreshList++;
         },
       });
 
@@ -216,5 +326,6 @@
     onsuccess={createResourceStore.onsuccess}
   />
   <ApplyManifestDialog bind:open={applyManifestStore.open} ctxName={clusterStore.activeContext ?? ''} />
+  <ShortcutHelpDialog bind:open={shortcutsHelpOpen} />
 {/if}
 <Notification />

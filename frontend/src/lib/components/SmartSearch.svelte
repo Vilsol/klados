@@ -4,6 +4,7 @@
   import {getSuggestions, type Suggestion} from "$lib/search/autocomplete";
   import {filterItems} from "$lib/search/filter";
   import {preferencesStore} from "$lib/stores/preferences.svelte";
+  import {shortcutActions} from "$lib/stores/shortcutActions.svelte";
   import SmartSearchAutocomplete from "./SmartSearchAutocomplete.svelte";
   import type {KubernetesResource} from "$lib/types";
 
@@ -60,6 +61,13 @@
 
   $effect(() => {
     ontermschange?.(terms);
+  });
+
+  $effect(() => {
+    shortcutActions.focusSearch;
+    if (shortcutActions.focusSearch > 0) {
+      requestAnimationFrame(() => inputEl?.focus());
+    }
   });
 
   function updateAutocomplete() {

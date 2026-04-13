@@ -10,6 +10,10 @@ export interface ShortcutDef {
   description: string;
   // Modes in which this shortcut fires. Defaults to ['normal'].
   modes?: FocusMode[];
+  // Grouping category for the shortcut help dialog.
+  category?: string;
+  // If true, this shortcut is hidden from the help dialog (e.g. alias bindings).
+  hidden?: boolean;
 }
 
 function buildKeyCombo(e: KeyboardEvent): string {
@@ -21,7 +25,14 @@ function buildKeyCombo(e: KeyboardEvent): string {
     parts.push("Alt");
   }
   if (e.shiftKey) {
-    parts.push("Shift");
+    // Don't include Shift for symbol characters — Shift is already encoded
+    // in the key value (e.g., Shift+/ produces e.key="?", so the combo
+    // should be "?" not "Shift+?"). Only include Shift for letters/digits
+    // and non-printable keys.
+    const isShiftedSymbol = e.key.length === 1 && !/[a-zA-Z0-9]/.test(e.key);
+    if (!isShiftedSymbol) {
+      parts.push("Shift");
+    }
   }
   if (e.metaKey) {
     parts.push("Meta");
@@ -75,6 +86,19 @@ export class ShortcutStore {
         e.preventDefault();
       }
       return;
+    }
+
+    // Skip unmodified single-key shortcuts when focus is on a text input
+    const hasModifier = e.ctrlKey || e.altKey || e.metaKey;
+    if (!hasModifier) {
+      const el = document.activeElement;
+      if (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        (el instanceof HTMLElement && el.isContentEditable)
+      ) {
+        return;
+      }
     }
 
     for (const def of this._shortcuts) {

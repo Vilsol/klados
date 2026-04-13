@@ -7,6 +7,7 @@
   import {BrowseManifestFile} from "../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
   import {ApplyManifest} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte";
+  import {shortcutActions} from "$lib/stores/shortcutActions.svelte";
 
   interface ApplyResult {
     gvr: string;
@@ -118,6 +119,13 @@
       applying = false;
     }
   }
+
+  $effect(() => {
+    shortcutActions.confirmDialog;
+    if (shortcutActions.confirmDialog > 0 && open && !applying && !editorEmpty) {
+      applyManifest();
+    }
+  });
 
   function actionClass(action: string, error: string): string {
     if (error) {

@@ -1,6 +1,7 @@
 <script lang="ts">
   import {Trash2, Tag, StickyNote, Scale, Download, X} from "lucide-svelte";
   import {selectionStore} from "$lib/stores/selection.svelte";
+  import {shortcutActions} from "$lib/stores/shortcutActions.svelte";
   import {exportItems} from "$lib/utils/export";
   import BulkDeleteDialog from "./BulkDeleteDialog.svelte";
   import BulkMetadataDialog from "./BulkMetadataDialog.svelte";
@@ -29,6 +30,13 @@
       clearTimeout(timer);
       window.removeEventListener("click", close);
     };
+  });
+
+  $effect(() => {
+    shortcutActions.deleteSelected;
+    if (shortcutActions.deleteSelected > 0 && selectionStore.count > 0) {
+      deleteOpen = true;
+    }
   });
 
   function doExport(format: "yaml" | "json") {

@@ -17,6 +17,7 @@
   } from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {GetSchema} from "../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte";
+  import {shortcutActions} from "$lib/stores/shortcutActions.svelte";
   import {getLogger} from "$lib/logger";
 
   const log = getLogger("resources");
@@ -250,6 +251,13 @@
       saving = false;
     }
   }
+
+  $effect(() => {
+    shortcutActions.confirmDialog;
+    if (shortcutActions.confirmDialog > 0 && open && !saving) {
+      apply();
+    }
+  });
 </script>
 
 <Dialog.Root bind:open>

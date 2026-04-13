@@ -4,6 +4,7 @@
   import {notificationStore} from "$lib/stores/notification.svelte";
   import {Check, X, Loader2} from "lucide-svelte";
   import {DeleteResource} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {shortcutActions} from "$lib/stores/shortcutActions.svelte";
 
   let {
     open = $bindable(false),
@@ -25,6 +26,13 @@
     const name = obj.metadata?.name ?? "";
     return ns ? `${ns}/${name}` : name;
   }
+
+  $effect(() => {
+    shortcutActions.confirmDialog;
+    if (shortcutActions.confirmDialog > 0 && open && !running) {
+      run();
+    }
+  });
 
   async function run() {
     running = true;

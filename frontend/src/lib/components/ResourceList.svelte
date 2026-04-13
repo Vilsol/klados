@@ -23,6 +23,8 @@
   import type {SearchTerm} from "$lib/search/parser";
   import {exportItems} from "$lib/utils/export";
   import type {KubernetesResource} from "$lib/types";
+  import {shortcutStore} from "$lib/stores/shortcuts.svelte";
+  import {shortcutActions} from "$lib/stores/shortcutActions.svelte";
 
   function itemKey(obj: Record<string, KubernetesResource>): string {
     const ns = obj.metadata?.namespace ?? "";
@@ -36,6 +38,41 @@
       now = Date.now();
     }, 1000);
     return () => clearInterval(id);
+  });
+
+  onMount(() => {
+    shortcutStore.register({
+      id: "delete-selected",
+      keys: "Delete",
+      description: "Delete selected resources",
+      category: "Resources",
+      action: () => {
+        shortcutActions.deleteSelected++;
+      },
+    });
+    shortcutStore.register({
+      id: "select-all",
+      keys: "Control+a",
+      description: "Select / deselect all",
+      category: "Resources",
+      action: () => {
+        shortcutActions.selectAll++;
+      },
+    });
+    shortcutStore.register({
+      id: "copy-resource-names",
+      keys: "Control+Shift+C",
+      description: "Copy selected resource names",
+      category: "Resources",
+      action: () => {
+        shortcutActions.copyResourceNames++;
+      },
+    });
+    return () => {
+      shortcutStore.unregister("delete-selected");
+      shortcutStore.unregister("select-all");
+      shortcutStore.unregister("copy-resource-names");
+    };
   });
 
   let {
@@ -215,6 +252,46 @@
   const allVisibleSelected = $derived(filtered.length > 0 && filteredKeys.every((k) => selectionStore.isSelected(k)));
   const someVisibleSelected = $derived(!allVisibleSelected && filteredKeys.some((k) => selectionStore.isSelected(k)));
   const canMutate = $derived(clusterStore.canMutate());
+
+  // Action bus: select all / deselect all
+  $effect(() => {
+    shortcutActions.selectAll;
+    if (shortcutActions.selectAll > 0) {
+      if (allVisibleSelected) {
+        selectionStore.deselectAll();
+      } else {
+        selectionStore.selectAll(filteredKeys, filteredItemsByKey);
+      }
+    }
+  });
+
+  // Action bus: delete selected — handled by BulkActionBar which owns the delete dialog
+
+  // Action bus: refresh
+  $effect(() => {
+    shortcutActions.refreshList;
+    if (shortcutActions.refreshList > 0) {
+      onrefresh?.();
+    }
+  });
+
+  // Action bus: copy resource names
+  $effect(() => {
+    shortcutActions.copyResourceNames;
+    if (shortcutActions.copyResourceNames > 0 && selectionStore.count > 0) {
+      const names = selectionStore.items()
+        .map((item) => {
+          const meta = item.metadata as Record<string, unknown> | undefined;
+          return (meta?.name as string) ?? "";
+        })
+        .filter(Boolean);
+      if (names.length > 0) {
+        navigator.clipboard.writeText(names.join("\n")).then(() => {
+          notificationStore.push(`Copied ${names.length} name${names.length > 1 ? "s" : ""}`, "info");
+        });
+      }
+    }
+  });
 
   const tooManyForSparklines = $derived(filtered.length > 200);
 
