@@ -18,7 +18,11 @@ import { fuzzyMatch } from './fuzzy'
 export function yamlSchemaCompletion(schema: JSONSchema7): Extension {
   return yamlLanguage.data.of({
     autocomplete: (ctx: CompletionContext): CompletionResult | null => {
-      return doComplete(ctx, schema)
+      try {
+        return doComplete(ctx, schema)
+      } catch {
+        return null
+      }
     },
   })
 }

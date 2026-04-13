@@ -59,32 +59,8 @@ export function resolvePosition(
 
   // Fallback: cursor is outside all ranges (empty/trailing lines) or
   // inside a map but the typed prefix was parsed as a scalar value.
-  // Use indentation to find the right map — the map whose content indent
-  // (indent of child keys) matches the cursor's indent.
-  if (!bestMap || needsIndentFallback(bestMap, cursorIndent)) {
-    // Find the map whose contentIndent matches cursor indent.
-    // If multiple match, pick the deepest one that precedes the cursor.
-    const candidates = maps
-      .filter((m) => m.range[0] <= pos && m.contentIndent === cursorIndent)
-      .sort((a, b) => b.depth - a.depth)
-
-    if (candidates.length > 0) {
-      bestMap = candidates[0]
-    } else {
-      // No exact contentIndent match — the cursor is at an indent level
-      // where no map's children live. This means we're typing inside a
-      // key whose value hasn't become a map yet (e.g., `metadata:\n  ann`
-      // where `ann` is parsed as scalar value, not a key).
-      //
-      // Find the pair in the nearest parent map whose key is at
-      // (cursorIndent - indentStep) and resolve to that pair's path.
-      const parentMap = findParentMapForNewBlock(maps, pos, cursorIndent)
-      if (parentMap) {
-        bestMap = parentMap
-      } else {
-        bestMap = maps.find((m) => m.depth === 0) ?? null
-      }
-    }
+  if (!bestMap || bestMap.contentIndent !== cursorIndent) {
+    bestMap = resolveByIndent(maps, pos, cursorIndent)
   }
 
   if (!bestMap) {
@@ -105,59 +81,89 @@ export function resolvePosition(
 }
 
 /**
- * Check if the initial range-based match is wrong and we need indent fallback.
- */
-function needsIndentFallback(map: MapInfo, cursorIndent: number): boolean {
-  return map.contentIndent !== cursorIndent
-}
-
-/**
- * When no map has contentIndent matching cursorIndent, the cursor is likely
- * inside a key:value pair where the value is not yet a map (e.g., typing a
- * new key under `metadata:` when the parser sees the typed text as a scalar).
+ * Resolve the correct map using indentation when range-based lookup fails.
  *
- * Walk all maps and find a pair whose key indent + indentStep matches
- * cursorIndent. Return a synthetic MapInfo pointing to that pair's path
- * (the pointer the map *would* have if it existed).
+ * Strategy: walk all maps in the document and find pairs (key: value) where
+ * the cursor could belong. The cursor belongs to the pair whose key is the
+ * closest *before* the cursor at the indent level one step above cursorIndent.
+ * If that pair has a map value, use it. If not, create a synthetic entry.
  */
-function findParentMapForNewBlock(
+function resolveByIndent(
   maps: MapInfo[],
   pos: number,
   cursorIndent: number
 ): MapInfo | null {
-  // Walk maps from deepest to shallowest, looking for one that contains
-  // a pair whose value would be at cursorIndent
-  const sorted = [...maps].filter((m) => m.range[0] <= pos).sort((a, b) => b.depth - a.depth)
+  // Strategy 1: Find the pair closest before cursor whose map value's
+  // contentIndent matches cursorIndent.
+  // Strategy 2: If no such map exists, find the pair closest before cursor
+  // at one indent level up, whose value block would contain cursorIndent.
 
-  for (const m of sorted) {
-    for (const pair of m.map.items) {
-      if (!isPair(pair) || !isScalar(pair.key)) continue
-      const keyRange = (pair.key as any).range as [number, number, number] | undefined
-      if (!keyRange) continue
+  // Collect all candidate contexts: real maps and potential synthetic parents
+  interface Candidate {
+    mapInfo: MapInfo
+    /** Position of the key that "owns" this context, for proximity sorting */
+    keyPos: number
+  }
 
-      // The key's indent
-      const keyIndent = m.contentIndent
+  const candidates: Candidate[] = []
 
-      // If cursor indent is deeper than this key's indent, the cursor could
-      // be inside this pair's value block
-      if (cursorIndent > keyIndent) {
-        const key = String(pair.key.value)
-        const pairPointer = m.pointer ? m.pointer + '/' + key : '/' + key
-        // Return a synthetic MapInfo — we use the parent map but with
-        // the pointer pointing to this pair's key
-        return {
-          map: { items: [] } as any, // no existing keys — it's a new block
-          range: m.range,
-          pointer: pairPointer,
-          depth: m.depth + 1,
-          indent: m.contentIndent,
-          contentIndent: cursorIndent,
+  for (const m of maps) {
+    if (m.range[0] > pos) continue
+
+    if (m.contentIndent === cursorIndent) {
+      // This map has children at cursor's indent level — it's a direct match
+      // Use the map's own start as the key position
+      candidates.push({ mapInfo: m, keyPos: m.range[0] })
+    }
+
+    // Also check pairs in this map that might own the cursor's indent level
+    // but don't have a map value yet
+    if (cursorIndent > m.contentIndent) {
+      // Find the pair closest before cursor
+      let closestKey: string | null = null
+      let closestKeyPos = -1
+
+      for (const pair of m.map.items) {
+        if (!isPair(pair) || !isScalar(pair.key)) continue
+        const keyRange = (pair.key as any).range as [number, number, number] | undefined
+        if (!keyRange || keyRange[0] > pos) continue
+
+        // Check if this pair's value is already a map we've collected
+        const hasChildMap = maps.some(
+          (child) =>
+            child.pointer === (m.pointer ? m.pointer + '/' + String(pair.key.value) : '/' + String(pair.key.value))
+        )
+
+        if (!hasChildMap && keyRange[0] > closestKeyPos) {
+          closestKey = String(pair.key.value)
+          closestKeyPos = keyRange[0]
         }
+      }
+
+      if (closestKey !== null) {
+        const pointer = m.pointer ? m.pointer + '/' + closestKey : '/' + closestKey
+        candidates.push({
+          mapInfo: {
+            map: { items: [] } as any,
+            range: m.range,
+            pointer,
+            depth: m.depth + 1,
+            indent: m.contentIndent,
+            contentIndent: cursorIndent,
+          },
+          keyPos: closestKeyPos,
+        })
       }
     }
   }
 
-  return null
+  if (candidates.length === 0) {
+    return maps.find((m) => m.depth === 0) ?? null
+  }
+
+  // Sort by key position descending — closest to cursor wins
+  candidates.sort((a, b) => b.keyPos - a.keyPos)
+  return candidates[0].mapInfo
 }
 
 interface MapInfo {
@@ -165,9 +171,7 @@ interface MapInfo {
   range: [number, number, number]
   pointer: string
   depth: number
-  /** The indentation of the map node's key (or 0 for root) */
   indent: number
-  /** The indentation of the map's child keys */
   contentIndent: number
 }
 
@@ -187,7 +191,6 @@ function collectMaps(
       const indent = state.doc.lineAt(range[0]).from
       const mapIndent = range[0] - indent
 
-      // Content indent: the indent of the first child key
       let contentIndent = mapIndent
       for (const pair of parsed.items) {
         if (isPair(pair) && isScalar(pair.key)) {
