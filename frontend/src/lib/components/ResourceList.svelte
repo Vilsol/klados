@@ -1,6 +1,5 @@
 <script lang="ts">
-  import {createVirtualizer} from "@tanstack/svelte-virtual";
-  import {ArrowUpDown, ArrowUp, ArrowDown, Trash2, RefreshCw, Columns3, Check, Minus, Download} from "lucide-svelte";
+  import {Trash2, RefreshCw, Columns3, Check, Minus, Download} from "lucide-svelte";
   import {ConfirmDialog} from "@klados/ui";
   import {notificationStore} from "$lib/stores/notification.svelte";
   import {evalExpr, defaultAlign, type ColumnDef, type RenderType} from "$lib/registry/index";
@@ -17,6 +16,7 @@
   import {clusterStore} from "$lib/stores/cluster.svelte";
   import {selectionStore} from "$lib/stores/selection.svelte";
   import ColumnMenu from "./ColumnMenu.svelte";
+  import DataTable, {type DataTableColumn} from "./DataTable.svelte";
   import SmartSearch from "./SmartSearch.svelte";
   import SavedFilterDropdown from "./SavedFilterDropdown.svelte";
   import {filterItems} from "$lib/search/filter";
@@ -121,7 +121,6 @@
   let ctxMenuEl = $state<HTMLDivElement | null>(null);
   let columnMenuOpen = $state(false);
   let exportMenuOpen = $state(false);
-  let resizing = $state<{name: string; startX: number; startWidth: number} | null>(null);
 
   function getSparklinePoints(itemName: string, metricName: string): {t: number; v: number}[] {
     const metrics = sparklineData[itemName];
@@ -216,7 +215,6 @@
       const {column, direction} = columnStore.sortState;
       const col = columnStore.visibleColumns.find((c) => c.name === column);
       if (col?.expr) {
-        // Pre-compute sort keys to avoid repeated evalExpr in comparator
         const keyed = result.map((item) => ({item, key: String(evalExpr(col.expr, item) ?? "")}));
         const isAge = col.renderType === "age";
         keyed.sort((a, b) => {
@@ -267,8 +265,6 @@
     }
   });
 
-  // Action bus: delete selected — handled by BulkActionBar which owns the delete dialog
-
   // Action bus: refresh
   $effect(() => {
     shortcutActions.refreshList;
@@ -297,25 +293,18 @@
 
   const tooManyForSparklines = $derived(filtered.length > 200);
 
-  const rowHeight = $derived(columnStore.compact ? 28 : 36);
+  // Map ColumnDef[] to DataTableColumn[] with computed alignment
+  const dataTableColumns = $derived<DataTableColumn[]>(
+    columnStore.visibleColumns.map((c) => ({
+      name: c.name,
+      width: c.width,
+      align: c.align ?? defaultAlign(c.renderType),
+    })),
+  );
 
-  const virtualizer = $derived.by(() => {
-    const rh = rowHeight;
-    return createVirtualizer({
-      count: filtered.length,
-      getScrollElement: () => scrollContainer ?? null,
-      estimateSize: () => rh,
-      overscan: 10,
-    });
-  });
-
-  function toggleSort(name: string) {
-    const current = columnStore.sortState;
-    if (current?.column === name) {
-      columnStore.setSort(name, current.direction === "asc" ? "desc" : "asc");
-    } else {
-      columnStore.setSort(name, "asc");
-    }
+  // Look up the full ColumnDef by name for cell rendering
+  function getColumnDef(name: string): ColumnDef | undefined {
+    return columnStore.visibleColumns.find((c) => c.name === name);
   }
 
   function renderCell(col: ColumnDef, item: Record<string, KubernetesResource>) {
@@ -346,17 +335,6 @@
     return "bg-muted/10 text-fg border-border";
   }
 
-  function alignClass(col: ColumnDef): string {
-    const align = col.align ?? defaultAlign(col.renderType);
-    if (align === "right") {
-      return "text-right";
-    }
-    if (align === "center") {
-      return "text-center";
-    }
-    return "text-left";
-  }
-
   async function confirmDelete() {
     if (!deleteTarget) {
       return;
@@ -379,14 +357,10 @@
     confirmOpen = true;
   }
 
-  const gridTemplateCols = $derived.by(() => {
+  const prefixGridCols = $derived(canMutate ? ["36px"] : []);
+
+  const suffixGridCols = $derived.by(() => {
     const parts: string[] = [];
-    if (canMutate) {
-      parts.push("36px");
-    }
-    for (const c of columnStore.visibleColumns) {
-      parts.push(c.width ? `${c.width}px` : "minmax(20px, 1fr)");
-    }
     for (const _ of pluginColumns) {
       parts.push("1fr");
     }
@@ -394,62 +368,28 @@
       parts.push("80px");
     }
     parts.push("36px");
-    return parts.join(" ");
+    return parts;
   });
-
-  function snapAllColumnsToPixels() {
-    const headerCells = scrollContainer?.querySelectorAll<HTMLElement>("[data-header-col]");
-    if (!headerCells) {
-      return;
-    }
-    for (const cell of headerCells) {
-      const name = cell.dataset.headerCol ?? "";
-      const col = columnStore.visibleColumns.find((c) => c.name === name);
-      if (col && !col.width) {
-        columnStore.resizeColumn(name, cell.getBoundingClientRect().width);
-      }
-    }
-  }
-
-  function startResize(e: MouseEvent, col: ColumnDef) {
-    e.preventDefault();
-    snapAllColumnsToPixels();
-    const cell = (e.currentTarget as HTMLElement).parentElement;
-    const measuredWidth = cell ? cell.getBoundingClientRect().width : (col.width ?? 100);
-    resizing = {name: col.name, startX: e.clientX, startWidth: measuredWidth};
-    window.addEventListener("mousemove", onResizeMove);
-    window.addEventListener("mouseup", onResizeUp, {once: true});
-  }
-
-  function onResizeMove(e: MouseEvent) {
-    if (!resizing) {
-      return;
-    }
-    const delta = e.clientX - resizing.startX;
-    const newWidth = Math.max(20, resizing.startWidth + delta);
-    columnStore.resizeColumn(resizing.name, newWidth);
-  }
-
-  function onResizeUp() {
-    window.removeEventListener("mousemove", onResizeMove);
-    resizing = null;
-  }
-
-  function autoFit(name: string) {
-    const cells = scrollContainer?.querySelectorAll(`[data-col="${name}"]`);
-    if (!cells) {
-      return;
-    }
-    let max = 60;
-    for (const cell of cells) {
-      max = Math.max(max, (cell as HTMLElement).scrollWidth);
-    }
-    columnStore.autoFitColumn(name, max);
-  }
 </script>
 
-<div class="flex flex-col h-full overflow-hidden isolate">
-  <div class="flex items-center gap-2 px-3 py-2 border-b border-border shrink-0">
+<DataTable
+  items={filtered}
+  visibleColumns={dataTableColumns}
+  sortState={columnStore.sortState}
+  compact={columnStore.compact}
+  {loading}
+  {error}
+  emptyMessage="No resources found"
+  {prefixGridCols}
+  {suffixGridCols}
+  bind:scrollContainer
+  selectedRow={(item) => selectedName === `${item.metadata?.name ?? ''}/${item.metadata?.namespace ?? ''}`}
+  onsort={(col, dir) => columnStore.setSort(col, dir)}
+  onresize={(col, width) => columnStore.resizeColumn(col, width)}
+  onrowclick={onselect ? (item) => onselect?.(item) : undefined}
+  oncontextmenu={(e, item) => { ctxMenu = { x: e.clientX, y: e.clientY, item } }}
+>
+  {#snippet toolbar()}
     <SmartSearch {items} bind:value={searchQuery} ontermschange={(t) => { searchTerms = t }} />
     <SavedFilterDropdown {gvr} {contextName} currentQuery={searchQuery} onapply={(q) => { searchQuery = q }} />
     <span class="text-xs text-muted">{filtered.length} items</span>
@@ -493,7 +433,16 @@
         <Columns3 size={14} />
       </button>
       {#if columnMenuOpen}
-        <ColumnMenu {gvr} {sparklineGvrs} {sparklineColumns} {onSparklineToggle} />
+        <ColumnMenu
+          visibleColumns={columnStore.visibleColumns}
+          allColumns={columnStore.allColumns}
+          compact={columnStore.compact}
+          onToggle={(name, visible) => columnStore.setColumnVisible(name, visible)}
+          onMove={(name, dir) => columnStore.moveColumn(name, dir)}
+          onReset={() => columnStore.reset()}
+          onCompactChange={(v) => columnStore.setCompact(v)}
+          {gvr} {sparklineGvrs} {sparklineColumns} {onSparklineToggle}
+        />
       {/if}
     </div>
     {#if onrefresh}
@@ -507,216 +456,167 @@
         <RefreshCw size={14} class={loading ? 'animate-spin' : ''} />
       </button>
     {/if}
-  </div>
+  {/snippet}
 
-  {#if error}
-    <div class="p-4 text-sm text-destructive">{error}</div>
-  {:else}
-    <div bind:this={scrollContainer} class="flex-1 overflow-auto">
-      <div
-        class="grid text-xs font-semibold uppercase tracking-wider text-muted border-b border-border sticky top-0 z-20 bg-bg px-2"
-        style="grid-template-columns: {gridTemplateCols}"
-      >
-        {#if canMutate}
-          <div class="flex items-center justify-center {columnStore.compact ? 'py-1' : 'py-2'}">
-            <button
-              type="button"
-              onclick={() => {
-                if (allVisibleSelected) {
-                  selectionStore.deselectAll()
-                } else {
-                  selectionStore.selectAll(filteredKeys, filteredItemsByKey)
-                }
-              }}
-              class="w-4 h-4 rounded border border-border flex items-center justify-center hover:border-accent transition-colors
-                {allVisibleSelected || someVisibleSelected ? 'bg-accent border-accent' : ''}"
-              aria-label={allVisibleSelected ? 'Deselect all' : 'Select all'}
-            >
-              {#if allVisibleSelected}
-                <Check size={10} class="text-accent-fg" />
-              {:else if someVisibleSelected}
-                <Minus size={10} class="text-accent-fg" />
-              {/if}
-            </button>
-          </div>
-        {/if}
-        {#each columnStore.visibleColumns as col, i}
-          <div class="relative" data-header-col={col.name}>
-            <button
-              type="button"
-              onclick={() => toggleSort(col.name)}
-              class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {columnStore.compact ? 'py-1' : 'py-2'}"
-            >
-              {col.name}
-              {#if columnStore.sortState?.column === col.name}
-                {#if columnStore.sortState.direction === 'asc'}
-                  <ArrowUp size={10} />
-                {:else}
-                  <ArrowDown size={10} />
-                {/if}
-              {:else}
-                <ArrowUpDown size={10} class="opacity-30" />
-              {/if}
-            </button>
-            {#if i < columnStore.visibleColumns.length - 1}
-              <!-- svelte-ignore a11y_no_static_element_interactions -->
-              <div
-                class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-border/50 hover:bg-accent/70 z-20"
-                onmousedown={(e) => startResize(e, col)}
-                ondblclick={() => autoFit(col.name)}
-              ></div>
-            {/if}
-          </div>
-        {/each}
-        {#each pluginColumns as pcol (pcol.id)}
-          <div class="py-2 px-1">{pcol.label}</div>
-        {/each}
-        {#each sparklineColumns as scol}
-          <div class="py-2 px-1">{scol}</div>
-        {/each}
-        <div></div>
+  {#snippet headerPrefix()}
+    {#if canMutate}
+      <div class="flex items-center justify-center {columnStore.compact ? 'py-1' : 'py-2'}">
+        <button
+          type="button"
+          onclick={() => {
+            if (allVisibleSelected) {
+              selectionStore.deselectAll()
+            } else {
+              selectionStore.selectAll(filteredKeys, filteredItemsByKey)
+            }
+          }}
+          class="w-4 h-4 rounded border border-border flex items-center justify-center hover:border-accent transition-colors
+            {allVisibleSelected || someVisibleSelected ? 'bg-accent border-accent' : ''}"
+          aria-label={allVisibleSelected ? 'Deselect all' : 'Select all'}
+        >
+          {#if allVisibleSelected}
+            <Check size={10} class="text-accent-fg" />
+          {:else if someVisibleSelected}
+            <Minus size={10} class="text-accent-fg" />
+          {/if}
+        </button>
       </div>
-      {#if loading}
-        <div class="flex items-center justify-center py-12 text-sm text-muted">Loading...</div>
-      {:else if filtered.length === 0}
-        <div class="flex items-center justify-center py-12 text-sm text-muted">No resources found</div>
-      {:else}
-        <div style="height: {$virtualizer.getTotalSize()}px; position: relative;">
-          {#each $virtualizer.getVirtualItems() as row (row.index)}
-            {@const item = filtered[row.index]}
-            {@const isSelected = selectedName === `${item.metadata?.name ?? ''}/${item.metadata?.namespace ?? ''}`}
-            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-            <div
-              class="absolute top-0 left-0 min-w-full flex items-center px-2 transition-colors group
-                {isSelected ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-surface-hover border-l-2 border-transparent'}
-                {onselect ? 'cursor-pointer' : ''}"
-              style="transform: translateY({row.start}px); height: {rowHeight}px;"
-              tabindex={onselect ? 0 : undefined}
-              onclick={() => onselect?.(item)}
-              onkeydown={(e) => { if (e.key === 'Enter') { onselect?.(item); } }}
-              oncontextmenu={(e) => { e.preventDefault(); e.stopPropagation(); ctxMenu = { x: e.clientX, y: e.clientY, item } }}
+    {/if}
+  {/snippet}
+
+  {#snippet headerSuffix()}
+    {#each pluginColumns as pcol (pcol.id)}
+      <div class="{columnStore.compact ? 'py-1' : 'py-2'} px-1">{pcol.label}</div>
+    {/each}
+    {#each sparklineColumns as scol}
+      <div class="{columnStore.compact ? 'py-1' : 'py-2'} px-1">{scol}</div>
+    {/each}
+    <div></div>
+  {/snippet}
+
+  {#snippet rowPrefix({ item })}
+    {#if canMutate}
+      {@const key = itemKey(item)}
+      <div class="flex items-center justify-center" onclick={(e) => e.stopPropagation()} role="none">
+        <button
+          type="button"
+          onclick={(e) => {
+            e.stopPropagation()
+            if (e.shiftKey) {
+              selectionStore.selectRange(key, filteredKeys, filteredItemsByKey)
+            } else {
+              selectionStore.toggle(key, item)
+            }
+          }}
+          class="w-4 h-4 rounded border border-border flex items-center justify-center hover:border-accent transition-colors
+            {selectionStore.isSelected(key) ? 'bg-accent border-accent' : ''}"
+          aria-label={selectionStore.isSelected(key) ? 'Deselect' : 'Select'}
+        >
+          {#if selectionStore.isSelected(key)}
+            <Check size={10} class="text-accent-fg" />
+          {/if}
+        </button>
+      </div>
+    {/if}
+  {/snippet}
+
+  {#snippet cell({ item, column })}
+    {@const col = getColumnDef(column.name)}
+    {#if col}
+      {@const value = renderCell(col, item)}
+      {#if col.name === 'Namespace'}
+        <button
+          type="button"
+          class="hover:text-accent cursor-pointer truncate text-left"
+          onclick={(e) => { e.stopPropagation(); clusterStore.setNamespaces(contextName, [String(value)]) }}
+        >
+          {renderValue(value, col.renderType)}
+        </button>
+      {:else if col.renderType === 'controlledBy'}
+        {@const ref = getControllerRef(item)}
+        {#if ref}
+          {#if onopenowner && clusterStore.resolveOwnerGVR(ref.apiVersion, ref.kind)}
+            <button
+              type="button"
+              class="text-accent hover:underline cursor-pointer"
+              title="{ref.kind}/{ref.name}"
+              onclick={(e) => { e.stopPropagation(); onopenowner?.(ref, item.metadata?.namespace ?? '') }}
             >
-              <div class="grid flex-1" style="grid-template-columns: {gridTemplateCols}">
-                {#if canMutate}
-                  {@const key = itemKey(item)}
-                  <div class="flex items-center justify-center" onclick={(e) => e.stopPropagation()} role="none">
-                    <button
-                      type="button"
-                      onclick={(e) => {
-                        e.stopPropagation()
-                        if (e.shiftKey) {
-                          selectionStore.selectRange(key, filteredKeys, filteredItemsByKey)
-                        } else {
-                          selectionStore.toggle(key, item)
-                        }
-                      }}
-                      class="w-4 h-4 rounded border border-border flex items-center justify-center hover:border-accent transition-colors
-                        {selectionStore.isSelected(key) ? 'bg-accent border-accent' : ''}"
-                      aria-label={selectionStore.isSelected(key) ? 'Deselect' : 'Select'}
-                    >
-                      {#if selectionStore.isSelected(key)}
-                        <Check size={10} class="text-accent-fg" />
-                      {/if}
-                    </button>
-                  </div>
-                {/if}
-                {#each columnStore.visibleColumns as col, i}
-                  {@const value = renderCell(col, item)}
-                  <div
-                    class="px-1 truncate text-sm {alignClass(col)}
-                      {col.name === 'Namespace' ? 'cursor-pointer hover:text-accent' : ''}"
-                    data-col={col.name}
-                    onclick={col.name === 'Namespace' ? (e) => { e.stopPropagation(); clusterStore.setNamespaces(contextName, [String(value)]) } : undefined}
-                  >
-                    {#if col.renderType === 'controlledBy'}
-                      {@const ref = getControllerRef(item)}
-                      {#if ref}
-                        {#if onopenowner && clusterStore.resolveOwnerGVR(ref.apiVersion, ref.kind)}
-                          <button
-                            type="button"
-                            class="text-accent hover:underline cursor-pointer"
-                            title="{ref.kind}/{ref.name}"
-                            onclick={(e) => { e.stopPropagation(); onopenowner?.(ref, item.metadata?.namespace ?? '') }}
-                          >
-                            {ref.kind}
-                          </button>
-                        {:else}
-                          <span title="{ref.kind}/{ref.name}">{ref.kind}</span>
-                        {/if}
-                      {/if}
-                    {:else if col.renderType === 'badge'}
-                      <span class="px-1.5 py-0.5 text-xs rounded border {badgeClass(value)}" title={renderValue(value, col.renderType)}>
-                        {renderValue(value, col.renderType)}
-                      </span>
-                    {:else}
-                      <span class={col.renderType === 'age' ? 'text-muted' : ''} title={renderValue(value, col.renderType)}>
-                        {renderValue(value, col.renderType)}
-                      </span>
-                    {/if}
-                  </div>
-                {/each}
-                {#each pluginColumns as pcol (pcol.id)}
-                  <div class="px-1 flex items-center overflow-hidden text-sm">
-                    {#if basePluginURL}
-                      {#await loadPluginComponent(pcol.pluginName, pcol.component, basePluginURL) then Cmp}
-                        {#if Cmp}
-                          <Cmp resource={item} />
-                        {/if}
-                      {/await}
-                    {/if}
-                  </div>
-                {/each}
-                {#each sparklineColumns as scol}
-                  <div class="px-1 flex items-center overflow-hidden">
-                    {#if tooManyForSparklines}
-                      <span class="text-xs text-muted" title="Sparklines disabled for >200 resources">Too many</span>
-                    {:else}
-                      {@const pts = getSparklinePoints(item.metadata?.name ?? '', scol)}
-                      {#if pts.length > 0}
-                        <Sparkline points={pts} height={20} />
-                      {:else}
-                        <div style="height: 20px;"></div>
-                      {/if}
-                    {/if}
-                  </div>
-                {/each}
-                <div class="flex items-center justify-end gap-1">
-                  {#if rowActions}
-                    {#each rowActions(item) as action}
-                      <button
-                        type="button"
-                        onclick={(e) => { e.stopPropagation(); action.onClick() }}
-                        class="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-all {action.variant === 'destructive' ? 'hover:text-destructive' : 'hover:text-fg'}"
-                        title={action.label}
-                        aria-label={action.label}
-                      >
-                        {#if action.icon}
-                          <action.icon size={13} />
-                        {:else}
-                          <span class="text-xs">{action.label}</span>
-                        {/if}
-                      </button>
-                    {/each}
-                  {:else if canMutate}
-                    <button
-                      type="button"
-                      onclick={(e) => { e.stopPropagation(); requestDelete(item) }}
-                      class="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-destructive transition-all"
-                      title="Delete"
-                      aria-label="Delete {item.metadata?.name}"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  {/if}
-                </div>
-              </div>
-            </div>
-          {/each}
-        </div>
+              {ref.kind}
+            </button>
+          {:else}
+            <span title="{ref.kind}/{ref.name}">{ref.kind}</span>
+          {/if}
+        {/if}
+      {:else if col.renderType === 'badge'}
+        <span class="px-1.5 py-0.5 text-xs rounded border {badgeClass(value)}" title={renderValue(value, col.renderType)}>
+          {renderValue(value, col.renderType)}
+        </span>
+      {:else}
+        <span class={col.renderType === 'age' ? 'text-muted' : ''} title={renderValue(value, col.renderType)}>
+          {renderValue(value, col.renderType)}
+        </span>
+      {/if}
+    {/if}
+  {/snippet}
+
+  {#snippet rowSuffix({ item })}
+    {#each pluginColumns as pcol (pcol.id)}
+      <div class="px-1 flex items-center overflow-hidden text-sm">
+        {#if basePluginURL}
+          {#await loadPluginComponent(pcol.pluginName, pcol.component, basePluginURL) then Cmp}
+            {#if Cmp}
+              <Cmp resource={item} />
+            {/if}
+          {/await}
+        {/if}
+      </div>
+    {/each}
+    {#each sparklineColumns as scol}
+      <div class="px-1 flex items-center overflow-hidden">
+        {#if tooManyForSparklines}
+          <span class="text-xs text-muted" title="Sparklines disabled for >200 resources">Too many</span>
+        {:else}
+          {@const pts = getSparklinePoints(item.metadata?.name ?? '', scol)}
+          {#if pts.length > 0}
+            <Sparkline points={pts} height={20} />
+          {:else}
+            <div style="height: 20px;"></div>
+          {/if}
+        {/if}
+      </div>
+    {/each}
+    <div class="flex items-center justify-end gap-1">
+      {#if rowActions}
+        {#each rowActions(item) as action}
+          <button
+            type="button"
+            onclick={(e) => { e.stopPropagation(); action.onClick() }}
+            class="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-all {action.variant === 'destructive' ? 'hover:text-destructive' : 'hover:text-fg'}"
+            title={action.label}
+            aria-label={action.label}
+          >
+            {#if action.icon}
+              <action.icon size={13} />
+            {:else}
+              <span class="text-xs">{action.label}</span>
+            {/if}
+          </button>
+        {/each}
+      {:else if canMutate}
+        <button
+          type="button"
+          onclick={(e) => { e.stopPropagation(); requestDelete(item) }}
+          class="p-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-destructive transition-all"
+          title="Delete"
+          aria-label="Delete {item.metadata?.name}"
+        >
+          <Trash2 size={13} />
+        </button>
       {/if}
     </div>
-  {/if}
-</div>
+  {/snippet}
+</DataTable>
 
 {#if ctxMenu}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
