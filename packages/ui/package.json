@@ -37,6 +37,7 @@
     "@xterm/addon-fit": ">=0.10",
     "@xterm/addon-webgl": ">=0.18",
     "@xterm/addon-clipboard": ">=0.1",
+    "@codemirror/lint": ">=6",
     "@codemirror/merge": ">=6",
     "codemirror-json-schema": ">=0.7",
     "codemirror-yaml-completion": "workspace:*",

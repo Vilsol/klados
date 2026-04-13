@@ -2,10 +2,13 @@
   import {Dialog} from "bits-ui";
   import {Combobox, cmYamlExtensions} from "@klados/ui";
   import {onDestroy} from "svelte";
-  import {EditorView} from "@codemirror/view";
+  import {EditorView, hoverTooltip} from "@codemirror/view";
   import {EditorState} from "@codemirror/state";
-  import {yamlSchema} from "codemirror-json-schema/yaml";
+  import {linter} from "@codemirror/lint";
+  import {yamlSchemaLinter, yamlSchemaHover} from "codemirror-json-schema/yaml";
+  import {stateExtensions, handleRefresh} from "codemirror-json-schema";
   import {yamlSchemaCompletion} from "codemirror-yaml-completion";
+  import {yaml as yamlLang} from "@codemirror/lang-yaml";
   import {parse} from "yaml";
   import {
     GetAllTemplateGVRs,
@@ -65,7 +68,13 @@
         selection: {anchor: cursorPos},
         extensions: [
           ...cmYamlExtensions({
-            lang: schema ? [yamlSchema(schema), yamlSchemaCompletion(schema)] : undefined,
+            lang: schema ? [
+              yamlLang(),
+              linter(yamlSchemaLinter(), {needsRefresh: handleRefresh}),
+              hoverTooltip(yamlSchemaHover()),
+              stateExtensions(schema),
+              yamlSchemaCompletion(schema),
+            ] : undefined,
           }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {

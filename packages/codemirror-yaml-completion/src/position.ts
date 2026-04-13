@@ -128,14 +128,16 @@ function resolveByIndent(
         const keyRange = (pair.key as any).range as [number, number, number] | undefined
         if (!keyRange || keyRange[0] > pos) continue
 
+        const keyName = String((pair.key as any).value)
+
         // Check if this pair's value is already a map we've collected
         const hasChildMap = maps.some(
           (child) =>
-            child.pointer === (m.pointer ? m.pointer + '/' + String(pair.key.value) : '/' + String(pair.key.value))
+            child.pointer === (m.pointer ? m.pointer + '/' + keyName : '/' + keyName)
         )
 
         if (!hasChildMap && keyRange[0] > closestKeyPos) {
-          closestKey = String(pair.key.value)
+          closestKey = keyName
           closestKeyPos = keyRange[0]
         }
       }

@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
   import { Dialog } from 'bits-ui'
-  import { EditorView, tooltips } from '@codemirror/view'
+  import { EditorView, tooltips, hoverTooltip } from '@codemirror/view'
   import { EditorState, StateEffect, Compartment } from '@codemirror/state'
-  import { yamlSchema } from 'codemirror-json-schema/yaml'
+  import { linter } from '@codemirror/lint'
+  import { yamlSchemaLinter, yamlSchemaHover } from 'codemirror-json-schema/yaml'
+  import { stateExtensions, handleRefresh } from 'codemirror-json-schema'
   import { yamlSchemaCompletion } from 'codemirror-yaml-completion'
   import { yaml as yamlLang } from '@codemirror/lang-yaml'
   import { stringify, parse } from 'yaml'
@@ -101,7 +103,13 @@
 
   function safeSchemaExtensions(s: Record<string, any>) {
     try {
-      return [yamlSchema(s as any), yamlSchemaCompletion(s as any)]
+      return [
+        yamlLang(),
+        linter(yamlSchemaLinter(), { needsRefresh: handleRefresh }),
+        hoverTooltip(yamlSchemaHover()),
+        stateExtensions(s as any),
+        yamlSchemaCompletion(s as any),
+      ]
     } catch {
       return yamlLang()
     }

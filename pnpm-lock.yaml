@@ -126,6 +126,9 @@ importers:
       '@codemirror/legacy-modes':
         specifier: ^6.5.2
         version: 6.5.2
+      '@codemirror/lint':
+        specifier: ^6
+        version: 6.9.5
       '@codemirror/merge':
         specifier: ^6.12.1
         version: 6.12.1
@@ -311,6 +314,9 @@ importers:
       '@codemirror/legacy-modes':
         specifier: '>=6'
         version: 6.5.2
+      '@codemirror/lint':
+        specifier: '>=6'
+        version: 6.9.5
       '@codemirror/merge':
         specifier: '>=6'
         version: 6.12.1
