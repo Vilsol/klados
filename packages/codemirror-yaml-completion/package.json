@@ -1,0 +1,33 @@
+{
+  "name": "codemirror-yaml-completion",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@codemirror/autocomplete": ">=6",
+    "@codemirror/state": ">=6",
+    "@codemirror/lang-yaml": ">=6",
+    "json-schema-library": ">=9"
+  },
+  "dependencies": {
+    "yaml": "^2.8.0"
+  },
+  "devDependencies": {
+    "vitest": "^4",
+    "@codemirror/autocomplete": "^6",
+    "@codemirror/state": "^6",
+    "@codemirror/language": "^6",
+    "@codemirror/lang-yaml": "^6",
+    "json-schema-library": "^9",
+    "json-schema": "^0.4"
+  }
+}

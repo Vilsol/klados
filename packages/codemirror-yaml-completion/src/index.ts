@@ -1,0 +1,1 @@
+export { yamlSchemaCompletion } from './completion'
