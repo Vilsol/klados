@@ -6,13 +6,14 @@ import {
   highlightActiveLineGutter,
   tooltips,
 } from '@codemirror/view'
-import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
+import { defaultKeymap, history, historyKeymap, indentMore, indentLess } from '@codemirror/commands'
 import { yaml as yamlLang } from '@codemirror/lang-yaml'
 import { searchKeymap, search } from '@codemirror/search'
 import { syntaxHighlighting, foldGutter, foldKeymap } from '@codemirror/language'
 import { oneDarkHighlightStyle } from '@codemirror/theme-one-dark'
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
-import type { Extension } from '@codemirror/state'
+import { type Extension, Prec } from '@codemirror/state'
+import { ViewPlugin } from '@codemirror/view'
 import { rainbowIndent, rainbowIndentTheme } from './cm-rainbow-indent'
 
 export const cmEditorTheme = EditorView.theme({
@@ -59,7 +60,26 @@ export function cmYamlExtensions(opts?: {
     syntaxHighlighting(oneDarkHighlightStyle),
     opts?.lang ?? yamlLang(),
     search({ top: true }),
-    keymap.of([...closeBracketsKeymap, ...completionKeymap, indentWithTab, ...defaultKeymap, ...historyKeymap, ...searchKeymap, ...foldKeymap]),
+    keymap.of([...closeBracketsKeymap, ...completionKeymap, ...defaultKeymap, ...historyKeymap, ...searchKeymap, ...foldKeymap]),
+    ViewPlugin.define((view) => {
+      const handler = (e: KeyboardEvent) => {
+        if (e.key === 'Tab' && view.hasFocus) {
+          e.preventDefault()
+          e.stopImmediatePropagation()
+          if (e.shiftKey) {
+            indentLess(view)
+          } else {
+            indentMore(view)
+          }
+        }
+      }
+      view.dom.ownerDocument.addEventListener('keydown', handler, true)
+      return {
+        destroy() {
+          view.dom.ownerDocument.removeEventListener('keydown', handler, true)
+        },
+      }
+    }),
     tooltips({ parent: document.body }),
     cmEditorTheme,
   ]
