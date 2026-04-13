@@ -5,7 +5,7 @@
   import {EditorView} from "@codemirror/view";
   import {EditorState} from "@codemirror/state";
   import {yamlSchema} from "codemirror-json-schema/yaml";
-  import {yamlLanguage} from "@codemirror/lang-yaml";
+  import {yamlSchemaCompletion} from "codemirror-yaml-completion";
   import {parse} from "yaml";
   import {
     GetAllTemplateGVRs,
@@ -64,34 +64,13 @@
         doc,
         selection: {anchor: cursorPos},
         extensions: [
-          ...cmYamlExtensions({lang: schema ? yamlSchema(schema) : undefined}),
+          ...cmYamlExtensions({
+            lang: schema ? [yamlSchema(schema), yamlSchemaCompletion(schema)] : undefined,
+          }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
               editorDirty = true;
             }
-          }),
-          // Debug: log whether Ctrl+Space reaches CodeMirror and whether completion sources are called
-          EditorView.domEventHandlers({
-            keydown(event) {
-              if (event.key === " " && event.ctrlKey) {
-                log.info("[key-debug] Ctrl+Space reached CodeMirror DOM", {
-                  key: event.key,
-                  code: event.code,
-                  ctrlKey: event.ctrlKey,
-                  defaultPrevented: event.defaultPrevented,
-                });
-              }
-              return false;
-            },
-          }),
-          yamlLanguage.data.of({
-            autocomplete: (ctx: import("@codemirror/autocomplete").CompletionContext) => {
-              log.info("[completion-debug] yamlLanguage completion source called", {
-                pos: ctx.pos,
-                explicit: ctx.explicit,
-              });
-              return null;
-            },
           }),
         ],
       }),

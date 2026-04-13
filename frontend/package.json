@@ -41,6 +41,7 @@
     "cel-js": "^0.8.2",
     "codemirror": "^6.0.2",
     "codemirror-json-schema": "^0.8.1",
+    "codemirror-yaml-completion": "workspace:*",
     "lucide-svelte": "^1",
     "stacktrace-js": "^2.0.2",
     "strip-ansi": "^7.2.0",

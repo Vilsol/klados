@@ -4,6 +4,7 @@
   import { EditorView, tooltips } from '@codemirror/view'
   import { EditorState, StateEffect, Compartment } from '@codemirror/state'
   import { yamlSchema } from 'codemirror-json-schema/yaml'
+  import { yamlSchemaCompletion } from 'codemirror-yaml-completion'
   import { yaml as yamlLang } from '@codemirror/lang-yaml'
   import { stringify, parse } from 'yaml'
   import DiffView from './DiffView.svelte'
@@ -100,7 +101,7 @@
 
   function safeSchemaExtensions(s: Record<string, any>) {
     try {
-      return yamlSchema(s as any)
+      return [yamlSchema(s as any), yamlSchemaCompletion(s as any)]
     } catch {
       return yamlLang()
     }

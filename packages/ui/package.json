@@ -39,6 +39,7 @@
     "@xterm/addon-clipboard": ">=0.1",
     "@codemirror/merge": ">=6",
     "codemirror-json-schema": ">=0.7",
+    "codemirror-yaml-completion": "workspace:*",
     "yaml": ">=2"
   },
   "devDependencies": {
