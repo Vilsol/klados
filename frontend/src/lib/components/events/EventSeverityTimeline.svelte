@@ -34,15 +34,15 @@
   let brushStart = $state<number | null>(null);
   let brushEnd = $state<number | null>(null);
   let hoverIdx = $state<number | null>(null);
-  let hoverX = $state(0);
+  let hoverPxX = $state(0);
   let containerEl = $state<HTMLDivElement | undefined>(undefined);
   let svgEl = $state<SVGSVGElement | undefined>(undefined);
 
   const tooltipLeft = $derived.by(() => {
     const w = containerEl?.clientWidth ?? 0;
-    const desired = hoverX + 8;
-    const maxLeft = Math.max(0, w - 160);
-    return Math.min(desired, maxLeft);
+    const desired = hoverPxX + 8;
+    const maxLeft = Math.max(0, w - 180);
+    return Math.min(Math.max(desired, 0), maxLeft);
   });
 
   const H = 40;
@@ -60,28 +60,33 @@
     return `${pad(t0.getHours())}:${pad(t0.getMinutes())}–${pad(t1.getHours())}:${pad(t1.getMinutes())}`;
   }
 
-  function bucketIndexFromEvent(e: MouseEvent): number | null {
-    if (!svgEl) return null;
-    const rect = svgEl.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const svgX = (x / rect.width) * svgWidth;
-    const idx = Math.floor(svgX / BAR_W);
-    if (idx < 0 || idx >= filteredBuckets.length) return null;
+  function pickBucketAtX(x: number, rectWidth: number): number | null {
+    const bucketCount = filteredBuckets.length;
+    if (bucketCount === 0) return null;
+    const cssBucketW = rectWidth / bucketCount;
+    const idx = Math.floor(x / cssBucketW);
+    if (idx < 0 || idx >= bucketCount) return null;
     return idx;
   }
 
   function onSvgMouseDown(e: MouseEvent) {
-    const i = bucketIndexFromEvent(e);
+    if (!svgEl) return;
+    const rect = svgEl.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const i = pickBucketAtX(x, rect.width);
     if (i === null) return;
     brushStart = i;
     brushEnd = i;
   }
 
   function onSvgMouseMove(e: MouseEvent) {
-    const i = bucketIndexFromEvent(e);
+    if (!svgEl) return;
+    const rect = svgEl.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    hoverPxX = x;
+    const i = pickBucketAtX(x, rect.width);
     if (i === null) return;
     hoverIdx = i;
-    hoverX = i * BAR_W;
     if (brushStart !== null) brushEnd = i;
   }
 
@@ -95,11 +100,16 @@
     brushEnd = null;
   }
 
+  $effect(() => {
+    const handler = () => onSvgMouseUp();
+    window.addEventListener("mouseup", handler);
+    return () => window.removeEventListener("mouseup", handler);
+  });
+
   const svgWidth = $derived(filteredBuckets.length * BAR_W);
 
   const selectedRange = $derived.by(() => {
     if (!selectedWindow) return null;
-    // Buckets overlap [selectedWindow.from, selectedWindow.to) when bucket.t1 > from AND bucket.t0 < to
     let startIdx = -1;
     let endIdx = -1;
     for (let i = 0; i < filteredBuckets.length; i++) {
@@ -118,7 +128,7 @@
   bind:this={containerEl}
   class="relative border-b border-border"
   style="height: {H}px;"
-  onmouseleave={() => { hoverIdx = null; }}
+  onmouseleave={() => { hoverIdx = null; hoverPxX = 0; }}
   role="presentation"
 >
   <svg
@@ -146,6 +156,32 @@
         <rect x={i * BAR_W} y={H - warnH - normalH} width={BAR_W - 1} height={normalH} class="fill-muted" opacity="0.6" />
       </g>
     {/each}
+
+    {#if hoverIdx !== null && brushStart === null}
+      <rect
+        x={hoverIdx * BAR_W}
+        y="0"
+        width={BAR_W}
+        height={H}
+        class="fill-fg"
+        opacity="0.08"
+        pointer-events="none"
+      />
+    {/if}
+
+    {#if brushStart !== null && brushEnd !== null}
+      {@const a = Math.min(brushStart, brushEnd)}
+      {@const b = Math.max(brushStart, brushEnd)}
+      <rect
+        x={a * BAR_W}
+        y="0"
+        width={(b - a + 1) * BAR_W}
+        height={H}
+        class="fill-accent"
+        opacity="0.3"
+        pointer-events="none"
+      />
+    {/if}
 
     {#if selectedRange}
       <rect
