@@ -1,145 +1,363 @@
 <script lang="ts">
-  import {onDestroy} from "svelte";
+  import {untrack} from "svelte";
+  import {DetailDrawer} from "@klados/ui";
   import {createResourceStore} from "$lib/stores/resource.svelte";
   import {clusterStore} from "$lib/stores/cluster.svelte";
+  import {descriptorRegistry} from "$lib/registry/index";
+  import {registryLoaded} from "$lib/registry/loaded.svelte";
+  import {columnStore} from "$lib/stores/columns.svelte";
+  import {notificationStore} from "$lib/stores/notification.svelte";
+  import {GetResource} from "../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import DataTable, {type DataTableColumn} from "$lib/components/DataTable.svelte";
+  import ColumnMenu from "$lib/components/ColumnMenu.svelte";
+  import ResourceDetail from "$lib/components/ResourceDetail.svelte";
+  import EventToolbar from "$lib/components/events/EventToolbar.svelte";
+  import EventSeverityTimeline from "$lib/components/events/EventSeverityTimeline.svelte";
+  import EventDetailPanel from "$lib/components/events/EventDetailPanel.svelte";
+  import {
+    classifySeverity,
+    rowReason,
+    rowMessage,
+    rowCount,
+    rowLastSeen,
+    rowFirstSeen,
+    rowInvolvedObject,
+    rowSample,
+    formatObject,
+    eventTimestamp,
+  } from "$lib/event/event-columns";
+  import {groupEvents} from "$lib/event/event-grouping";
+  import {isGrouped, type EventItem, type EventRow, type InvolvedObjectRef} from "$lib/event/event-types";
   import {formatAge} from "$lib/utils/age";
-  import {RefreshCw} from "lucide-svelte";
+  import type {ControllerRef} from "$lib/utils/relationships";
+  import EventTypeBadge from "$lib/event/EventTypeBadge.svelte";
 
   let {params = {}}: {params?: Record<string, string>} = $props();
 
   const ctxName = $derived(params.ctx ?? "");
-
-  $effect(() => {
-    if (ctxName) {
-      clusterStore.setActiveContext(ctxName);
-    }
-  });
-
-  const store = createResourceStore();
   const EVENTS_GVR = "core.v1.events";
 
+  $effect(() => { if (ctxName) clusterStore.setActiveContext(ctxName); });
+  $effect(() => { columnStore.loadForGVR(EVENTS_GVR); });
+
+  const store = createResourceStore();
+  const selectedNs = $derived(clusterStore.getSelectedNamespaces(ctxName));
+  const watchNamespace = $derived(selectedNs.length === 1 ? selectedNs[0] : "");
+
   $effect(() => {
-    if (ctxName) {
-      store.start(ctxName, EVENTS_GVR, "");
-    }
+    if (ctxName) store.start(ctxName, EVENTS_GVR, watchNamespace);
     return () => store.stop();
   });
 
   let showWarning = $state(true);
   let showNormal = $state(true);
-  let reasonFilter = $state("");
+  let selectedKinds = $state<string[]>([]);
+  let selectedReasons = $state<string[]>([]);
+  let search = $state("");
+  let grouped = $state(false);
+  let timeWindow = $state<{from: number; to: number} | null>(null);
+  const rangeMs = 30 * 60_000;
 
-  const selectedNs = $derived(clusterStore.getSelectedNamespaces(ctxName));
+  let listScrollContainer = $state<HTMLDivElement | undefined>();
+  let paused = $state(false);
+
+  let selectedEvent = $state<EventRow | null>(null);
+  let selectedInvolvedItem = $state<Record<string, unknown> | null>(null);
+  let selectedInvolvedGVR = $state<string>("");
+
+  let columnMenuOpen = $state(false);
 
   let now = $state(Date.now());
-  const ticker = setInterval(() => {
-    now = Date.now();
-  }, 1000);
-  onDestroy(() => clearInterval(ticker));
+  $effect(() => {
+    const id = setInterval(() => { now = Date.now(); }, 1000);
+    return () => clearInterval(id);
+  });
 
-  const filtered = $derived.by(() =>
-    store.items
-      .filter((e) => {
-        const type = e.type ?? "Normal";
-        if (type === "Warning" && !showWarning) {
-          return false;
-        }
-        if (type === "Normal" && !showNormal) {
-          return false;
-        }
-        if (reasonFilter && !(e.reason ?? "").toLowerCase().includes(reasonFilter.toLowerCase())) {
-          return false;
-        }
-        if (selectedNs.length > 0 && !selectedNs.includes(e.metadata?.namespace ?? "")) {
-          return false;
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        const ta = a.lastTimestamp ?? a.eventTime ?? a.metadata?.creationTimestamp ?? "";
-        const tb = b.lastTimestamp ?? b.eventTime ?? b.metadata?.creationTimestamp ?? "";
-        return tb.localeCompare(ta);
-      }),
+  $effect(() => {
+    if (!columnMenuOpen) return;
+    const close = () => { columnMenuOpen = false; };
+    const timer = setTimeout(() => window.addEventListener("click", close, {once: true}), 0);
+    return () => { clearTimeout(timer); window.removeEventListener("click", close); };
+  });
+
+  const rawItems = $derived(store.items as unknown as EventItem[]);
+
+  const nsFiltered = $derived(
+    selectedNs.length > 0
+      ? rawItems.filter((e) => selectedNs.includes(e.metadata?.namespace ?? ""))
+      : rawItems,
+  );
+  const severityFiltered = $derived(
+    nsFiltered.filter((e) => {
+      const sev = classifySeverity(e);
+      return sev === "Warning" ? showWarning : showNormal;
+    }),
+  );
+  const kindFiltered = $derived(
+    selectedKinds.length === 0
+      ? severityFiltered
+      : severityFiltered.filter((e) => selectedKinds.includes(e.involvedObject?.kind ?? "")),
+  );
+  const reasonFiltered = $derived(
+    selectedReasons.length === 0
+      ? kindFiltered
+      : kindFiltered.filter((e) => selectedReasons.includes(e.reason ?? "")),
+  );
+  const searchFiltered = $derived.by(() => {
+    if (!search.trim()) return reasonFiltered;
+    const needle = search.toLowerCase();
+    return reasonFiltered.filter((e) => {
+      return (
+        (e.reason ?? "").toLowerCase().includes(needle) ||
+        (e.message ?? "").toLowerCase().includes(needle) ||
+        (e.involvedObject?.name ?? "").toLowerCase().includes(needle)
+      );
+    });
+  });
+  const windowFiltered = $derived.by(() => {
+    if (!timeWindow) return searchFiltered;
+    return searchFiltered.filter((e) => {
+      const ts = Date.parse(eventTimestamp(e));
+      return Number.isFinite(ts) && ts >= timeWindow!.from && ts < timeWindow!.to;
+    });
+  });
+
+  const sortedItems = $derived.by(() => {
+    const copy = [...windowFiltered];
+    copy.sort((a, b) => {
+      const ta = eventTimestamp(a);
+      const tb = eventTimestamp(b);
+      if (ta !== tb) return tb.localeCompare(ta);
+      return (a.metadata?.uid ?? "").localeCompare(b.metadata?.uid ?? "");
+    });
+    return copy;
+  });
+
+  const rows: EventRow[] = $derived(
+    grouped ? (groupEvents(sortedItems) as EventRow[]) : (sortedItems as EventRow[]),
+  );
+
+  const availableKinds = $derived.by(() => {
+    const s = new Set<string>();
+    for (const e of rawItems) {
+      const k = e.involvedObject?.kind;
+      if (k) s.add(k);
+    }
+    return Array.from(s).sort();
+  });
+  const availableReasons = $derived.by(() => {
+    const s = new Set<string>();
+    for (const e of rawItems) {
+      if (e.reason) s.add(e.reason);
+    }
+    return Array.from(s).sort();
+  });
+
+  const warningCount = $derived(windowFiltered.filter((e) => classifySeverity(e) === "Warning").length);
+
+  const dataTableColumns = $derived<DataTableColumn[]>(
+    columnStore.visibleColumns.map((c) => ({
+      name: c.name,
+      width: c.width,
+    })),
+  );
+
+  function cellText(row: EventRow, name: string): string {
+    switch (name) {
+      case "Reason":     return rowReason(row);
+      case "Object":     return formatObject(rowInvolvedObject(row));
+      case "Message":    return rowMessage(row);
+      case "Count":      return String(rowCount(row));
+      case "Namespace":  return rowInvolvedObject(row).namespace;
+      case "Source":     return rowSample(row).source?.component ?? "";
+      default:           return "";
+    }
+  }
+
+  function rowKey(row: EventRow): string {
+    if (isGrouped(row)) return row.key;
+    return (row as EventItem).metadata?.uid ?? `${(row as EventItem).reason ?? ""}/${(row as EventItem).metadata?.name ?? ""}`;
+  }
+
+  function openEvent(row: EventRow) {
+    selectedEvent = row;
+    selectedInvolvedItem = null;
+    selectedInvolvedGVR = "";
+  }
+  async function openInvolvedObject(ref: InvolvedObjectRef, gvr: string) {
+    try {
+      const obj = await GetResource(ctxName, gvr, ref.namespace, ref.name);
+      if (obj) {
+        selectedInvolvedItem = obj as Record<string, unknown>;
+        selectedInvolvedGVR = gvr;
+      }
+    } catch {
+      notificationStore.push("Involved object not found", "error");
+    }
+  }
+  async function openOwnerDrawer(ref: ControllerRef, namespace: string) {
+    const ownerGVR = clusterStore.resolveOwnerGVR(ref.apiVersion, ref.kind);
+    if (!ownerGVR) return;
+    try {
+      const owner = await GetResource(ctxName, ownerGVR, namespace, ref.name);
+      if (owner) {
+        selectedInvolvedItem = owner as Record<string, unknown>;
+        selectedInvolvedGVR = ownerGVR;
+      }
+    } catch {
+      notificationStore.push("Owner resource not found", "error");
+    }
+  }
+  function closeDrawer() {
+    selectedEvent = null;
+    selectedInvolvedItem = null;
+    selectedInvolvedGVR = "";
+  }
+
+  function onScroll() {
+    const el = listScrollContainer;
+    if (!el) return;
+    paused = el.scrollTop > 20;
+  }
+  $effect(() => {
+    const el = listScrollContainer;
+    if (!el) return;
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
+  });
+  function jumpToLatest() {
+    listScrollContainer?.scrollTo({top: 0, behavior: "smooth"});
+  }
+
+  const drawerOpen = $derived(selectedEvent !== null || selectedInvolvedItem !== null);
+
+  const drawerItem = $derived.by(() => {
+    if (selectedInvolvedItem) return selectedInvolvedItem;
+    if (selectedEvent) return rowSample(selectedEvent) as Record<string, unknown>;
+    return null;
+  });
+
+  const drawerGVR = $derived(selectedInvolvedGVR || EVENTS_GVR);
+
+  const selectedDescriptor = $derived(
+    selectedInvolvedGVR && registryLoaded() ? descriptorRegistry.get(selectedInvolvedGVR) : null,
   );
 </script>
 
 <div class="flex flex-col h-full">
-  <div class="shrink-0 px-4 py-3 border-b border-border flex items-center gap-3 flex-wrap">
+  <div class="shrink-0 px-4 py-3 border-b border-border flex items-center gap-2">
     <h1 class="text-sm font-semibold">Event Stream</h1>
     <span class="text-xs text-muted">{ctxName}</span>
-
-    <div class="flex items-center gap-2 ml-2">
-      <label class="flex items-center gap-1 text-xs cursor-pointer">
-        <input type="checkbox" bind:checked={showWarning} class="accent-destructive">
-        <span class="text-destructive font-medium">Warning</span>
-      </label>
-      <label class="flex items-center gap-1 text-xs cursor-pointer">
-        <input type="checkbox" bind:checked={showNormal} class="accent-accent">
-        <span>Normal</span>
-      </label>
-    </div>
-
-    <input
-      type="text"
-      placeholder="Filter reason…"
-      bind:value={reasonFilter}
-      class="text-xs bg-bg border border-border rounded px-2 py-1 outline-none focus:ring-1 focus:ring-accent w-36"
-    >
-
-    <span class="text-xs text-muted ml-auto">{filtered.length} events</span>
-
-    {#if store.loading}
-      <RefreshCw size={14} class="animate-spin text-muted" />
-    {/if}
   </div>
 
-  <div class="flex-1 overflow-auto">
-    {#if store.error}
-      <div class="p-4 text-sm text-destructive">{store.error}</div>
-    {:else if filtered.length === 0 && !store.loading}
-      <div class="flex items-center justify-center py-16 text-sm text-muted">No events found</div>
-    {:else}
-      <table class="w-full text-xs">
-        <thead class="sticky top-0 bg-surface border-b border-border z-10">
-          <tr>
-            <th class="text-left px-3 py-2 font-medium text-muted w-20">Type</th>
-            <th class="text-left px-3 py-2 font-medium text-muted w-32">Reason</th>
-            <th class="text-left px-3 py-2 font-medium text-muted w-40">Object</th>
-            <th class="text-left px-3 py-2 font-medium text-muted">Message</th>
-            <th class="text-left px-3 py-2 font-medium text-muted w-12">Count</th>
-            <th class="text-left px-3 py-2 font-medium text-muted w-24">Age</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each filtered as event (event.metadata?.uid ?? event.metadata?.name)}
-            {@const type = event.type ?? 'Normal'}
-            {@const reason = event.reason ?? ''}
-            {@const objName = event.involvedObject?.name ?? ''}
-            {@const objKind = event.involvedObject?.kind ?? ''}
-            {@const message = event.message ?? ''}
-            {@const count = event.count ?? 1}
-            {@const ts = event.lastTimestamp ?? event.eventTime ?? event.metadata?.creationTimestamp ?? ''}
-            <tr
-              class="border-b border-border hover:bg-surface-hover
-              {type === 'Warning' ? 'bg-destructive/5' : ''}"
-            >
-              <td class="px-3 py-1.5">
-                <span
-                  class="px-1.5 py-0.5 rounded text-xs font-medium
-                  {type === 'Warning' ? 'bg-destructive/15 text-destructive' : 'bg-accent/15 text-accent'}"
-                >
-                  {type}
-                </span>
-              </td>
-              <td class="px-3 py-1.5 font-mono text-muted truncate max-w-[128px]">{reason}</td>
-              <td class="px-3 py-1.5 truncate max-w-[160px]"><span class="text-muted">{objKind}/</span>{objName}</td>
-              <td class="px-3 py-1.5 text-muted max-w-xs truncate">{message}</td>
-              <td class="px-3 py-1.5 text-muted">{count}</td>
-              <td class="px-3 py-1.5 text-muted">{ts ? formatAge(ts, now) : '—'}</td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+  <EventSeverityTimeline
+    filteredItems={windowFiltered}
+    allItems={rawItems}
+    {rangeMs}
+    {now}
+    selectedWindow={timeWindow}
+    onBrush={(w) => { timeWindow = w; }}
+  />
+
+  <EventToolbar
+    {showWarning}
+    {showNormal}
+    onSeverityChange={({showWarning: w, showNormal: n}) => { showWarning = w; showNormal = n; }}
+    {availableKinds}
+    {selectedKinds}
+    onKindsChange={(v) => { selectedKinds = v; }}
+    {availableReasons}
+    {selectedReasons}
+    onReasonsChange={(v) => { selectedReasons = v; }}
+    {search}
+    onSearchChange={(v) => { search = v; }}
+    {grouped}
+    onGroupedChange={(v) => { grouped = v; }}
+    {paused}
+    onJumpToLatest={jumpToLatest}
+    totalCount={windowFiltered.length}
+    {warningCount}
+    rangeLabel="last 30m"
+    {columnMenuOpen}
+    onColumnMenuToggle={() => { columnMenuOpen = !columnMenuOpen; }}
+    {timeWindow}
+    onClearTimeWindow={() => { timeWindow = null; }}
+  />
+
+  <div class="flex-1 overflow-hidden relative">
+    <DataTable
+      items={rows}
+      visibleColumns={dataTableColumns}
+      sortState={columnStore.sortState}
+      compact={columnStore.compact}
+      loading={store.loading}
+      error={store.error}
+      emptyMessage="No events found"
+      bind:scrollContainer={listScrollContainer}
+      selectedRow={(row) => selectedEvent !== null && rowKey(row as EventRow) === rowKey(selectedEvent)}
+      onsort={(col, dir) => columnStore.setSort(col, dir)}
+      onresize={(col, width) => columnStore.resizeColumn(col, width)}
+      onrowclick={(row) => openEvent(row as EventRow)}
+    >
+      {#snippet cell({item, column})}
+        {@const row = item as EventRow}
+        {#if column.name === "Type"}
+          <EventTypeBadge severity={classifySeverity(row)} />
+        {:else if column.name === "First seen"}
+          <span class="text-muted">{rowFirstSeen(row) ? formatAge(rowFirstSeen(row), now) : "—"}</span>
+        {:else if column.name === "Last seen"}
+          <span class="text-muted">{rowLastSeen(row) ? formatAge(rowLastSeen(row), now) : "—"}</span>
+        {:else}
+          <span title={cellText(row, column.name)}>{cellText(row, column.name)}</span>
+        {/if}
+      {/snippet}
+    </DataTable>
+
+    {#if columnMenuOpen}
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="absolute top-2 right-2 z-50" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+        <ColumnMenu
+          visibleColumns={columnStore.visibleColumns}
+          allColumns={columnStore.allColumns}
+          compact={columnStore.compact}
+          onToggle={(name, visible) => columnStore.setColumnVisible(name, visible)}
+          onMove={(name, dir) => columnStore.moveColumn(name, dir)}
+          onReset={() => columnStore.reset()}
+          onCompactChange={(v) => columnStore.setCompact(v)}
+          gvr={EVENTS_GVR}
+        />
+      </div>
+    {/if}
+
+    {#if drawerOpen && drawerItem}
+      <DetailDrawer
+        item={drawerItem}
+        {ctxName}
+        gvr={drawerGVR}
+        onclose={closeDrawer}
+        onFetchResource={async (c, g, ns, n) => { try { return await GetResource(c, g, ns, n); } catch { return null; } }}
+      >
+        {#snippet children({obj, onrefresh})}
+          {#if selectedInvolvedItem && selectedDescriptor}
+            <ResourceDetail
+              {obj}
+              descriptor={selectedDescriptor}
+              {ctxName}
+              gvr={selectedInvolvedGVR}
+              namespace={obj.metadata?.namespace ?? ''}
+              name={obj.metadata?.name ?? ''}
+              {onrefresh}
+              onopenowner={openOwnerDrawer}
+            />
+          {:else if selectedEvent}
+            <EventDetailPanel
+              event={selectedEvent}
+              {now}
+              onOpenInvolvedObject={openInvolvedObject}
+            />
+          {/if}
+        {/snippet}
+      </DetailDrawer>
     {/if}
   </div>
 </div>
