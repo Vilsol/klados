@@ -121,14 +121,48 @@
     });
   });
 
+  function sortKey(row: EventRow, columnName: string): {kind: "string" | "number"; value: string | number} {
+    switch (columnName) {
+      case "Type":       return {kind: "string", value: classifySeverity(row)};
+      case "Reason":     return {kind: "string", value: rowReason(row)};
+      case "Object":     return {kind: "string", value: formatObject(rowInvolvedObject(row))};
+      case "Message":    return {kind: "string", value: rowMessage(row)};
+      case "Count":      return {kind: "number", value: rowCount(row)};
+      case "First seen": return {kind: "string", value: rowFirstSeen(row)};
+      case "Last seen":  return {kind: "string", value: rowLastSeen(row)};
+      case "Namespace":  return {kind: "string", value: rowInvolvedObject(row).namespace};
+      case "Source":     return {kind: "string", value: rowSample(row).source?.component ?? ""};
+      default:           return {kind: "string", value: ""};
+    }
+  }
+
   const sortedItems = $derived.by(() => {
     const copy = [...windowFiltered];
-    copy.sort((a, b) => {
-      const ta = eventTimestamp(a);
-      const tb = eventTimestamp(b);
-      if (ta !== tb) return tb.localeCompare(ta);
-      return (a.metadata?.uid ?? "").localeCompare(b.metadata?.uid ?? "");
-    });
+    const sortState = columnStore.sortState;
+    if (sortState) {
+      const dir = sortState.direction === "asc" ? 1 : -1;
+      copy.sort((a, b) => {
+        const ka = sortKey(a as EventRow, sortState.column);
+        const kb = sortKey(b as EventRow, sortState.column);
+        let cmp: number;
+        if (ka.kind === "number") {
+          cmp = (ka.value as number) - (kb.value as number);
+        } else {
+          cmp = String(ka.value).localeCompare(String(kb.value));
+        }
+        if (cmp === 0) {
+          cmp = (a.metadata?.uid ?? "").localeCompare(b.metadata?.uid ?? "");
+        }
+        return cmp * dir;
+      });
+    } else {
+      copy.sort((a, b) => {
+        const ta = eventTimestamp(a);
+        const tb = eventTimestamp(b);
+        if (ta !== tb) return tb.localeCompare(ta);
+        return (a.metadata?.uid ?? "").localeCompare(b.metadata?.uid ?? "");
+      });
+    }
     return copy;
   });
 
