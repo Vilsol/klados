@@ -380,7 +380,7 @@
     onscroll={onScroll}
     onwheel={onWheel}
     oncopy={onCopy}
-    class="flex-1 overflow-y-auto overflow-x-auto bg-[#1a1a1a] font-mono relative"
+    class="flex-1 overflow-y-auto overflow-x-auto bg-[#1a1a1a] font-mono relative scrollbar-on-dark"
     style:font-size="{fontSize}px"
     class:overflow-x-hidden={wrap}
   >
