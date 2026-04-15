@@ -50,4 +50,8 @@ describe("groupEvents", () => {
     const b = ev({firstTimestamp: "2026-04-15T09:50:00Z", lastTimestamp: "2026-04-15T10:02:00Z"});
     expect(groupEvents([a, b])[0].firstSeen).toBe("2026-04-15T09:50:00Z");
   });
+
+  it("returns empty array for empty input", () => {
+    expect(groupEvents([])).toEqual([]);
+  });
 });

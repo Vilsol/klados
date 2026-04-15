@@ -10,6 +10,10 @@ describe("pickBucketSize", () => {
   it("clamps to the max for very long ranges", () => {
     expect(pickBucketSize(Number.MAX_SAFE_INTEGER, 60)).toBe(BUCKET_SIZES_MS.at(-1));
   });
+  it("returns the smallest bucket for very small ranges", () => {
+    expect(pickBucketSize(0, 60)).toBe(BUCKET_SIZES_MS[0]);
+    expect(pickBucketSize(1000, 60)).toBe(BUCKET_SIZES_MS[0]);
+  });
 });
 
 describe("bucketize", () => {
@@ -32,5 +36,12 @@ describe("bucketize", () => {
     const to = from + 60_000;
     const items = [{type: "Warning", lastTimestamp: "2026-04-15T09:00:00Z", involvedObject: {}}];
     expect(bucketize(items as any, from, to, 60_000)[0].warn).toBe(0);
+  });
+  it("returns empty buckets when items array is empty", () => {
+    const from = Date.parse("2026-04-15T10:00:00Z");
+    const to = from + 5 * 60_000;
+    const result = bucketize([], from, to, 60_000);
+    expect(result).toHaveLength(5);
+    expect(result.every((b) => b.warn === 0 && b.normal === 0)).toBe(true);
   });
 });
