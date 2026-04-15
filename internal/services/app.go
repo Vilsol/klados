@@ -65,14 +65,26 @@ func (a *AppService) ServiceStartup(ctx context.Context, options application.Ser
 		slox.Warn(a.ctx, "failed to load kubeconfigs", "error", err)
 	}
 
-	for _, ctxName := range a.session.ConnectedClusters {
-		go func(name string) {
-			if err := a.clusterMgr.Connect(a.ctx, name); err != nil {
-				slox.Warn(a.ctx, "failed to reconnect cluster", "context", name, "error", err)
-				return
+	if last := a.session.LastActiveContext; last != "" {
+		known := false
+		for _, name := range a.session.ConnectedClusters {
+			if name == last {
+				known = true
+				break
 			}
-			a.portForwardManager.ReconnectSaved(name)
-		}(ctxName)
+		}
+		if known {
+			go func(name string) {
+				if err := a.clusterMgr.Connect(a.ctx, name); err != nil {
+					slox.Warn(a.ctx, "failed to reconnect cluster", "context", name, "error", err)
+					return
+				}
+				if err := a.clusterMgr.Activate(a.ctx, name); err != nil {
+					slox.Warn(a.ctx, "failed to activate cluster on startup", "context", name, "error", err)
+				}
+				a.portForwardManager.ReconnectSaved(name)
+			}(last)
+		}
 	}
 
 	return nil
@@ -209,6 +221,14 @@ func (a *AppService) SetReadOnly(ctx context.Context, enabled bool) error {
 	return a.config.Update(func(c *config.Config) {
 		c.ReadOnly = enabled
 	})
+}
+
+func (a *AppService) SetLastActiveContext(name string) {
+	if a.session == nil {
+		return
+	}
+	a.session.LastActiveContext = name
+	a.session.SaveDebounced()
 }
 
 func (a *AppService) GetClusterHealth(ctx context.Context, connCtx string) (cluster.ClusterHealth, error) {

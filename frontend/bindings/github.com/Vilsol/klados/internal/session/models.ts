@@ -7,6 +7,7 @@ import { Create as $Create } from "@wailsio/runtime";
 
 export class Session {
     "connectedClusters": string[];
+    "lastActiveContext"?: string;
     "activeNamespaces": { [_ in string]?: string };
     "openTabs": TabState[];
     "activeTab": number;
@@ -46,21 +47,21 @@ export class Session {
      */
     static createFrom($$source: any = {}): Session {
         const $$createField0_0 = $$createType0;
-        const $$createField1_0 = $$createType1;
-        const $$createField2_0 = $$createType3;
-        const $$createField6_0 = $$createType4;
+        const $$createField2_0 = $$createType1;
+        const $$createField3_0 = $$createType3;
+        const $$createField7_0 = $$createType4;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("connectedClusters" in $$parsedSource) {
             $$parsedSource["connectedClusters"] = $$createField0_0($$parsedSource["connectedClusters"]);
         }
         if ("activeNamespaces" in $$parsedSource) {
-            $$parsedSource["activeNamespaces"] = $$createField1_0($$parsedSource["activeNamespaces"]);
+            $$parsedSource["activeNamespaces"] = $$createField2_0($$parsedSource["activeNamespaces"]);
         }
         if ("openTabs" in $$parsedSource) {
-            $$parsedSource["openTabs"] = $$createField2_0($$parsedSource["openTabs"]);
+            $$parsedSource["openTabs"] = $$createField3_0($$parsedSource["openTabs"]);
         }
         if ("window" in $$parsedSource) {
-            $$parsedSource["window"] = $$createField6_0($$parsedSource["window"]);
+            $$parsedSource["window"] = $$createField7_0($$parsedSource["window"]);
         }
         return new Session($$parsedSource as Partial<Session>);
     }

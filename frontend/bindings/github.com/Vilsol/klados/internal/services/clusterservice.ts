@@ -9,6 +9,10 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 // @ts-ignore: Unused imports
 import * as cluster$0 from "../cluster/models.js";
 
+export function Activate(contextName: string): $CancellablePromise<void> {
+    return $Call.ByID(1916362053, contextName);
+}
+
 export function AddKubeconfigPath(path: string): $CancellablePromise<cluster$0.KubeContext[]> {
     return $Call.ByID(3424427683, path).then(($result: any) => {
         return $$createType1($result);
@@ -21,6 +25,10 @@ export function Connect(contextName: string): $CancellablePromise<void> {
 
 export function CreateNamespace(contextName: string, name: string): $CancellablePromise<void> {
     return $Call.ByID(3190336079, contextName, name);
+}
+
+export function Deactivate(contextName: string): $CancellablePromise<void> {
+    return $Call.ByID(1785056746, contextName);
 }
 
 export function DeleteNamespace(contextName: string, name: string): $CancellablePromise<void> {

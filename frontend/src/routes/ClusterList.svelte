@@ -235,7 +235,7 @@
   {#snippet rowSuffix({ item: ctx })}
     {@const status = clusterStore.connectionStatus[ctx.name] ?? "disconnected"}
     <div class="flex items-center justify-end">
-      {#if status === "connected" || status === "connecting"}
+      {#if status !== "disconnected"}
         <button
           type="button"
           onclick={(e) => { e.stopPropagation(); clusterStore.disconnect(ctx.name) }}

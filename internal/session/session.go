@@ -14,6 +14,7 @@ import (
 
 type Session struct {
 	ConnectedClusters []string          `json:"connectedClusters"`
+	LastActiveContext string            `json:"lastActiveContext,omitempty"`
 	ActiveNamespaces  map[string]string `json:"activeNamespaces"`
 	OpenTabs          []TabState        `json:"openTabs"`
 	ActiveTab         int               `json:"activeTab"`

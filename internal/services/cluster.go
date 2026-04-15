@@ -73,6 +73,24 @@ func (c *ClusterService) Disconnect(contextName string) error {
 	return nil
 }
 
+func (c *ClusterService) Activate(contextName string) error {
+	if err := c.manager().Activate(c.ctx, contextName); err != nil {
+		return err
+	}
+	if ps := c.appService.PluginService(); ps != nil {
+		ps.EmitClusterEvent("cluster:activated", clusterEventPayload(contextName))
+	}
+	return nil
+}
+
+func (c *ClusterService) Deactivate(contextName string) error {
+	c.manager().Deactivate(contextName)
+	if ps := c.appService.PluginService(); ps != nil {
+		ps.EmitClusterEvent("cluster:deactivated", clusterEventPayload(contextName))
+	}
+	return nil
+}
+
 func (c *ClusterService) ListNamespaces(contextName string) ([]string, error) {
 	return c.manager().ListNamespaces(c.ctx, contextName)
 }

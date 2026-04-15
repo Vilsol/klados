@@ -106,6 +106,10 @@ export function SaveUIState(openTabs: session$0.TabState[], activeTab: number, s
     return $Call.ByID(1357217799, openTabs, activeTab, sidebarCollapsed, terminalFontSize);
 }
 
+export function SetLastActiveContext(name: string): $CancellablePromise<void> {
+    return $Call.ByID(312818588, name);
+}
+
 export function SetReadOnly(enabled: boolean): $CancellablePromise<void> {
     return $Call.ByID(1908353457, enabled);
 }

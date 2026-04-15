@@ -82,7 +82,9 @@ type Connection struct {
 	MetricsCapability metrics.MetricsCapability
 	Permissions       PermissionSet
 	cancel            context.CancelFunc
-	healthStop        context.CancelFunc
+	connCtx           context.Context
+	monitorCancel     context.CancelFunc
+	activated         bool
 }
 
 type Manager struct {
@@ -239,6 +241,7 @@ func (m *Manager) Connect(ctx context.Context, contextName string) error {
 		Dynamic:   dynClient,
 		Discovery: disc,
 		cancel:    cancel,
+		connCtx:   connCtx,
 	}
 
 	m.mu.Lock()
@@ -247,9 +250,31 @@ func (m *Manager) Connect(ctx context.Context, contextName string) error {
 
 	m.emitStatus(contextName, StatusConnected)
 
-	go m.healthMonitor(connCtx, conn)
-	go m.fetchAndStorePermissions(connCtx, contextName, conn)
-	go m.startHealthPoller(connCtx, contextName, conn)
+	return nil
+}
+
+// Activate starts monitoring and runs one-shot bootstrap (permissions, server
+// version, metrics capability detection, resource discovery). Idempotent — a
+// second call on an already-activated connection is a no-op.
+func (m *Manager) Activate(ctx context.Context, contextName string) error {
+	m.mu.Lock()
+	conn, ok := m.connections[contextName]
+	if !ok {
+		m.mu.Unlock()
+		return fmt.Errorf("not connected to %q", contextName)
+	}
+	if conn.activated {
+		m.mu.Unlock()
+		return nil
+	}
+	monitorCtx, cancel := context.WithCancel(conn.connCtx)
+	conn.monitorCancel = cancel
+	conn.activated = true
+	m.mu.Unlock()
+
+	go m.healthMonitor(monitorCtx, conn)
+	go m.fetchAndStorePermissions(monitorCtx, contextName, conn)
+	go m.startHealthPoller(monitorCtx, contextName, conn)
 	go m.emitDiscovery(contextName)
 	go func() {
 		sv, err := conn.Clientset.Discovery().ServerVersion()
@@ -257,7 +282,7 @@ func (m *Manager) Connect(ctx context.Context, contextName string) error {
 			slox.Warn(m.ctx, "server version fetch failed", "context", contextName, "error", err)
 			return
 		}
-		provider := detectProvider(rawCtx.Cluster, sv.GitVersion)
+		provider := detectProvider(conn.Cluster, sv.GitVersion)
 		m.mu.Lock()
 		if c, ok := m.connections[contextName]; ok {
 			c.ServerVersion = sv.GitVersion
@@ -270,13 +295,13 @@ func (m *Manager) Connect(ctx context.Context, contextName string) error {
 		})
 	}()
 	go func() {
-		mc, err := metricsClientset.NewForConfig(restCfg)
+		mc, err := metricsClientset.NewForConfig(conn.Config)
 		if err != nil {
 			slox.Warn(m.ctx, "metrics client creation failed", "context", contextName, "error", err)
 			return
 		}
 		slox.Debug(m.ctx, "detecting metrics sources", "context", contextName)
-		msProvider := metrics.NewMetricsServerProvider(mc.MetricsV1beta1(), disc)
+		msProvider := metrics.NewMetricsServerProvider(mc.MetricsV1beta1(), conn.Discovery)
 		cap := metrics.MetricsCapability{
 			HasMetricsServer: msProvider.Available(),
 		}
@@ -288,7 +313,7 @@ func (m *Manager) Connect(ctx context.Context, contextName string) error {
 				manualURL = mc.PrometheusURL
 			}
 		}
-		if promURL, found := metrics.DetectPrometheus(m.ctx, clientset, disc, dynClient, restCfg, manualURL); found {
+		if promURL, found := metrics.DetectPrometheus(m.ctx, conn.Clientset, conn.Discovery, conn.Dynamic, conn.Config, manualURL); found {
 			cap.HasPrometheus = true
 			cap.PrometheusURL = promURL
 		}
@@ -302,7 +327,39 @@ func (m *Manager) Connect(ctx context.Context, contextName string) error {
 		m.emitEvent(fmt.Sprintf("metrics:%s:capabilities", contextName), cap)
 	}()
 
+	slox.Info(m.ctx, "cluster monitoring activated", "context", contextName)
 	return nil
+}
+
+// Deactivate stops monitoring but keeps the connection alive. Idempotent.
+// The cached Status is preserved (not reset) — last observed reality is more
+// useful than a stale "connected" lie.
+func (m *Manager) Deactivate(contextName string) {
+	m.mu.Lock()
+	conn, ok := m.connections[contextName]
+	if !ok || !conn.activated {
+		m.mu.Unlock()
+		return
+	}
+	cancel := conn.monitorCancel
+	conn.monitorCancel = nil
+	conn.activated = false
+	m.mu.Unlock()
+
+	if cancel != nil {
+		cancel()
+	}
+	slox.Info(m.ctx, "cluster monitoring deactivated", "context", contextName)
+}
+
+// IsActivated reports whether monitoring is running for the given context.
+func (m *Manager) IsActivated(contextName string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if conn, ok := m.connections[contextName]; ok {
+		return conn.activated
+	}
+	return false
 }
 
 func (m *Manager) emitDiscovery(contextName string) {
@@ -315,6 +372,8 @@ func (m *Manager) emitDiscovery(contextName string) {
 }
 
 func (m *Manager) Disconnect(contextName string) error {
+	m.Deactivate(contextName)
+
 	m.mu.Lock()
 	conn, ok := m.connections[contextName]
 	if !ok {
@@ -325,7 +384,9 @@ func (m *Manager) Disconnect(contextName string) error {
 	m.mu.Unlock()
 
 	slox.Info(m.ctx, "cluster disconnecting", "context", contextName)
-	conn.cancel()
+	if conn.cancel != nil {
+		conn.cancel()
+	}
 	m.emitStatus(contextName, StatusDisconnected)
 	return nil
 }
@@ -509,26 +570,18 @@ func (m *Manager) emitStatus(contextName string, status ConnectionStatus) {
 }
 
 func (m *Manager) startHealthPoller(ctx context.Context, contextName string, conn *Connection) {
-	healthCtx, stop := context.WithCancel(ctx)
-	m.mu.Lock()
-	if c, ok := m.connections[contextName]; ok {
-		c.healthStop = stop
-	}
-	m.mu.Unlock()
-	defer stop()
-
-	// Emit immediately on connect, then every 10s
-	h := CheckHealth(healthCtx, conn)
+	// Emit immediately on activate, then every 10s
+	h := CheckHealth(ctx, conn)
 	m.emitEvent(fmt.Sprintf("cluster:%s:health", contextName), h)
 
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 	for {
 		select {
-		case <-healthCtx.Done():
+		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			h := CheckHealth(healthCtx, conn)
+			h := CheckHealth(ctx, conn)
 			m.emitEvent(fmt.Sprintf("cluster:%s:health", contextName), h)
 		}
 	}

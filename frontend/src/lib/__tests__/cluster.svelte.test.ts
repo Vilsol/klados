@@ -6,22 +6,47 @@ vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/clusterser
   ListContexts: vi.fn(),
   Connect: vi.fn(),
   Disconnect: vi.fn(),
+  Activate: vi.fn().mockResolvedValue(undefined),
+  Deactivate: vi.fn().mockResolvedValue(undefined),
   ListNamespaces: vi.fn(),
+  CreateNamespace: vi.fn(),
+  DeleteNamespace: vi.fn(),
   SwitchNamespace: vi.fn(),
   GetActiveNamespace: vi.fn().mockResolvedValue(""),
   GetStatus: vi.fn(),
+}));
+vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js", () => ({
+  SetReadOnly: vi.fn().mockResolvedValue(undefined),
+  SetLastActiveContext: vi.fn().mockResolvedValue(undefined),
+  LogFrontend: vi.fn().mockResolvedValue(undefined),
+  GetStreamingConfig: vi.fn().mockResolvedValue({port: 0, token: ""}),
+  GetClusterHealth: vi.fn(),
+  SaveUIState: vi.fn(),
+  GetSession: vi.fn(),
+  BrowseKubeconfigFile: vi.fn(),
+  BrowsePluginFile: vi.fn(),
+  BrowseManifestFile: vi.fn(),
+}));
+vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js", () => ({
+  GetConfig: vi.fn().mockResolvedValue({readOnly: false}),
 }));
 
 import {
   ListContexts,
   Connect,
   Disconnect,
+  Activate,
+  Deactivate,
   ListNamespaces,
 } from "../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice";
+import {SetLastActiveContext} from "../../../bindings/github.com/Vilsol/klados/internal/services/appservice";
 
 const mockedListContexts = vi.mocked(ListContexts);
 const mockedConnect = vi.mocked(Connect);
 const mockedDisconnect = vi.mocked(Disconnect);
+const mockedActivate = vi.mocked(Activate);
+const mockedDeactivate = vi.mocked(Deactivate);
+const mockedSetLastActive = vi.mocked(SetLastActiveContext);
 const mockedListNamespaces = vi.mocked(ListNamespaces);
 
 describe("clusterStore", () => {
@@ -47,7 +72,7 @@ describe("clusterStore", () => {
     expect(clusterStore.connectionStatus.ctx2).toBe("disconnected");
   });
 
-  it("connect updates status and sets active context", async () => {
+  it("connect updates status without auto-setting active context", async () => {
     mockedConnect.mockResolvedValue(undefined);
     mockedListNamespaces.mockResolvedValue(["default", "kube-system"] as unknown[]);
 
@@ -55,7 +80,8 @@ describe("clusterStore", () => {
 
     expect(mockedConnect).toHaveBeenCalledWith("ctx1");
     expect(clusterStore.connectionStatus.ctx1).toBe("connected");
-    expect(clusterStore.activeContext).toBe("ctx1");
+    expect(clusterStore.activeContext).toBeNull();
+    expect(mockedActivate).not.toHaveBeenCalled();
     expect(clusterStore.getNamespaces("ctx1")).toEqual(["default", "kube-system"]);
   });
 
@@ -68,6 +94,37 @@ describe("clusterStore", () => {
 
     expect(clusterStore.activeContext).toBe("ctx1");
     expect(clusterStore.connectionStatus.ctx2).toBe("connected");
+  });
+
+  it("setActiveContext activates new and deactivates previous", async () => {
+    clusterStore.activeContext = "ctx1";
+
+    await clusterStore.setActiveContext("ctx2");
+
+    expect(mockedDeactivate).toHaveBeenCalledWith("ctx1");
+    expect(mockedActivate).toHaveBeenCalledWith("ctx2");
+    expect(mockedSetLastActive).toHaveBeenCalledWith("ctx2");
+    expect(clusterStore.activeContext).toBe("ctx2");
+  });
+
+  it("setActiveContext is no-op when same context", async () => {
+    clusterStore.activeContext = "ctx1";
+
+    await clusterStore.setActiveContext("ctx1");
+
+    expect(mockedActivate).not.toHaveBeenCalled();
+    expect(mockedDeactivate).not.toHaveBeenCalled();
+  });
+
+  it("setActiveContext(null) deactivates current and persists empty", async () => {
+    clusterStore.activeContext = "ctx1";
+
+    await clusterStore.setActiveContext(null);
+
+    expect(mockedDeactivate).toHaveBeenCalledWith("ctx1");
+    expect(mockedActivate).not.toHaveBeenCalled();
+    expect(mockedSetLastActive).toHaveBeenCalledWith("");
+    expect(clusterStore.activeContext).toBeNull();
   });
 
   it("connect sets error status on failure", async () => {

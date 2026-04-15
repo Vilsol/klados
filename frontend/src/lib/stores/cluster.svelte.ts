@@ -3,13 +3,15 @@ import {
   ListContexts,
   Connect,
   Disconnect,
+  Activate,
+  Deactivate,
   ListNamespaces,
   CreateNamespace,
   DeleteNamespace,
   SwitchNamespace,
   GetActiveNamespace,
 } from "../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js";
-import {SetReadOnly} from "../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
+import {SetReadOnly, SetLastActiveContext} from "../../../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
 import {GetConfig} from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
 import {getLogger} from "$lib/logger";
 import {preferencesStore} from "./preferences.svelte";
@@ -85,9 +87,34 @@ class ClusterStore {
     return resolveGVR(this.kindGVRMap, apiVersion, kind);
   }
 
-  /** Set the currently-viewed cluster context (called by route components on mount) */
-  setActiveContext(ctxName: string) {
+  /**
+   * Set the currently-viewed cluster context. Drives the monitoring lifecycle:
+   * deactivates the previously-active cluster, activates the new one, and
+   * persists the selection. Called by route components on mount.
+   */
+  async setActiveContext(ctxName: string | null) {
+    const prev = this.activeContext;
+    if (prev === ctxName) return;
     this.activeContext = ctxName;
+    if (prev) {
+      try {
+        await Deactivate(prev);
+      } catch (e) {
+        log.warn("Deactivate failed", {ctxName: prev, error: String(e)});
+      }
+    }
+    if (ctxName) {
+      try {
+        await Activate(ctxName);
+      } catch (e) {
+        log.warn("Activate failed", {ctxName, error: String(e)});
+      }
+    }
+    try {
+      await SetLastActiveContext(ctxName ?? "");
+    } catch (e) {
+      log.debug("SetLastActiveContext failed", {error: String(e)});
+    }
   }
 
   /** Namespace list for the given context (falls back to empty array) */
@@ -168,7 +195,7 @@ class ClusterStore {
   }
 
   private async restoreContext(ctxName: string) {
-    this.activeContext = ctxName;
+    await this.setActiveContext(ctxName);
     try {
       const saved = await GetActiveNamespace(ctxName);
       if (saved) {
@@ -186,10 +213,6 @@ class ClusterStore {
       await Connect(ctxName);
       this.connectionStatus[ctxName] = "connected";
       log.info("Cluster connected", {ctxName});
-      // Only set activeContext if nothing is currently active
-      if (!this.activeContext) {
-        this.activeContext = ctxName;
-      }
       await this.loadNamespaces(ctxName);
     } catch (e) {
       log.error("Cluster connect failed", {ctxName, error: String(e)});
@@ -205,9 +228,8 @@ class ClusterStore {
       delete this.namespaces[ctxName];
       delete this.selectedNamespaces[ctxName];
       if (this.activeContext === ctxName) {
-        // Find another connected cluster to switch to
         const other = Object.entries(this.connectionStatus).find(([name, s]) => name !== ctxName && s === "connected");
-        this.activeContext = other ? other[0] : null;
+        await this.setActiveContext(other ? other[0] : null);
       }
     } catch (e) {
       log.error("Failed to disconnect", {error: String(e)});

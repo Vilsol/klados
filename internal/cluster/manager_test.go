@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"sync"
@@ -141,6 +142,100 @@ func TestIndependentConnectionsIsolated(t *testing.T) {
 	conn, err := mgr.GetConnection("ctx2")
 	testza.AssertNoError(t, err)
 	testza.AssertEqual(t, "ctx2", conn.Name)
+}
+
+func TestActivate_ErrorsWhenNotConnected(t *testing.T) {
+	mgr := NewManager(func(string, any) {}, nil, noopLogger())
+	err := mgr.Activate(context.Background(), "nonexistent")
+	testza.AssertNotNil(t, err)
+}
+
+func TestActivate_Idempotent(t *testing.T) {
+	mgr := NewManager(func(string, any) {}, nil, noopLogger())
+	cancelCalled := 0
+	mgr.connections["ctx1"] = &Connection{
+		KubeContext:   KubeContext{Name: "ctx1", Status: StatusConnected},
+		cancel:        func() {},
+		connCtx:       context.Background(),
+		activated:     true,
+		monitorCancel: func() { cancelCalled++ },
+	}
+
+	// Already activated — should be a no-op, not spawn goroutines or overwrite monitorCancel.
+	err := mgr.Activate(context.Background(), "ctx1")
+	testza.AssertNoError(t, err)
+	testza.AssertTrue(t, mgr.connections["ctx1"].activated)
+	testza.AssertEqual(t, 0, cancelCalled)
+}
+
+func TestDeactivate_CancelsMonitorAndClearsFlag(t *testing.T) {
+	mgr := NewManager(func(string, any) {}, nil, noopLogger())
+	cancelCalled := 0
+	mgr.connections["ctx1"] = &Connection{
+		KubeContext:   KubeContext{Name: "ctx1", Status: StatusConnected},
+		cancel:        func() {},
+		connCtx:       context.Background(),
+		activated:     true,
+		monitorCancel: func() { cancelCalled++ },
+	}
+
+	mgr.Deactivate("ctx1")
+
+	testza.AssertEqual(t, 1, cancelCalled)
+	testza.AssertFalse(t, mgr.connections["ctx1"].activated)
+	testza.AssertTrue(t, mgr.connections["ctx1"].monitorCancel == nil)
+
+	// Second call is a no-op — cancelCalled stays at 1.
+	mgr.Deactivate("ctx1")
+	testza.AssertEqual(t, 1, cancelCalled)
+}
+
+func TestDeactivate_NoopWhenNotActivated(t *testing.T) {
+	mgr := NewManager(func(string, any) {}, nil, noopLogger())
+	mgr.connections["ctx1"] = &Connection{
+		KubeContext: KubeContext{Name: "ctx1", Status: StatusConnected},
+		cancel:      func() {},
+		connCtx:     context.Background(),
+	}
+
+	// Should not panic even though monitorCancel is nil.
+	mgr.Deactivate("ctx1")
+	mgr.Deactivate("nonexistent")
+}
+
+func TestDisconnect_DeactivatesFirst(t *testing.T) {
+	mgr := NewManager(func(string, any) {}, nil, noopLogger())
+	monitorCancelCalled := 0
+	connCancelCalled := 0
+	mgr.connections["ctx1"] = &Connection{
+		KubeContext:   KubeContext{Name: "ctx1", Status: StatusConnected},
+		cancel:        func() { connCancelCalled++ },
+		connCtx:       context.Background(),
+		activated:     true,
+		monitorCancel: func() { monitorCancelCalled++ },
+	}
+
+	testza.AssertNoError(t, mgr.Disconnect("ctx1"))
+
+	testza.AssertEqual(t, 1, monitorCancelCalled)
+	testza.AssertEqual(t, 1, connCancelCalled)
+	_, err := mgr.GetConnection("ctx1")
+	testza.AssertNotNil(t, err)
+}
+
+func TestIsActivated(t *testing.T) {
+	mgr := NewManager(func(string, any) {}, nil, noopLogger())
+	testza.AssertFalse(t, mgr.IsActivated("ctx1"))
+
+	mgr.connections["ctx1"] = &Connection{
+		KubeContext: KubeContext{Name: "ctx1", Status: StatusConnected},
+		cancel:      func() {},
+		connCtx:     context.Background(),
+	}
+	testza.AssertFalse(t, mgr.IsActivated("ctx1"))
+
+	mgr.connections["ctx1"].activated = true
+	testza.AssertTrue(t, mgr.IsActivated("ctx1"))
 }
 
 func TestConcurrentAccess(t *testing.T) {
