@@ -641,6 +641,21 @@ var builtinDescriptors = []*Descriptor{
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
 	{
+		Group: "", Version: "v1", Resource: "events", Kind: "Event",
+		Columns: []Column{
+			{Name: "Type",       Expr: "type",                                              RenderType: RenderBadge, Width: 80},
+			{Name: "Namespace",  Expr: "metadata.namespace",                                RenderType: RenderText,  Width: 150},
+			{Name: "Reason",     Expr: "reason",                                            RenderType: RenderText,  Width: 140},
+			{Name: "Object",     Expr: "involvedObject.kind + '/' + involvedObject.name",   RenderType: RenderText,  Width: 200},
+			{Name: "Message",    Expr: "message",                                           RenderType: RenderText},
+			{Name: "Count",      Expr: "count",                                             RenderType: RenderText,  Width: 60},
+			{Name: "First seen", Expr: "firstTimestamp",                                    RenderType: RenderAge,   Width: 90, Hidden: true},
+			{Name: "Last seen",  Expr: "lastTimestamp",                                     RenderType: RenderAge,   Width: 90},
+			{Name: "Source",     Expr: "source.component",                                  RenderType: RenderText,  Width: 150, Hidden: true},
+		},
+		DetailPanels: []string{},
+	},
+	{
 		Group: "admissionregistration.k8s.io", Version: "v1", Resource: "mutatingwebhookconfigurations", Kind: "MutatingWebhookConfiguration",
 		ClusterScoped: true,
 		Columns: []Column{
