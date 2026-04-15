@@ -36,6 +36,8 @@
   let hoverIdx = $state<number | null>(null);
   let hoverX = $state(0);
   let containerEl = $state<HTMLDivElement | undefined>(undefined);
+  let svgEl = $state<SVGSVGElement | undefined>(undefined);
+
   const tooltipLeft = $derived.by(() => {
     const w = containerEl?.clientWidth ?? 0;
     const desired = hoverX + 8;
@@ -58,18 +60,32 @@
     return `${pad(t0.getHours())}:${pad(t0.getMinutes())}–${pad(t1.getHours())}:${pad(t1.getMinutes())}`;
   }
 
-  function handleMouseDown(i: number) {
+  function bucketIndexFromEvent(e: MouseEvent): number | null {
+    if (!svgEl) return null;
+    const rect = svgEl.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const svgX = (x / rect.width) * svgWidth;
+    const idx = Math.floor(svgX / BAR_W);
+    if (idx < 0 || idx >= filteredBuckets.length) return null;
+    return idx;
+  }
+
+  function onSvgMouseDown(e: MouseEvent) {
+    const i = bucketIndexFromEvent(e);
+    if (i === null) return;
     brushStart = i;
     brushEnd = i;
   }
 
-  function handleMouseMoveBucket(i: number, e: MouseEvent) {
+  function onSvgMouseMove(e: MouseEvent) {
+    const i = bucketIndexFromEvent(e);
+    if (i === null) return;
     hoverIdx = i;
     hoverX = i * BAR_W;
     if (brushStart !== null) brushEnd = i;
   }
 
-  function handleMouseUp() {
+  function onSvgMouseUp() {
     if (brushStart !== null && brushEnd !== null && onBrush) {
       const a = Math.min(brushStart, brushEnd);
       const b = Math.max(brushStart, brushEnd);
@@ -79,21 +95,21 @@
     brushEnd = null;
   }
 
-  function handleMouseLeave() {
-    hoverIdx = null;
-    if (brushStart !== null) {
-      brushStart = null;
-      brushEnd = null;
-    }
-  }
-
   const svgWidth = $derived(filteredBuckets.length * BAR_W);
 
   const selectedRange = $derived.by(() => {
     if (!selectedWindow) return null;
-    const startIdx = filteredBuckets.findIndex((b) => b.t1 > selectedWindow.from);
-    const endIdx = filteredBuckets.findLastIndex((b) => b.t0 < selectedWindow.to);
-    if (startIdx === -1 || endIdx === -1) return null;
+    // Buckets overlap [selectedWindow.from, selectedWindow.to) when bucket.t1 > from AND bucket.t0 < to
+    let startIdx = -1;
+    let endIdx = -1;
+    for (let i = 0; i < filteredBuckets.length; i++) {
+      const b = filteredBuckets[i];
+      if (b.t1 <= selectedWindow.from) continue;
+      if (b.t0 >= selectedWindow.to) break;
+      if (startIdx === -1) startIdx = i;
+      endIdx = i;
+    }
+    if (startIdx === -1) return null;
     return {startIdx, endIdx};
   });
 </script>
@@ -102,18 +118,21 @@
   bind:this={containerEl}
   class="relative border-b border-border"
   style="height: {H}px;"
-  onmouseleave={handleMouseLeave}
+  onmouseleave={() => { hoverIdx = null; }}
   role="presentation"
 >
   <svg
-    class="w-full h-full"
+    bind:this={svgEl}
+    class="w-full h-full select-none"
     viewBox="0 0 {svgWidth} {H}"
     preserveAspectRatio="none"
-    onmouseup={handleMouseUp}
-    role="img"
     aria-label="Severity timeline"
+    role="img"
+    onmousedown={onSvgMouseDown}
+    onmousemove={onSvgMouseMove}
+    onmouseup={onSvgMouseUp}
   >
-    <!-- Transparent overlay to capture mouse events in gaps -->
+    <!-- Transparent hit-target across the full width -->
     <rect x="0" y="0" width={svgWidth} height={H} fill="transparent" />
 
     {#each filteredBuckets as b, i (i)}
@@ -121,22 +140,10 @@
       {@const overlayH = barH(total.warn + total.normal)}
       {@const warnH = barH(b.warn)}
       {@const normalH = barH(b.normal)}
-      <g
-        data-bucket={i}
-        onmousedown={() => handleMouseDown(i)}
-        onmousemove={(e) => handleMouseMoveBucket(i, e)}
-        role="presentation"
-      >
+      <g data-bucket={i} pointer-events="none">
         <rect x={i * BAR_W} y={H - overlayH} width={BAR_W - 1} height={overlayH} class="fill-border/40" />
         <rect x={i * BAR_W} y={H - warnH} width={BAR_W - 1} height={warnH} class="fill-destructive" />
-        <rect
-          x={i * BAR_W}
-          y={H - warnH - normalH}
-          width={BAR_W - 1}
-          height={normalH}
-          class="fill-muted"
-          opacity="0.6"
-        />
+        <rect x={i * BAR_W} y={H - warnH - normalH} width={BAR_W - 1} height={normalH} class="fill-muted" opacity="0.6" />
       </g>
     {/each}
 

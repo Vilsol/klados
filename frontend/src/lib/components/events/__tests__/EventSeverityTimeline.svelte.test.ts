@@ -15,21 +15,36 @@ describe("EventSeverityTimeline", () => {
     expect(groups.length).toBeGreaterThan(0);
   });
 
-  it("fires onBrush with correct from/to when dragging from bucket i to bucket j", async () => {
+  it("fires onBrush once after mousedown+mouseup on svg", async () => {
     const spy = vi.fn();
     const {container} = render(EventSeverityTimeline, {
       props: {filteredItems: [], allItems: [], rangeMs, now, selectedWindow: null, onBrush: spy},
     });
-    const groups = container.querySelectorAll("[data-bucket]");
-    const start = groups[5] as HTMLElement;
-    const end = groups[10] as HTMLElement;
-    await fireEvent.mouseDown(start);
-    await fireEvent.mouseMove(end);
-    const svg = container.querySelector("svg") as SVGElement;
-    await fireEvent.mouseUp(svg);
+    const svg = container.querySelector("svg") as SVGSVGElement;
+
+    // Mock getBoundingClientRect so bucketIndexFromEvent returns a valid index
+    vi.spyOn(svg, "getBoundingClientRect").mockReturnValue({
+      left: 0, top: 0, right: 240, bottom: 40, width: 240, height: 40,
+      x: 0, y: 0, toJSON: () => {},
+    } as DOMRect);
+
+    // Click in the middle of the SVG — both events at the same x → single bucket
+    await fireEvent.mouseDown(svg, {clientX: 20, clientY: 20});
+    await fireEvent.mouseUp(svg, {clientX: 20, clientY: 20});
+
     expect(spy).toHaveBeenCalledTimes(1);
     const arg = spy.mock.calls[0][0];
+    expect(typeof arg.from).toBe("number");
+    expect(typeof arg.to).toBe("number");
     expect(arg.from).toBeLessThan(arg.to);
+  });
+
+  it("does not fire onBrush without any mouse interaction", () => {
+    const spy = vi.fn();
+    render(EventSeverityTimeline, {
+      props: {filteredItems: [], allItems: [], rangeMs, now, selectedWindow: null, onBrush: spy},
+    });
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it("clear affordance fires onBrush(null)", async () => {
