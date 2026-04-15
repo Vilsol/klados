@@ -66,6 +66,15 @@ describe("EventDetailPanel", () => {
     expect(card.title).toContain("No descriptor registered for Kind Pod");
   });
 
+  it("switches to YAML tab when clicked and shows YAML content", async () => {
+    vi.mocked(clusterStore.resolveOwnerGVR).mockReturnValue("core.v1.pods");
+    render(EventDetailPanel, {
+      props: {event: baseEvent, now: Date.now()},
+    });
+    await fireEvent.click(screen.getByText("YAML"));
+    expect(screen.queryByTestId("involved-object-card")).toBeNull();
+  });
+
   it("shows the grouped count strip for GroupedEvent inputs", () => {
     vi.mocked(clusterStore.resolveOwnerGVR).mockReturnValue("core.v1.pods");
     const grouped = {
