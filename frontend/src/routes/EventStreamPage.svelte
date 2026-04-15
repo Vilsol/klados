@@ -1,5 +1,4 @@
 <script lang="ts">
-  import {untrack} from "svelte";
   import {DetailDrawer} from "@klados/ui";
   import {createResourceStore} from "$lib/stores/resource.svelte";
   import {clusterStore} from "$lib/stores/cluster.svelte";
@@ -153,7 +152,34 @@
     return Array.from(s).sort();
   });
 
-  const warningCount = $derived(windowFiltered.filter((e) => classifySeverity(e) === "Warning").length);
+  const _kindFilteredAll = $derived(
+    selectedKinds.length === 0
+      ? nsFiltered
+      : nsFiltered.filter((e) => selectedKinds.includes(e.involvedObject?.kind ?? "")),
+  );
+  const _reasonFilteredAll = $derived(
+    selectedReasons.length === 0
+      ? _kindFilteredAll
+      : _kindFilteredAll.filter((e) => selectedReasons.includes(e.reason ?? "")),
+  );
+  const _searchFilteredAll = $derived.by(() => {
+    if (!search.trim()) return _reasonFilteredAll;
+    const needle = search.toLowerCase();
+    return _reasonFilteredAll.filter((e) =>
+      (e.reason ?? "").toLowerCase().includes(needle) ||
+      (e.message ?? "").toLowerCase().includes(needle) ||
+      (e.involvedObject?.name ?? "").toLowerCase().includes(needle)
+    );
+  });
+  const _windowFilteredAll = $derived.by(() => {
+    if (!timeWindow) return _searchFilteredAll;
+    return _searchFilteredAll.filter((e) => {
+      const ts = Date.parse(eventTimestamp(e));
+      return Number.isFinite(ts) && ts >= timeWindow!.from && ts < timeWindow!.to;
+    });
+  });
+
+  const warningCount = $derived(_windowFilteredAll.filter((e) => classifySeverity(e) === "Warning").length);
 
   const dataTableColumns = $derived<DataTableColumn[]>(
     columnStore.visibleColumns.map((c) => ({
