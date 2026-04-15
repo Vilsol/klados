@@ -35,6 +35,13 @@
   let brushEnd = $state<number | null>(null);
   let hoverIdx = $state<number | null>(null);
   let hoverX = $state(0);
+  let containerEl = $state<HTMLDivElement | undefined>(undefined);
+  const tooltipLeft = $derived.by(() => {
+    const w = containerEl?.clientWidth ?? 0;
+    const desired = hoverX + 8;
+    const maxLeft = Math.max(0, w - 160);
+    return Math.min(desired, maxLeft);
+  });
 
   const H = 40;
   const BAR_W = 4;
@@ -58,9 +65,7 @@
 
   function handleMouseMoveBucket(i: number, e: MouseEvent) {
     hoverIdx = i;
-    hoverX = (e.target as Element).closest("svg")
-      ? e.offsetX + i * BAR_W
-      : e.offsetX;
+    hoverX = i * BAR_W;
     if (brushStart !== null) brushEnd = i;
   }
 
@@ -94,6 +99,7 @@
 </script>
 
 <div
+  bind:this={containerEl}
   class="relative border-b border-border"
   style="height: {H}px;"
   onmouseleave={handleMouseLeave}
@@ -104,7 +110,8 @@
     viewBox="0 0 {svgWidth} {H}"
     preserveAspectRatio="none"
     onmouseup={handleMouseUp}
-    role="presentation"
+    role="img"
+    aria-label="Severity timeline"
   >
     <!-- Transparent overlay to capture mouse events in gaps -->
     <rect x="0" y="0" width={svgWidth} height={H} fill="transparent" />
@@ -162,7 +169,7 @@
     {@const b = filteredBuckets[hoverIdx]}
     <div
       class="absolute pointer-events-none bg-surface border border-border rounded text-xs px-1.5 py-0.5 shadow z-10"
-      style="left: {Math.min(hoverX + 8, 200)}px; bottom: {H + 4}px"
+      style="left: {tooltipLeft}px; bottom: {H + 4}px"
     >
       {formatBucketLabel(b)} · {b.warn} warnings, {b.normal} normal
     </div>
