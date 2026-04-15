@@ -159,7 +159,7 @@
   <button
     type="button"
     onclick={onColumnMenuToggle}
-    class="p-1 rounded hover:bg-surface-hover transition-colors"
+    class="p-1 rounded hover:bg-surface-hover transition-colors {columnMenuOpen ? 'bg-surface-hover' : ''}"
     title="Manage columns"
     aria-label="Manage columns"
     data-testid="column-menu-button"
