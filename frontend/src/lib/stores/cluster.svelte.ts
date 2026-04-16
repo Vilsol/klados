@@ -20,6 +20,7 @@ const log = getLogger("cluster");
 // biome-ignore lint/style/noExportedImports: re-exported for consumers
 import {type KubeContext, ConnectionStatus} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js";
 import {buildKindGVRMap, resolveGVR} from "$lib/utils/relationships";
+import {descriptorRegistry} from "$lib/registry";
 import type {APIResource} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/index.js";
 
 export type {KubeContext};
@@ -82,6 +83,7 @@ class ClusterStore {
 
   setDiscoveryResources(resources: APIResource[]): void {
     this.kindGVRMap = buildKindGVRMap(resources);
+    descriptorRegistry.updateDiscovery(resources);
   }
 
   resolveOwnerGVR(apiVersion: string, kind: string): string | undefined {

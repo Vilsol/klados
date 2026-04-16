@@ -1,6 +1,8 @@
 import {GetDescriptors} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 import {GetPluginDescriptors} from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
 import {getLogger} from "$lib/logger";
+import type {APIResource} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/index.js";
+import {generateDescriptor} from "./generator";
 
 const log = getLogger("registry");
 import {evaluate, parse} from "cel-js";
@@ -55,6 +57,7 @@ class DescriptorRegistry {
   private descriptors = new Map<string, DescriptorDef>();
   private readonly builtins = new Map<string, DescriptorDef>();
   private availableGVRs = new Set<string>();
+  private discovery = new Map<string, APIResource>();
 
   async load() {
     try {
@@ -202,13 +205,53 @@ class DescriptorRegistry {
     return {...d, columns};
   }
 
+  // Discovery reflects the active context only. On context switch this map
+  // is fully replaced via `cluster.setDiscoveryResources`.
+  updateDiscovery(resources: APIResource[]): void {
+    this.discovery = new Map(resources.map((r) => [r.gvr, r]));
+  }
+
   registerVirtual(gvr: string, descriptor: DescriptorDef): void {
     this.descriptors.set(gvr, descriptor);
   }
 
   get(gvr: string): DescriptorDef {
-    const d = this.descriptors.get(gvr) ?? this.fallback(gvr);
+    const d = this.descriptors.get(gvr) ?? this.fromDiscovery(gvr) ?? this.fallback(gvr);
     return this.withControlledBy(d);
+  }
+
+  private fromDiscovery(gvr: string): DescriptorDef | undefined {
+    const r = this.discovery.get(gvr);
+    if (!r) return undefined;
+    const d = generateDescriptor(r);
+    return {
+      group: d.group ?? "",
+      version: d.version ?? "",
+      resource: d.resource ?? "",
+      kind: d.kind ?? "",
+      gvr,
+      clusterScoped: d.clusterScoped ?? false,
+      columns: (d.columns ?? []).map((c) => ({
+        name: c.name ?? "",
+        expr: c.expr ?? "",
+        renderType: (c.renderType ?? "text") as RenderType,
+        width: c.width ?? undefined,
+        align: (c.align ?? undefined) as AlignType | undefined,
+        hidden: c.hidden ?? undefined,
+      })),
+      overviewFields: (d.overviewFields ?? []).map((f) => ({
+        label: f.label ?? "",
+        expr: f.expr ?? "",
+        renderType: (f.renderType ?? "text") as RenderType,
+      })),
+      detailPanels: d.detailPanels ?? [],
+      actions: (d.actions ?? []).map((a) => ({
+        name: a.name ?? "",
+        label: a.label ?? "",
+        disabledWhen: a.disabledWhen ?? undefined,
+        disabledReason: a.disabledReason ?? undefined,
+      })),
+    };
   }
 
   private fallback(gvr: string): DescriptorDef {
