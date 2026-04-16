@@ -11,7 +11,10 @@ import (
 	"github.com/Vilsol/klados/internal/metrics"
 	"github.com/Vilsol/slox"
 	corev1 "k8s.io/api/core/v1"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -506,42 +509,86 @@ func (m *Manager) DiscoverResources(contextName string) ([]APIResource, error) {
 	}
 
 	lists, err := conn.Discovery.ServerPreferredResources()
-	if err != nil {
-		// partial results are OK
-		if lists == nil {
-			return nil, fmt.Errorf("discovering resources for %q: %w", contextName, err)
-		}
+	if err != nil && len(lists) == 0 {
+		return nil, err
 	}
 
-	var resources []APIResource
+	var primary []APIResource
 	for _, list := range lists {
-		gv := list.GroupVersion
-		var group, version string
-		if idx := strings.LastIndex(gv, "/"); idx != -1 {
-			group = gv[:idx]
-			version = gv[idx+1:]
-		} else {
-			group = ""
-			version = gv
+		if list == nil {
+			continue
 		}
-		gKey := group
-		if gKey == "" {
-			gKey = "core"
+		subs := DetectSubresources(list)
+		gv, gvErr := parseGroupVersion(list.GroupVersion)
+		if gvErr != nil {
+			slox.Warn(m.ctx, "discovery: invalid group/version", "gv", list.GroupVersion, "err", gvErr)
+			continue
 		}
-
 		for _, r := range list.APIResources {
 			if strings.Contains(r.Name, "/") {
 				continue
 			}
-			resources = append(resources, APIResource{
-				GVR:        fmt.Sprintf("%s.%s.%s", gKey, version, r.Name),
-				Kind:       r.Kind,
-				Namespaced: r.Namespaced,
+			primary = append(primary, APIResource{
+				GVR:          formatGVR(gv.group, gv.version, r.Name),
+				Kind:         r.Kind,
+				Namespaced:   r.Namespaced,
+				Subresources: subs[r.Name],
 			})
 		}
 	}
 
-	return resources, nil
+	crdMeta := m.fetchCRDMetadata(conn)
+	for i := range primary {
+		if md, ok := crdMeta[primary[i].GVR]; ok {
+			primary[i].PrinterColumns = md.PrinterColumns
+			primary[i].ScaleSpec = md.ScaleSpec
+		}
+	}
+
+	return primary, nil
+}
+
+type groupVersion struct{ group, version string }
+
+func parseGroupVersion(gv string) (groupVersion, error) {
+	parts := strings.SplitN(gv, "/", 2)
+	if len(parts) == 1 {
+		if parts[0] == "" {
+			return groupVersion{}, fmt.Errorf("empty group/version %q", gv)
+		}
+		return groupVersion{group: "core", version: parts[0]}, nil
+	}
+	if parts[0] == "" || parts[1] == "" {
+		return groupVersion{}, fmt.Errorf("empty group or version in %q", gv)
+	}
+	return groupVersion{group: parts[0], version: parts[1]}, nil
+}
+
+func (m *Manager) fetchCRDMetadata(conn *Connection) map[string]CRDMetadata {
+	if conn.Dynamic == nil {
+		return map[string]CRDMetadata{}
+	}
+	crdGVR := schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1",
+		Resource: "customresourcedefinitions",
+	}
+	list, err := conn.Dynamic.Resource(crdGVR).List(m.ctx, metav1.ListOptions{})
+	if err != nil {
+		slox.Debug(m.ctx, "discovery: CRD list unavailable, skipping printer columns", "err", err)
+		return map[string]CRDMetadata{}
+	}
+
+	crds := make([]apiextv1.CustomResourceDefinition, 0, len(list.Items))
+	for i := range list.Items {
+		var crd apiextv1.CustomResourceDefinition
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(list.Items[i].Object, &crd); err != nil {
+			slox.Debug(m.ctx, "discovery: CRD convert failed", "err", err)
+			continue
+		}
+		crds = append(crds, crd)
+	}
+	return ExtractCRDMetadata(crds)
 }
 
 func (m *Manager) DisconnectAll() error {
