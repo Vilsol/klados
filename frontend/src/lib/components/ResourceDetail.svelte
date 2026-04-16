@@ -4,6 +4,7 @@
   import {slotRegistry} from "$lib/plugins/slots.svelte.js";
   import {loadPluginComponent} from "$lib/plugins/loader.js";
   import {createPluginContext} from "$lib/plugins/context.js";
+  import type {PluginManifest} from "$lib/plugins/types/manifest.js";
   import {clusterStore} from "$lib/stores/cluster.svelte.js";
   import {streamingStore} from "$lib/stores/streaming.svelte.js";
   import {
@@ -192,7 +193,7 @@
         events: tab.perms.events || undefined,
       },
     };
-    return createPluginContext(manifest, {
+    return createPluginContext(manifest as unknown as PluginManifest, {
       clusterName: ctxName,
       clusterVersion: "",
       namespace: ns,

@@ -1,7 +1,9 @@
+import type {KubernetesResource} from "$lib/types";
+
 class SelectionStore {
   selectedKeys = $state<Set<string>>(new Set());
   selectedGVR = $state<string>("");
-  selectedItems = $state<Map<string, Record<string, unknown>>>(new Map());
+  selectedItems = $state<Map<string, KubernetesResource>>(new Map());
   visibleKeys = $state<Set<string>>(new Set());
   private lastToggled = $state<string | null>(null);
 
@@ -12,7 +14,7 @@ class SelectionStore {
     return this.selectedKeys.has(key);
   }
 
-  select(key: string, item: Record<string, unknown>): void {
+  select(key: string, item: KubernetesResource): void {
     const keys = new Set(this.selectedKeys);
     keys.add(key);
     this.selectedKeys = keys;
@@ -38,7 +40,7 @@ class SelectionStore {
     }
   }
 
-  toggle(key: string, item: Record<string, unknown>): void {
+  toggle(key: string, item: KubernetesResource): void {
     if (this.isSelected(key)) {
       this.deselect(key);
     } else {
@@ -46,7 +48,7 @@ class SelectionStore {
     }
   }
 
-  selectRange(toKey: string, orderedKeys: string[], itemsByKey: Map<string, Record<string, unknown>>): void {
+  selectRange(toKey: string, orderedKeys: string[], itemsByKey: Map<string, KubernetesResource>): void {
     const from = this.lastToggled;
     if (!from) {
       const item = itemsByKey.get(toKey);
@@ -85,7 +87,7 @@ class SelectionStore {
     this.lastToggled = toKey;
   }
 
-  selectAll(keys: string[], itemsByKey: Map<string, Record<string, unknown>>): void {
+  selectAll(keys: string[], itemsByKey: Map<string, KubernetesResource>): void {
     const newKeys = new Set(this.selectedKeys);
     const newItems = new Map(this.selectedItems);
 
@@ -115,8 +117,8 @@ class SelectionStore {
     this.visibleKeys = new Set();
   }
 
-  items(): Record<string, unknown>[] {
-    return [...this.selectedKeys].map((k) => this.selectedItems.get(k)).filter((v): v is Record<string, unknown> => v !== undefined);
+  items(): KubernetesResource[] {
+    return [...this.selectedKeys].map((k) => this.selectedItems.get(k)).filter((v): v is KubernetesResource => v !== undefined);
   }
 
   setVisibleKeys(keys: Set<string>): void {

@@ -2,6 +2,7 @@ import {describe, it, expect, beforeEach, vi} from "vitest";
 import {render, screen, waitFor} from "@testing-library/svelte";
 import Sidebar from "$lib/components/Sidebar.svelte";
 import {sessionStore} from "$lib/stores/session.svelte";
+import type {SidebarEntry} from "../../../bindings/github.com/Vilsol/klados/internal/plugin/models";
 
 vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js", () => ({
   ListAPIResources: vi.fn().mockResolvedValue([]),
@@ -57,7 +58,7 @@ describe("Sidebar plugin entries", () => {
     const {GetPluginSidebarEntries} = await import("../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js");
     vi.mocked(GetPluginSidebarEntries).mockResolvedValue([
       {category: "Security", label: "Certificates", gvr: "cert-manager.io.v1.certificates", icon: "", plugin: "cert-manager"},
-    ] as unknown[]);
+    ] as unknown as SidebarEntry[]);
 
     render(Sidebar);
 
@@ -71,7 +72,7 @@ describe("Sidebar plugin entries", () => {
     vi.mocked(GetPluginSidebarEntries).mockResolvedValue([
       {category: "Security", label: "Certificates", gvr: "cert-manager.io.v1.certificates", icon: "", plugin: "cert-manager"},
       {category: "Security", label: "Issuers", gvr: "cert-manager.io.v1.issuers", icon: "", plugin: "cert-manager"},
-    ] as unknown[]);
+    ] as unknown as SidebarEntry[]);
 
     render(Sidebar);
 

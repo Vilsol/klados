@@ -33,17 +33,17 @@
     }
   });
 
-  function itemKey(obj: Record<string, unknown>): string {
+  function itemKey(obj: import("$lib/types").KubernetesResource): string {
     const ns = obj.metadata?.namespace ?? "";
     const name = obj.metadata?.name ?? "";
     return ns ? `${ns}/${name}` : name;
   }
 
-  function currentReplicas(item: Record<string, unknown>): number {
+  function currentReplicas(item: import("$lib/types").KubernetesResource): number {
     return item.spec?.replicas ?? 0;
   }
 
-  function targetReplicas(item: Record<string, unknown>): number {
+  function targetReplicas(item: import("$lib/types").KubernetesResource): number {
     const current = currentReplicas(item);
     switch (mode) {
       case "set":

@@ -23,6 +23,7 @@
   import type {ActionDef} from "$lib/registry/index";
   import {evalExpr} from "$lib/registry/index";
   import {clusterStore} from "$lib/stores/cluster.svelte";
+  import type {KubernetesResource} from "$lib/types";
 
   let {
     obj,
@@ -33,7 +34,7 @@
     actions,
     onrefresh,
   }: {
-    obj: Record<string, unknown>;
+    obj: KubernetesResource;
     ctxName: string;
     gvr: string;
     namespace: string;

@@ -19,6 +19,7 @@ import {notificationStore} from "$lib/stores/notification.svelte.js";
 import {streamingStore} from "$lib/stores/streaming.svelte.js";
 import {clusterStore} from "$lib/stores/cluster.svelte.js";
 import {createPluginContext} from "$lib/plugins/context.js";
+import type {PluginManifest} from "$lib/plugins/types/manifest.js";
 import {ListResources, GetResource} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 
 export type {PermsSummary};
@@ -253,7 +254,7 @@ function buildCommandContext(pluginName: string, perms: PermsSummary) {
     },
   };
   const ctx = clusterStore.activeContext ?? "";
-  return createPluginContext(manifest, {
+  return createPluginContext(manifest as unknown as PluginManifest, {
     clusterName: ctx,
     clusterVersion: "",
     namespace: clusterStore.getSelectedNamespaces(ctx)[0] ?? "",

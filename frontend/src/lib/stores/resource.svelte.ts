@@ -1,20 +1,21 @@
 import {Events} from "@wailsio/runtime";
 import {ListResources, StartWatch, StopWatch} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 import {getLogger} from "$lib/logger";
+import type {KubernetesResource} from "$lib/types";
 
 const log = getLogger("resource");
 
 interface WatchEvent {
   type: "ADDED" | "MODIFIED" | "DELETED";
-  object: Record<string, unknown>;
+  object: KubernetesResource;
 }
 
-function resourceKey(obj: Record<string, unknown>): string {
+function resourceKey(obj: KubernetesResource): string {
   return `${obj.metadata?.namespace ?? ""}/${obj.metadata?.name ?? ""}`;
 }
 
 class ResourceStore {
-  items = $state<Record<string, unknown>[]>([]);
+  items = $state<KubernetesResource[]>([]);
   loading = $state(false);
   error = $state<string | null>(null);
   lastLoadMs = $state<number | null>(null);
@@ -52,7 +53,7 @@ class ResourceStore {
       }
       const listMs = performance.now() - tList;
 
-      const map = new Map<string, Record<string, unknown>>();
+      const map = new Map<string, KubernetesResource>();
       for (const obj of list ?? []) {
         map.set(resourceKey(obj), obj);
       }

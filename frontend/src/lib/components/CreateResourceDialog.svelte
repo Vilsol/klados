@@ -234,7 +234,7 @@
     saving = true;
     try {
       const yamlText = view.state.doc.toString();
-      const parsed = parse(yamlText) as Record<string, unknown>;
+      const parsed = parse(yamlText) as import("$lib/types").KubernetesResource;
       if (!parsed) {
         notificationStore.push("Invalid YAML", "error");
         return;

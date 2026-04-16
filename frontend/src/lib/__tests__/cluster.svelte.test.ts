@@ -63,7 +63,7 @@ describe("clusterStore", () => {
     mockedListContexts.mockResolvedValue([
       {name: "ctx1", cluster: "c1", user: "u1", namespace: "default", status: ConnectionStatus.StatusConnected},
       {name: "ctx2", cluster: "c2", user: "u2", namespace: "ns2", status: ConnectionStatus.StatusDisconnected},
-    ] as unknown[]);
+    ] as never);
 
     await clusterStore.loadContexts();
 
@@ -74,7 +74,7 @@ describe("clusterStore", () => {
 
   it("connect updates status without auto-setting active context", async () => {
     mockedConnect.mockResolvedValue(undefined);
-    mockedListNamespaces.mockResolvedValue(["default", "kube-system"] as unknown[]);
+    mockedListNamespaces.mockResolvedValue(["default", "kube-system"] as never);
 
     await clusterStore.connect("ctx1");
 
@@ -88,7 +88,7 @@ describe("clusterStore", () => {
   it("connect does not override activeContext when already set", async () => {
     clusterStore.activeContext = "ctx1";
     mockedConnect.mockResolvedValue(undefined);
-    mockedListNamespaces.mockResolvedValue([] as unknown[]);
+    mockedListNamespaces.mockResolvedValue([] as never);
 
     await clusterStore.connect("ctx2");
 

@@ -131,6 +131,7 @@
   onmouseleave={() => { hoverIdx = null; hoverPxX = 0; }}
   role="presentation"
 >
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <svg
     bind:this={svgEl}
     class="w-full h-full select-none"

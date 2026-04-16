@@ -76,21 +76,21 @@ class DescriptorRegistry {
           kind: d.kind ?? "",
           gvr,
           clusterScoped: d.clusterScoped ?? false,
-          columns: (d.columns ?? []).map((c: Record<string, unknown>) => ({
+          columns: (d.columns ?? []).map((c) => ({
             name: c.name ?? "",
             expr: c.expr ?? "",
-            renderType: (c.renderType ?? "text") as RenderType,
+            renderType: ((c.renderType ?? "text") as string) as RenderType,
             width: c.width ?? undefined,
-            align: c.align ?? undefined,
+            align: (c.align ?? undefined) as AlignType | undefined,
             hidden: c.hidden ?? undefined,
           })),
-          overviewFields: (d.overviewFields ?? []).map((f: Record<string, unknown>) => ({
+          overviewFields: (d.overviewFields ?? []).map((f) => ({
             label: f.label ?? "",
             expr: f.expr ?? "",
-            renderType: (f.renderType ?? "text") as RenderType,
+            renderType: ((f.renderType ?? "text") as string) as RenderType,
           })),
           detailPanels: d.detailPanels ?? [],
-          actions: (d.actions ?? []).map((a: Record<string, unknown>) => ({
+          actions: (d.actions ?? []).map((a) => ({
             name: a.name ?? "",
             label: a.label ?? "",
             disabledWhen: a.disabledWhen ?? undefined,
@@ -125,18 +125,18 @@ class DescriptorRegistry {
         const gvr = `${gKey}.${d.version}.${d.resource}`;
         if (this.descriptors.has(gvr)) {
           const existing = this.descriptors.get(gvr) as DescriptorDef;
-          const pluginColumns = (d.columns ?? []).map((c: Record<string, unknown>) => ({
+          const pluginColumns: ColumnDef[] = (d.columns ?? []).map((c) => ({
             name: c.name ?? "",
             expr: c.expr ?? "",
-            renderType: (c.renderType ?? "text") as RenderType,
+            renderType: ((c.renderType ?? "text") as string) as RenderType,
             width: c.width ?? undefined,
-            align: c.align ?? undefined,
+            align: (c.align ?? undefined) as AlignType | undefined,
             hidden: c.hidden ?? undefined,
           }));
-          const addedOverview = (d.overviewFields ?? []).map((f: Record<string, unknown>) => ({
+          const addedOverview: OverviewFieldDef[] = (d.overviewFields ?? []).map((f) => ({
             label: f.label ?? "",
             expr: f.expr ?? "",
-            renderType: (f.renderType ?? "text") as RenderType,
+            renderType: ((f.renderType ?? "text") as string) as RenderType,
           }));
           const panelSet = new Set(existing.detailPanels);
           for (const p of d.detailPanels ?? []) {
@@ -167,21 +167,21 @@ class DescriptorRegistry {
             resource: d.resource ?? "",
             kind: d.kind ?? "",
             gvr,
-            columns: (d.columns ?? []).map((c: Record<string, unknown>) => ({
+            columns: (d.columns ?? []).map((c) => ({
               name: c.name ?? "",
               expr: c.expr ?? "",
-              renderType: (c.renderType ?? "text") as RenderType,
+              renderType: ((c.renderType ?? "text") as string) as RenderType,
               width: c.width ?? undefined,
-              align: c.align ?? undefined,
+              align: (c.align ?? undefined) as AlignType | undefined,
               hidden: c.hidden ?? undefined,
             })),
-            overviewFields: (d.overviewFields ?? []).map((f: Record<string, unknown>) => ({
+            overviewFields: (d.overviewFields ?? []).map((f) => ({
               label: f.label ?? "",
               expr: f.expr ?? "",
-              renderType: (f.renderType ?? "text") as RenderType,
+              renderType: ((f.renderType ?? "text") as string) as RenderType,
             })),
             detailPanels: d.detailPanels ?? [],
-            actions: (d.actions ?? []).map((a: Record<string, unknown>) => ({
+            actions: (d.actions ?? []).map((a) => ({
               name: a.name ?? "",
               label: a.label ?? "",
               disabledWhen: a.disabledWhen ?? undefined,

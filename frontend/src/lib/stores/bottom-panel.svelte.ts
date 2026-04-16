@@ -42,7 +42,7 @@ class BottomPanelStore {
     this.tabs = this.tabs.filter((t) => t.id !== id);
     if (this.activeTabId === id) {
       const visible = this.visibleTabs;
-      this.activeTabId = visible.length > 0 ? visible.at(-1).id : null;
+      this.activeTabId = visible.length > 0 ? (visible.at(-1)?.id ?? null) : null;
     }
   }
 

@@ -277,6 +277,9 @@
 
             const overRect = u.over.getBoundingClientRect();
             const parentRect = tooltip.parentElement?.getBoundingClientRect();
+            if (!parentRect) {
+              return;
+            }
             const absX = overRect.left - parentRect.left + x;
             const absY = overRect.top - parentRect.top + y;
 
@@ -302,9 +305,11 @@
               onzoom?.(null);
               // Also reset locally — the $effect will cover other charts
               const data = u.data[0] as number[];
-              if (data.length > 0) {
+              const first = data[0];
+              const last = data.at(-1);
+              if (data.length > 0 && first !== undefined && last !== undefined) {
                 isProgrammaticScale = true;
-                u.setScale("x", {min: data[0], max: data.at(-1)});
+                u.setScale("x", {min: first, max: last});
                 isProgrammaticScale = false;
               }
             });
@@ -450,8 +455,10 @@
         chart.setScale("x", {min: range.min, max: range.max});
       } else {
         const data = chart.data[0] as number[];
-        if (data?.length > 0) {
-          chart.setScale("x", {min: data[0], max: data.at(-1)});
+        const first = data?.[0];
+        const last = data?.at(-1);
+        if (data?.length > 0 && first !== undefined && last !== undefined) {
+          chart.setScale("x", {min: first, max: last});
         }
       }
       isProgrammaticScale = false;

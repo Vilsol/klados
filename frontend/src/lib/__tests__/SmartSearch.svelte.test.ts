@@ -26,7 +26,7 @@ describe("SmartSearch", () => {
 
     expect(ontermschange).toHaveBeenCalled();
     const lastCall = ontermschange.mock.calls.at(-1);
-    expect(lastCall[0]).toEqual([{type: "text", value: "nginx", negated: false}]);
+    expect(lastCall?.[0]).toEqual([{type: "text", value: "nginx", negated: false}]);
   });
 
   it("shows autocomplete when typing a qualifier prefix", async () => {

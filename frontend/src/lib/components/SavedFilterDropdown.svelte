@@ -96,7 +96,7 @@
     const clusterFilters = (clusterPrefs as {savedFilters?: Record<string, {name?: string}[]>})?.savedFilters?.[gvr] ?? [];
     const clusterUpdated = clusterFilters.filter((f: {name?: string}) => f.name !== name);
     if (clusterUpdated.length !== clusterFilters.length) {
-      await SetClusterSavedFilters(contextName, gvr, clusterUpdated);
+      await SetClusterSavedFilters(contextName, gvr, clusterUpdated.filter((f): f is SavedFilter => typeof f.name === "string"));
     }
   }
 

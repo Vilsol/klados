@@ -200,7 +200,8 @@
         <div style="height: {$virtualizer.getTotalSize()}px; position: relative;">
           {#each $virtualizer.getVirtualItems() as row (row.index)}
             {@const item = items[row.index]}
-            <!-- svelte-ignore a11y_no_static_element_interactions a11y_no_noninteractive_tabindex -->
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               class="absolute top-0 left-0 min-w-full flex items-center px-2 transition-colors group
                 {selectedRow?.(item) ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-surface-hover border-l-2 border-transparent'}

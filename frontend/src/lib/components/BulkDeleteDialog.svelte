@@ -21,7 +21,7 @@
   const selectedItems = $derived(selectionStore.items());
   const gvr = $derived(selectionStore.selectedGVR);
 
-  function itemKey(obj: Record<string, unknown>): string {
+  function itemKey(obj: import("$lib/types").KubernetesResource): string {
     const ns = obj.metadata?.namespace ?? "";
     const name = obj.metadata?.name ?? "";
     return ns ? `${ns}/${name}` : name;

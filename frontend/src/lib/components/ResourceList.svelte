@@ -26,7 +26,7 @@
   import {shortcutStore} from "$lib/stores/shortcuts.svelte";
   import {shortcutActions} from "$lib/stores/shortcutActions.svelte";
 
-  function itemKey(obj: Record<string, KubernetesResource>): string {
+  function itemKey(obj: KubernetesResource): string {
     const ns = obj.metadata?.namespace ?? "";
     const name = obj.metadata?.name ?? "";
     return ns ? `${ns}/${name}` : name;

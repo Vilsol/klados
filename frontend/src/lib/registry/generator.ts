@@ -4,9 +4,10 @@ import {
   Column,
   Action,
   OverviewField,
+  RenderType as BindingRenderType,
 } from "../../../bindings/github.com/Vilsol/klados/internal/resource/index.js";
 
-export type RenderType = "text" | "badge" | "age" | "progress";
+export type RenderType = BindingRenderType;
 
 const UNIVERSAL_PANELS = [
   "overview",
@@ -34,11 +35,11 @@ export function jsonPathToCEL(jsonPath: string): string {
 export function crdTypeToRenderType(t: string): RenderType {
   switch (t) {
     case "date":
-      return "age";
+      return BindingRenderType.RenderAge;
     case "boolean":
-      return "badge";
+      return BindingRenderType.RenderBadge;
     default:
-      return "text";
+      return BindingRenderType.RenderText;
   }
 }
 
@@ -47,11 +48,11 @@ export function generateDescriptor(r: APIResource): Descriptor {
   const [group, version, resourceName] = splitGVR(r.gvr);
 
   const columns: Column[] = [];
-  columns.push(new Column({ name: "Name", expr: "metadata.name", renderType: "text" }));
+  columns.push(new Column({ name: "Name", expr: "metadata.name", renderType: BindingRenderType.RenderText }));
   if (r.namespaced) {
-    columns.push(new Column({ name: "Namespace", expr: "metadata.namespace", renderType: "text" }));
+    columns.push(new Column({ name: "Namespace", expr: "metadata.namespace", renderType: BindingRenderType.RenderText }));
   }
-  columns.push(new Column({ name: "Age", expr: "metadata.creationTimestamp", renderType: "age" }));
+  columns.push(new Column({ name: "Age", expr: "metadata.creationTimestamp", renderType: BindingRenderType.RenderAge }));
 
   const existingNames = new Set(columns.map((c) => c.name));
   for (const pc of r.printerColumns ?? []) {
@@ -70,7 +71,7 @@ export function generateDescriptor(r: APIResource): Descriptor {
   if (r.subresources?.scale) {
     const specPath = jsonPathToCEL(r.scaleSpec?.specReplicasPath ?? ".spec.replicas");
     if (!existingNames.has("Replicas") && specPath) {
-      columns.push(new Column({ name: "Replicas", expr: specPath, renderType: "text" }));
+      columns.push(new Column({ name: "Replicas", expr: specPath, renderType: BindingRenderType.RenderText }));
       existingNames.add("Replicas");
     }
   }
@@ -88,9 +89,9 @@ export function generateDescriptor(r: APIResource): Descriptor {
 
   const overviewFields: OverviewField[] = [];
   if (r.namespaced) {
-    overviewFields.push(new OverviewField({ label: "Namespace", expr: "metadata.namespace", renderType: "text" }));
+    overviewFields.push(new OverviewField({ label: "Namespace", expr: "metadata.namespace", renderType: BindingRenderType.RenderText }));
   }
-  overviewFields.push(new OverviewField({ label: "Age", expr: "metadata.creationTimestamp", renderType: "age" }));
+  overviewFields.push(new OverviewField({ label: "Age", expr: "metadata.creationTimestamp", renderType: BindingRenderType.RenderAge }));
 
   return new Descriptor({
     group,
