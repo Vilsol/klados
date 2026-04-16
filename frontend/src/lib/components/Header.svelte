@@ -48,7 +48,7 @@
   );
 </script>
 
-<header class="flex items-center h-12 px-4 border-b border-border bg-surface shrink-0 gap-4" class:pl-20={isMac}>
+<header class="flex items-center px-4 border-b border-border bg-surface shrink-0 gap-4 {isMac ? 'pl-24 h-[50px]' : 'h-12'}">
   <span class="font-semibold text-sm tracking-wide">Klados</span>
 
   <div class="flex items-center gap-2 ml-4">
