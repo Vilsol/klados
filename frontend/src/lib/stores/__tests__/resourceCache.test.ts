@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { SvelteMap } from "svelte/reactivity";
 import { resourceCache } from "../resourceCache.svelte";
 
 describe("resourceCache", () => {
   beforeEach(() => {
-    (resourceCache as any).cache = new Map();
+    (resourceCache as any).cache = new SvelteMap();
   });
 
   it("upsert + findByOwnerUID", () => {

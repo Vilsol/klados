@@ -1,10 +1,15 @@
+import { SvelteMap } from "svelte/reactivity";
+
 /**
  * Global cache of watched resources, indexed by (contextName, gvr) → (uid → object).
  * Populated by ResourceStore instances as they receive watch events. Used by
  * RelatedResourcesPanel for reverse-lookup by ownerReferences.uid.
+ *
+ * Uses SvelteMap (not plain Map) so set/delete mutations trigger reactivity
+ * in consumers that read the cache inside $derived.
  */
 class ResourceCache {
-  private cache = $state<Map<string, Map<string, Record<string, unknown>>>>(new Map());
+  private cache = new SvelteMap<string, SvelteMap<string, Record<string, unknown>>>();
 
   private keyFor(ctx: string, gvr: string): string {
     return `${ctx}::${gvr}`;
@@ -16,7 +21,7 @@ class ResourceCache {
     const key = this.keyFor(ctx, gvr);
     let m = this.cache.get(key);
     if (!m) {
-      m = new Map();
+      m = new SvelteMap();
       this.cache.set(key, m);
     }
     m.set(uid, obj);

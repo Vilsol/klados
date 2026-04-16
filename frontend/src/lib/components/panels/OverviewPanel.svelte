@@ -8,6 +8,7 @@
 
   import {SectionHeader, KeyValueBadge, EmptyState, StatusBadge, KeyValuePairEditor, CopyableValue} from "@klados/ui";
   import {slotRegistry} from "$lib/plugins/slots.svelte.js";
+  import OwnerChain from "./OwnerChain.svelte";
   import {loadPluginComponent} from "$lib/plugins/loader.js";
   import {streamingStore} from "$lib/stores/streaming.svelte.js";
   import {UpdateResource} from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
@@ -175,6 +176,7 @@
   <!-- Overview fields card -->
   <section class="bg-surface border border-border rounded-lg p-4">
     <SectionHeader class="mb-3">Details</SectionHeader>
+    <OwnerChain contextName={ctxName} {obj} />
     <div class="grid grid-cols-3 gap-x-6 gap-y-3">
       {#each descriptor.overviewFields as field}
         <div class="min-w-0">

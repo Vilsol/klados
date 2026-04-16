@@ -50,6 +50,7 @@
   import ConditionsPanel from "./panels/ConditionsPanel.svelte";
   import MetadataPanel from "./panels/MetadataPanel.svelte";
   import DriftPanel from "./panels/DriftPanel.svelte";
+  import RelatedResourcesPanel from "./panels/RelatedResourcesPanel.svelte";
   import ActionsToolbar from "./panels/ActionsToolbar.svelte";
   import { getLastAppliedConfig } from "../kubernetes/metadata";
   import ValidationWarningBanner from "./ValidationWarningBanner.svelte";
@@ -93,6 +94,7 @@
     ["conditions", ConditionsPanel as PanelComponent],
     ["metadata", MetadataPanel as PanelComponent],
     ["drift", DriftPanel as PanelComponent],
+    ["related", RelatedResourcesPanel as PanelComponent],
   ]);
 
   const panelLabels: Record<string, string> = {
@@ -129,6 +131,7 @@
     conditions: "Conditions",
     metadata: "Metadata",
     drift: "Drift",
+    related: "Related",
   };
 
   let {
@@ -366,6 +369,8 @@
           <div class="overflow-auto h-full"><PanelCmp {obj} /></div>
         {:else if panel === 'hpa'}
           <div class="overflow-auto h-full"><PanelCmp {obj} {ctxName} /></div>
+        {:else if panel === 'related'}
+          <div class="overflow-auto h-full"><PanelCmp {obj} contextName={ctxName} /></div>
         {/if}
       {/if}
     {/each}
