@@ -2,6 +2,7 @@ import {Events} from "@wailsio/runtime";
 import {ListResources, StartWatch, StopWatch} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 import {getLogger} from "$lib/logger";
 import type {KubernetesResource} from "$lib/types";
+import {resourceCache} from "./resourceCache.svelte";
 
 const log = getLogger("resource");
 
@@ -56,6 +57,7 @@ class ResourceStore {
       const map = new Map<string, KubernetesResource>();
       for (const obj of list ?? []) {
         map.set(resourceKey(obj), obj);
+        resourceCache.upsert(contextName, gvr, obj as Record<string, unknown>);
       }
       this.items = Array.from(map.values());
       this.loading = false;
@@ -108,8 +110,11 @@ class ResourceStore {
     const key = resourceKey(obj);
 
     if (event.type === "DELETED") {
+      const uid = obj.metadata?.uid;
+      if (uid) resourceCache.remove(this.contextName, this.gvr, uid);
       this.items = this.items.filter((i) => resourceKey(i) !== key);
     } else {
+      resourceCache.upsert(this.contextName, this.gvr, obj as Record<string, unknown>);
       const idx = this.items.findIndex((i) => resourceKey(i) === key);
       if (idx >= 0) {
         const next = [...this.items];
