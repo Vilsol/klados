@@ -5,15 +5,15 @@
 		<key>CFBundleExecutable</key>
 		<string>klados</string>
 		<key>CFBundleGetInfoString</key>
-		<string>Some Product Comments</string>
+		<string>This is a comment</string>
 		<key>CFBundleIconFile</key>
 		<string>icons</string>
 		<key>CFBundleIconName</key>
 		<string>appicon</string>
 		<key>CFBundleIdentifier</key>
-		<string>com.mycompany.myproduct</string>
+		<string>me.vilsol.klados</string>
 		<key>CFBundleName</key>
-		<string>My Product</string>
+		<string>klados</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -30,6 +30,6 @@
 		<key>NSHighResolutionCapable</key>
 		<string>true</string>
 		<key>NSHumanReadableCopyright</key>
-		<string>(c) 2025, My Company</string>
+		<string>(c) 2026, Vilsol</string>
 	</dict>
 </plist>
