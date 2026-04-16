@@ -2,15 +2,19 @@ package services
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/MarvinJWendt/testza"
-	corev1 "k8s.io/api/core/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/fake"
+	kfake "k8s.io/client-go/kubernetes/fake"
+	k8stesting "k8s.io/client-go/testing"
 
 	"github.com/Vilsol/klados/internal/cluster"
 	"github.com/Vilsol/klados/internal/resource"
@@ -185,4 +189,62 @@ func TestResourceService_DeleteResource(t *testing.T) {
 	list, err := svc2.ListResources("ctx", "apps.v1.deployments", "default")
 	testza.AssertNoError(t, err)
 	testza.AssertEqual(t, 0, len(list))
+}
+
+func newTestResourceServiceWithClientset(clientset *kfake.Clientset) *ResourceService {
+	mgr := cluster.NewManager(func(string, any) {}, nil, context.Background())
+	mgr.SetConnectionForTest("ctx", &cluster.Connection{
+		Clientset: clientset,
+	})
+	appSvc := &AppService{clusterMgr: mgr}
+	return &ResourceService{appService: appSvc, ctx: context.Background()}
+}
+
+func makeEvent(name, namespace string, uid types.UID) *corev1.Event {
+	return &corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		InvolvedObject: corev1.ObjectReference{
+			UID: uid,
+		},
+	}
+}
+
+func TestGetEvents_ClusterScoped_SearchesAllNamespaces(t *testing.T) {
+	const targetUID = types.UID("cluster-scoped-uid")
+
+	clientset := kfake.NewSimpleClientset(
+		makeEvent("evt-a", "ns-a", targetUID),
+		makeEvent("evt-b", "ns-b", targetUID),
+		makeEvent("evt-other", "ns-c", "other-uid"),
+	)
+
+	// Fake clientset doesn't evaluate field selectors; simulate involvedObject.uid filtering via reactor.
+	clientset.PrependReactor("list", "events", func(action k8stesting.Action) (bool, runtime.Object, error) {
+		listAction := action.(k8stesting.ListActionImpl)
+		fs := listAction.GetListRestrictions().Fields.String()
+		wantedUID, _ := strings.CutPrefix(fs, "involvedObject.uid=")
+
+		all, _ := clientset.Tracker().List(
+			schema.GroupVersionResource{Group: "", Version: "v1", Resource: "events"},
+			schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Event"},
+			listAction.GetNamespace(),
+		)
+		allEvents := all.(*corev1.EventList)
+		filtered := &corev1.EventList{}
+		for _, e := range allEvents.Items {
+			if wantedUID == "" || string(e.InvolvedObject.UID) == wantedUID {
+				filtered.Items = append(filtered.Items, e)
+			}
+		}
+		return true, filtered, nil
+	})
+
+	svc := newTestResourceServiceWithClientset(clientset)
+
+	result, err := svc.GetEvents("ctx", "", string(targetUID))
+	testza.AssertNoError(t, err)
+	testza.AssertEqual(t, 2, len(result))
 }
