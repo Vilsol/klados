@@ -25,21 +25,26 @@ Keeping the generator in its own file means `index.ts` stays focused on registry
 
 ---
 
-## Task 1: CEL-path conversion helper
+## Task 1: Build generator.ts (helpers + `generateDescriptor`)
 
-Converts JSONPath expressions from CRD printer columns (e.g. `.spec.replicas`, `.status.conditions[?(@.type=="Ready")].status`) to CEL expressions usable by our renderer.
+Single module combining three concerns: JSONPath→CEL conversion, CRD-type→renderType mapping, and full descriptor construction from an `APIResource`. Each helper is trivially testable in isolation, so they share one file and one test suite.
 
 **Files:**
 - Create: `frontend/src/lib/registry/generator.ts`
 - Create: `frontend/src/lib/registry/__tests__/generator.test.ts`
 
-- [ ] **Step 1: Write failing tests**
+- [ ] **Step 1: Write the full test suite (all failing)**
 
 Create `frontend/src/lib/registry/__tests__/generator.test.ts`:
 
 ```typescript
 import { describe, it, expect } from "vitest";
-import { jsonPathToCEL } from "../generator";
+import {
+  jsonPathToCEL,
+  crdTypeToRenderType,
+  generateDescriptor,
+} from "../generator";
+import type { APIResource } from "../../../../bindings/github.com/Vilsol/klados/internal/cluster/index.js";
 
 describe("jsonPathToCEL", () => {
   it("strips leading dot", () => {
@@ -58,65 +63,11 @@ describe("jsonPathToCEL", () => {
     expect(jsonPathToCEL("")).toBe("");
   });
 
-  it("falls back to metadata.name for unsupported filter expressions", () => {
+  it("returns empty for unsupported filter expressions", () => {
     // We deliberately don't try to support JSONPath filter predicates.
     expect(jsonPathToCEL('.status.conditions[?(@.type=="Ready")].status')).toBe("");
   });
 });
-```
-
-- [ ] **Step 2: Run tests to verify they fail**
-
-Run: `cd frontend && npx vitest run src/lib/registry/__tests__/generator.test.ts`
-Expected: FAIL — module or export not found.
-
-- [ ] **Step 3: Implement `jsonPathToCEL`**
-
-Create `frontend/src/lib/registry/generator.ts`:
-
-```typescript
-/**
- * Convert a JSONPath expression (as used in CRD additionalPrinterColumns)
- * to a CEL expression for our renderer. We support the simple dotted-path
- * subset — JSONPath filter expressions are not supported and return "" so
- * the caller can skip the column.
- */
-export function jsonPathToCEL(jsonPath: string): string {
-  if (!jsonPath) return "";
-  let p = jsonPath.startsWith("$.") ? jsonPath.slice(2) : jsonPath;
-  if (p.startsWith(".")) p = p.slice(1);
-  if (p.includes("[") || p.includes("?") || p.includes("@")) return "";
-  return p;
-}
-```
-
-- [ ] **Step 4: Run tests**
-
-Run: `cd frontend && npx vitest run src/lib/registry/__tests__/generator.test.ts`
-Expected: all 5 tests PASS.
-
-- [ ] **Step 5: Commit**
-
-```bash
-jj desc -m "registry: jsonPathToCEL helper for printer-column conversion"
-```
-
----
-
-## Task 2: Render-type mapping
-
-Maps CRD printer column `type` (`string`, `integer`, `date`, `boolean`, `number`) to our `renderType` (`text`, `age`, `badge`, `progress`).
-
-**Files:**
-- Modify: `frontend/src/lib/registry/generator.ts`
-- Modify: `frontend/src/lib/registry/__tests__/generator.test.ts`
-
-- [ ] **Step 1: Write failing tests**
-
-Append to `generator.test.ts`:
-
-```typescript
-import { crdTypeToRenderType } from "../generator";
 
 describe("crdTypeToRenderType", () => {
   it("maps date → age", () => {
@@ -135,58 +86,6 @@ describe("crdTypeToRenderType", () => {
     expect(crdTypeToRenderType("gibberish")).toBe("text");
   });
 });
-```
-
-- [ ] **Step 2: Run to verify failure**
-
-Run: `cd frontend && npx vitest run src/lib/registry/__tests__/generator.test.ts`
-Expected: FAIL — export not found.
-
-- [ ] **Step 3: Implement**
-
-Append to `frontend/src/lib/registry/generator.ts`:
-
-```typescript
-export type RenderType = "text" | "badge" | "age" | "progress";
-
-export function crdTypeToRenderType(t: string): RenderType {
-  switch (t) {
-    case "date":
-      return "age";
-    case "boolean":
-      return "badge";
-    default:
-      return "text";
-  }
-}
-```
-
-- [ ] **Step 4: Run tests**
-
-Run: `cd frontend && npx vitest run src/lib/registry/__tests__/generator.test.ts`
-Expected: all tests PASS.
-
-- [ ] **Step 5: Commit**
-
-```bash
-jj new && jj desc -m "registry: crdTypeToRenderType helper"
-```
-
----
-
-## Task 3: Full descriptor generation
-
-**Files:**
-- Modify: `frontend/src/lib/registry/generator.ts`
-- Modify: `frontend/src/lib/registry/__tests__/generator.test.ts`
-
-- [ ] **Step 1: Write failing tests**
-
-Append to `generator.test.ts`:
-
-```typescript
-import { generateDescriptor } from "../generator";
-import type { APIResource } from "../../../../bindings/github.com/Vilsol/klados/internal/cluster/index.js";
 
 const baseResource = (over: Partial<APIResource> = {}): APIResource => ({
   GVR: "example.com.v1.widgets",
@@ -272,14 +171,14 @@ describe("generateDescriptor", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [ ] **Step 2: Run tests to verify they all fail**
 
 Run: `cd frontend && npx vitest run src/lib/registry/__tests__/generator.test.ts`
-Expected: FAIL — `generateDescriptor` not exported.
+Expected: FAIL — module or exports not found.
 
-- [ ] **Step 3: Implement `generateDescriptor`**
+- [ ] **Step 3: Implement all three helpers in `generator.ts`**
 
-Append to `frontend/src/lib/registry/generator.ts`:
+Create `frontend/src/lib/registry/generator.ts`:
 
 ```typescript
 import type { APIResource } from "../../../bindings/github.com/Vilsol/klados/internal/cluster/index.js";
@@ -288,6 +187,8 @@ import type { resource } from "../../../bindings/github.com/Vilsol/klados/intern
 type Descriptor = resource.Descriptor;
 type Column = resource.Column;
 type Action = resource.Action;
+
+export type RenderType = "text" | "badge" | "age" | "progress";
 
 const UNIVERSAL_PANELS = [
   "overview",
@@ -300,8 +201,33 @@ const UNIVERSAL_PANELS = [
 ];
 
 /**
- * Build a Descriptor from an enriched APIResource (discovery payload). This is
- * called when no built-in or plugin descriptor exists for the GVR.
+ * Convert a JSONPath expression (as used in CRD additionalPrinterColumns)
+ * to a CEL expression for our renderer. Only the simple dotted-path subset
+ * is supported — JSONPath filter predicates return "" so callers can skip
+ * those columns.
+ */
+export function jsonPathToCEL(jsonPath: string): string {
+  if (!jsonPath) return "";
+  let p = jsonPath.startsWith("$.") ? jsonPath.slice(2) : jsonPath;
+  if (p.startsWith(".")) p = p.slice(1);
+  if (p.includes("[") || p.includes("?") || p.includes("@")) return "";
+  return p;
+}
+
+export function crdTypeToRenderType(t: string): RenderType {
+  switch (t) {
+    case "date":
+      return "age";
+    case "boolean":
+      return "badge";
+    default:
+      return "text";
+  }
+}
+
+/**
+ * Build a Descriptor from an enriched APIResource (discovery payload). This
+ * is called when no built-in or plugin descriptor exists for the GVR.
  */
 export function generateDescriptor(r: APIResource): Descriptor {
   const [group, version, resourceName] = r.GVR.split(".").length >= 3
@@ -371,27 +297,25 @@ function splitGVR(gvr: string): [string, string, string] {
   const secondLast = gvr.lastIndexOf(".", lastDot - 1);
   const group = gvr.slice(0, secondLast);
   const version = gvr.slice(secondLast + 1, lastDot);
-  const resource = gvr.slice(lastDot + 1);
-  return [group, version, resource];
+  const resourceName = gvr.slice(lastDot + 1);
+  return [group, version, resourceName];
 }
 ```
 
 If `resource.Descriptor`/`resource.Column`/`resource.Action` aren't exported under that namespace, open `frontend/bindings/github.com/Vilsol/klados/internal/services/index.js` and find the correct import path. The type names remain identical.
 
-- [ ] **Step 4: Run tests**
+- [ ] **Step 4: Run tests — all should pass**
 
 Run: `cd frontend && npx vitest run src/lib/registry/__tests__/generator.test.ts`
-Expected: all PASS.
+Expected: all 17 tests PASS.
 
 - [ ] **Step 5: Commit**
 
-```bash
-jj new && jj desc -m "registry: generateDescriptor builds descriptors from discovery metadata"
-```
+The working copy is an empty commit prepared by the controller. Do NOT run `jj new` or `jj desc` — snapshot will capture the changes and the controller will handle the commit boundary.
 
 ---
 
-## Task 4: Wire generator into DescriptorRegistry
+## Task 2: Wire generator into DescriptorRegistry
 
 **Files:**
 - Modify: `frontend/src/lib/registry/index.ts`
@@ -512,13 +436,11 @@ Expected: exits 0.
 
 - [ ] **Step 7: Commit**
 
-```bash
-jj new && jj desc -m "registry: resolve to generated descriptor for GVRs lacking built-in/plugin"
-```
+The controller prepared a fresh working-copy commit for Task 2. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 5: End-to-end manual verification
+## Task 3: End-to-end manual verification
 
 - [ ] **Step 1: Run dev mode**
 
@@ -531,18 +453,16 @@ Navigate to `/c/<ctx>/<crd-gvr>`. Verify:
 - Columns with `priority > 0` are hidden (accessible via column chooser if one exists).
 - The detail page shows the universal tabs (Events will be implemented in Phase 3 — it may currently be blank/placeholder; that's expected).
 
-- [ ] **Step 3: Commit the phase marker**
+- [ ] **Step 3: Phase marker**
 
-```bash
-jj new && jj desc -m "docs: phase 2 dynamic descriptors complete"
-```
+No additional commit needed — the controller will close out Phase 2 after Task 3 passes.
 
 ---
 
 ## Self-Review Checklist
 
 - [x] Every code block contains executable code.
-- [x] Tests precede implementation (Tasks 1-3).
+- [x] Tests precede implementation (each task opens with a failing test suite).
 - [x] Resolution priority matches spec: built-in → plugin → generated → static fallback.
 - [x] `clusterScoped` flag correctly mirrors `!Namespaced`.
-- [x] Commits after each task.
+- [x] 3 tasks (not 5) — helpers consolidated into one generator module, followed by registry wiring, followed by manual verification.

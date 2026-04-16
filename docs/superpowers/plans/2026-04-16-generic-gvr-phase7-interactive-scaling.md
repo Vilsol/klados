@@ -28,11 +28,15 @@ No frontend code changes are required — the Scale dialog already calls `ScaleR
 
 ---
 
-## Task 1: Expose scale-subresource lookup on cluster.Manager
+## Task 1: Backend scaling infrastructure
 
 **Files:**
 - Modify: `internal/cluster/manager.go`
 - Modify: `internal/cluster/manager_test.go` (or `discover_integration_test.go`)
+- Modify: `internal/resource/engine.go`
+- Modify: `internal/resource/engine_test.go` (create if absent — check first)
+
+### Expose scale-subresource lookup on cluster.Manager
 
 - [ ] **Step 1: Store the discovered APIResources on the Manager**
 
@@ -76,7 +80,7 @@ func (m *Manager) HasScaleSubresource(contextName, gvr string) bool {
 }
 ```
 
-- [ ] **Step 3: Unit test**
+- [ ] **Step 3: Unit test HasScaleSubresource**
 
 Append to `internal/cluster/discover_integration_test.go`:
 
@@ -97,31 +101,19 @@ func TestHasScaleSubresource(t *testing.T) {
 }
 ```
 
-- [ ] **Step 4: Run tests**
+- [ ] **Step 4: Run cluster tests**
 
 Run: `go test ./internal/cluster/ -run TestHasScaleSubresource -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+### Engine.Scale using the dynamic client's scale subresource
 
-```bash
-jj desc -m "cluster: HasScaleSubresource lookup from discovery cache"
-```
-
----
-
-## Task 2: Engine.Scale using the dynamic client's scale subresource
-
-**Files:**
-- Modify: `internal/resource/engine.go`
-- Modify: `internal/resource/engine_test.go` (create if absent — check first)
-
-- [ ] **Step 1: Check for existing engine tests**
+- [ ] **Step 5: Check for existing engine tests**
 
 Run: `ls internal/resource/*_test.go`
 Note which exist. If `engine_test.go` is absent, create it with an appropriate fake clientset setup (mirror the patterns used in `internal/services/resource_test.go`).
 
-- [ ] **Step 2: Write failing test**
+- [ ] **Step 6: Write failing test**
 
 Add to `internal/resource/engine_test.go`:
 
@@ -176,7 +168,7 @@ func ptrInt32(n int32) *int32 { return &n }
 
 This test mostly exercises the code path; a more thorough test would use a reactor (`dyn.PrependReactor("update", "deployments", ...)`) to intercept and assert the subresource was "scale".
 
-- [ ] **Step 3: Implement `Engine.Scale`**
+- [ ] **Step 7: Implement `Engine.Scale`**
 
 Add to `internal/resource/engine.go`:
 
@@ -240,20 +232,16 @@ func (e *ResourceEngine) ScaleViaMergePatch(ctx context.Context, contextName, gv
 
 If `ParseGVR` isn't exported, check the existing resource package for a GVR parsing helper (the CLAUDE.md references a `ParseGVR`) and use its real name. Add `"fmt"` to imports if not already present.
 
-- [ ] **Step 4: Run tests**
+- [ ] **Step 8: Run engine tests**
 
 Run: `go test ./internal/resource/ -v`
 Expected: PASS. If the fake dynamic client doesn't support the scale subresource path, adjust the test to use a reactor that asserts the subresource name.
 
-- [ ] **Step 5: Commit**
-
-```bash
-jj new && jj desc -m "engine: Scale via scale subresource with MergePatch fallback"
-```
+The controller prepared a fresh working-copy commit for Task 1. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 3: Wire ScaleResource to engine + fallback path
+## Task 2: Wire ScaleResource to engine + fallback path
 
 **Files:**
 - Modify: `internal/services/resource.go`
@@ -320,24 +308,25 @@ Expected: PASS.
 Run: `go test ./internal/... -v` (skipping CGO-requiring packages per CLAUDE.md: `go test ./internal/config/ ./internal/session/ ./internal/cluster/ ./internal/streaming/ ./internal/watcher/ ./internal/resource/ ./internal/services/ -v`)
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-jj new && jj desc -m "services: ScaleResource delegates to engine, falls back to MergePatch"
-```
+The controller prepared a fresh working-copy commit for Task 2. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 4: RBAC error surface
+## Task 3: Bindings regen + RBAC + manual verification
 
 **Files:**
 - Modify: `frontend/src/lib/components/panels/ActionsToolbar.svelte` — confirm error handling already shows notification (likely does via `notificationStore`)
 
-- [ ] **Step 1: Verify error handling path**
+- [ ] **Step 1: Regenerate bindings**
+
+Run: `wails3 generate bindings`
+Expected: no-op or trivial diff (signature unchanged).
+
+- [ ] **Step 2: Verify error handling path**
 
 Open `frontend/src/lib/components/panels/ActionsToolbar.svelte`. Find the `doScale` handler. Confirm that on error the existing helper surfaces a notification (pattern seen in structural exploration: `"Scaled ${name} to ${replicas}"` / `"Scale failed"`).
 
-- [ ] **Step 2: If the error surface only shows a generic "Scale failed"**
+- [ ] **Step 3: If the error surface only shows a generic "Scale failed"**
 
 Enhance to include the error message. Example edit:
 
@@ -357,26 +346,11 @@ After:
 
 Only change this if the helper supports a function-form error message. Otherwise leave as-is — a generic error is acceptable.
 
-- [ ] **Step 3: No test needed if nothing changed**
+- [ ] **Step 4: No test needed if nothing changed**
 
 If you edited, run: `cd frontend && pnpm test`. Otherwise skip.
 
-- [ ] **Step 4: Commit (only if changed)**
-
-```bash
-jj new && jj desc -m "ActionsToolbar: surface detailed error on scale failure"
-```
-
----
-
-## Task 5: Regenerate bindings + manual verification
-
-- [ ] **Step 1: Regenerate bindings**
-
-Run: `wails3 generate bindings`
-Expected: no-op or trivial diff (signature unchanged).
-
-- [ ] **Step 2: Launch dev mode, test on a CRD with scale subresource**
+- [ ] **Step 5: Launch dev mode, test on a CRD with scale subresource**
 
 Run: `task dev`
 
@@ -390,21 +364,17 @@ Verify:
 - A Deployment still scales correctly (existing path preserved).
 - A resource without scale (e.g. a ConfigMap — which should not even show the action) does not attempt scale.
 
-- [ ] **Step 3: Verify RBAC error surface**
+- [ ] **Step 6: Verify RBAC error surface**
 
 Create a limited-privilege kubeconfig that lacks `patch/update` on `deployments/scale`. Confirm the scale attempt surfaces a clear error notification.
 
-- [ ] **Step 4: Commit phase marker**
-
-```bash
-jj new && jj desc -m "docs: phase 7 interactive scaling complete"
-```
+No additional commit needed — the controller will close out Phase 7 after Task 3 passes.
 
 ---
 
 ## Self-Review Checklist
 
-- [x] Scale subresource used when available, MergePatch fallback otherwise.
+- [x] Scale subresource used when available, MergePatch fallback otherwise (3 tasks not 5).
 - [x] Resources without scale subresource don't even show the Scale action (Phase 2 handles this — auto-generated descriptors omit scale action for non-scalable GVRs; built-in descriptors were already correct).
 - [x] Existing Scale dialog and BulkScaleDialog reused — no new UI components.
 - [x] RBAC failures surface via existing notification path.

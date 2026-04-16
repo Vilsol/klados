@@ -25,7 +25,7 @@
 - Create: `frontend/src/lib/components/panels/DriftPanel.svelte`
 - Modify: `frontend/src/lib/components/panels/OverviewPanel.svelte` (or equivalent — find the built-in overview) — show finalizers list
 - Modify: `frontend/src/lib/components/ResourceDetail.svelte` — register new panels, conditionally show `DriftPanel` only when last-applied annotation exists
-- Modify: `frontend/src/lib/registry/index.ts` — mark `"drift"` panel as conditional (see Task 5)
+- Modify: `frontend/src/lib/registry/index.ts` — mark `"drift"` panel as conditional (see Task 3)
 
 ---
 
@@ -192,20 +192,20 @@ export function getLastAppliedConfig(obj: unknown): Record<string, any> | null {
 Run: `cd frontend && npx vitest run src/lib/kubernetes/__tests__/metadata.test.ts`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-jj desc -m "kubernetes: metadata helpers for labels, annotations, finalizers, drift"
-```
+The controller prepared a fresh working-copy commit for Task 1. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 2: MetadataPanel component
+## Task 2: Build Metadata panel + Finalizers display
 
 **Files:**
 - Create: `frontend/src/lib/components/panels/MetadataPanel.svelte`
+- Create: `frontend/src/lib/__tests__/MetadataPanel.svelte.test.ts`
+- Modify: whichever `OverviewPanel.svelte` / built-in overview component exists. Locate via `grep -rn "overviewFields" frontend/src | head`
 
-- [ ] **Step 1: Implement**
+### MetadataPanel
+
+- [ ] **Step 1: Implement MetadataPanel**
 
 ```svelte
 <script lang="ts">
@@ -316,30 +316,19 @@ describe("MetadataPanel", () => {
 });
 ```
 
-- [ ] **Step 3: Run tests**
+- [ ] **Step 3: Run MetadataPanel tests**
 
 Run: `cd frontend && npx vitest run src/lib/__tests__/MetadataPanel.svelte.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+### Finalizers in Overview
 
-```bash
-jj new && jj desc -m "MetadataPanel: structured labels/annotations view"
-```
-
----
-
-## Task 3: Finalizers in Overview
-
-**Files:**
-- Modify: whichever `OverviewPanel.svelte` / built-in overview component exists. Locate via `grep -rn "overviewFields" frontend/src | head`
-
-- [ ] **Step 1: Locate the overview component**
+- [ ] **Step 4: Locate the overview component**
 
 Run: `grep -rln 'overviewFields\|OverviewPanel' frontend/src`
 Expected output names the file rendering the overview panel (likely `frontend/src/lib/components/panels/OverviewPanel.svelte` or similar). Call it `OverviewPanel.svelte` below.
 
-- [ ] **Step 2: Add finalizers section**
+- [ ] **Step 5: Add finalizers section**
 
 Near the end of the overview's template (after the overview fields loop), add:
 
@@ -365,31 +354,31 @@ Near the end of the overview's template (after the overview fields loop), add:
 {/if}
 ```
 
-- [ ] **Step 3: Type-check + run tests**
+- [ ] **Step 6: Type-check + run tests**
 
 Run: `cd frontend && pnpm check && pnpm test`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
-
-```bash
-jj new && jj desc -m "OverviewPanel: show finalizers when present"
-```
+The controller prepared a fresh working-copy commit for Task 2. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 4: DriftPanel component
+## Task 3: Build DriftPanel and wire conditional rendering
 
 **Files:**
 - Create: `frontend/src/lib/components/panels/DriftPanel.svelte`
 - Locate: the existing `DiffView` component — search `grep -rn 'DiffView' frontend/src` to find import path
+- Modify: `frontend/src/lib/components/ResourceDetail.svelte`
+- Modify: `frontend/src/lib/registry/generator.ts` — `"drift"` stays in panels but should only render when applicable (handled at the `ResourceDetail` level since tabs are string-identified)
+
+### DriftPanel component
 
 - [ ] **Step 1: Check for js-yaml dependency**
 
 Run: `grep '"js-yaml"' frontend/package.json`
 Expected: present. If not, install: `cd frontend && pnpm add js-yaml && pnpm add -D @types/js-yaml`.
 
-- [ ] **Step 2: Implement**
+- [ ] **Step 2: Implement DriftPanel**
 
 ```svelte
 <script lang="ts">
@@ -430,7 +419,7 @@ Expected: present. If not, install: `cd frontend && pnpm add js-yaml && pnpm add
 
 **Note:** The `DiffView` import path depends on the project's actual setup. Check `apps/docs/src/stories/DiffView.stories.ts` for the correct import and props. If it lives in `frontend/src/lib/components/DiffView.svelte` or `@klados/ui`, adjust.
 
-- [ ] **Step 3: Test**
+- [ ] **Step 3: Test DriftPanel**
 
 Create `frontend/src/lib/__tests__/DriftPanel.svelte.test.ts`:
 
@@ -464,26 +453,14 @@ describe("DriftPanel", () => {
 
 If the DiffView mock path differs, adjust accordingly.
 
-- [ ] **Step 4: Run tests**
+- [ ] **Step 4: Run DriftPanel tests**
 
 Run: `cd frontend && npx vitest run src/lib/__tests__/DriftPanel.svelte.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+### Register panels and conditionally hide Drift tab
 
-```bash
-jj new && jj desc -m "DriftPanel: diff current object against last-applied-configuration"
-```
-
----
-
-## Task 5: Conditional DriftPanel rendering + wiring
-
-**Files:**
-- Modify: `frontend/src/lib/components/ResourceDetail.svelte`
-- Modify: `frontend/src/lib/registry/generator.ts` — `"drift"` stays in panels but should only render when applicable (handled at the `ResourceDetail` level since tabs are string-identified)
-
-- [ ] **Step 1: Register panels and conditionally hide Drift tab**
+- [ ] **Step 5: Register panels and conditionally hide Drift tab**
 
 Open `frontend/src/lib/components/ResourceDetail.svelte`. Add imports:
 
@@ -514,36 +491,32 @@ let visiblePanels = $derived(() => {
 
 Use `visiblePanels()` when rendering the tab strip (instead of `descriptor.detailPanels`).
 
-- [ ] **Step 2: Type-check + tests**
+- [ ] **Step 6: Type-check + tests**
 
 Run: `cd frontend && pnpm check && pnpm test`
 Expected: PASS.
 
-- [ ] **Step 3: Manual verification**
+- [ ] **Step 7: Manual verification**
 
 Run: `task dev`. Open a resource that has a last-applied annotation (e.g. create a Deployment via `kubectl apply`). Confirm the Drift tab appears; on a resource created without `kubectl apply` (e.g. `kubectl create`), the Drift tab is absent.
 
-- [ ] **Step 4: Commit**
-
-```bash
-jj new && jj desc -m "ResourceDetail: register Metadata/Drift panels, hide Drift when N/A"
-```
+The controller prepared a fresh working-copy commit for Task 3. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 6: Phase marker
+## Task 4: Phase marker / manual verification
 
-- [ ] **Step 1: Commit phase marker**
+- [ ] **Step 1: Final checks**
 
-```bash
-jj new && jj desc -m "docs: phase 5 metadata/finalizers/drift complete"
-```
+Confirm all previous tasks are complete, tests pass, and the feature works end-to-end in `task dev`.
+
+No additional commit needed — the controller will close out Phase 5 after Task 4 passes.
 
 ---
 
 ## Self-Review Checklist
 
-- [x] Metadata helpers unit-tested, no mutation of input.
+- [x] Metadata helpers unit-tested, no mutation of input (4 tasks not 6).
 - [x] MetadataPanel excludes last-applied annotation.
 - [x] Finalizers show only when non-empty.
 - [x] Drift tab conditional on annotation presence.

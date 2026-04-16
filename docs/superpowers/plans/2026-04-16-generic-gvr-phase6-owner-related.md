@@ -29,11 +29,16 @@
 
 ---
 
-## Task 1: Owner helpers — extract owner refs, traverse chain
+## Task 1: Owner helpers + resourceCache infrastructure
 
 **Files:**
 - Create: `frontend/src/lib/kubernetes/owners.ts`
 - Create: `frontend/src/lib/kubernetes/__tests__/owners.test.ts`
+- Create: `frontend/src/lib/stores/resourceCache.svelte.ts`
+- Create: `frontend/src/lib/stores/__tests__/resourceCache.test.ts`
+- Modify: `frontend/src/lib/stores/resource.svelte.ts`
+
+### Owner helpers
 
 - [ ] **Step 1: Write failing tests**
 
@@ -84,7 +89,7 @@ Save as `frontend/src/lib/kubernetes/__tests__/owners.test.ts`.
 Run: `cd frontend && npx vitest run src/lib/kubernetes/__tests__/owners.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [ ] **Step 3: Implement owners.ts**
 
 Create `frontend/src/lib/kubernetes/owners.ts`:
 
@@ -127,25 +132,14 @@ function pluralize(s: string): string {
 }
 ```
 
-- [ ] **Step 4: Run tests**
+- [ ] **Step 4: Run owners tests**
 
 Run: `cd frontend && npx vitest run src/lib/kubernetes/__tests__/owners.test.ts`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+### Resource cache store
 
-```bash
-jj desc -m "kubernetes: owner reference helpers and naive GVR conversion"
-```
-
----
-
-## Task 2: Resource cache store
-
-**Files:**
-- Create: `frontend/src/lib/stores/resourceCache.svelte.ts`
-
-- [ ] **Step 1: Implement**
+- [ ] **Step 5: Implement resourceCache.svelte.ts**
 
 ```typescript
 /**
@@ -202,7 +196,7 @@ class ResourceCache {
 export const resourceCache = new ResourceCache();
 ```
 
-- [ ] **Step 2: Unit test**
+- [ ] **Step 6: Unit test resourceCache**
 
 Create `frontend/src/lib/stores/__tests__/resourceCache.test.ts`:
 
@@ -248,25 +242,14 @@ describe("resourceCache", () => {
 });
 ```
 
-- [ ] **Step 3: Run tests**
+- [ ] **Step 7: Run resourceCache tests**
 
 Run: `cd frontend && npx vitest run src/lib/stores/__tests__/resourceCache.test.ts`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+### Hydrate cache from ResourceStore
 
-```bash
-jj new && jj desc -m "stores: global resourceCache indexed by (ctx, gvr) -> (uid -> obj)"
-```
-
----
-
-## Task 3: Hydrate cache from ResourceStore
-
-**Files:**
-- Modify: `frontend/src/lib/stores/resource.svelte.ts`
-
-- [ ] **Step 1: Add cache hooks**
+- [ ] **Step 8: Add cache hooks to resource.svelte.ts**
 
 Open `frontend/src/lib/stores/resource.svelte.ts`. Find:
 - Initial list population (where `items` is first set from `ListResources`).
@@ -293,25 +276,27 @@ if (type === "ADDED" || type === "MODIFIED") {
 
 If `contextName` / `gvr` are passed to `start()` but not stored as fields, store them. Also ensure the existing `items` state update still happens — cache updates are additive.
 
-- [ ] **Step 2: Run frontend tests**
+- [ ] **Step 9: Run frontend tests**
 
 Run: `cd frontend && pnpm test`
 Expected: existing tests PASS.
 
-- [ ] **Step 3: Commit**
-
-```bash
-jj new && jj desc -m "ResourceStore: populate resourceCache from List and Watch events"
-```
+The controller prepared a fresh working-copy commit for Task 1. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 4: OwnerChain component (breadcrumb)
+## Task 2: Build OwnerChain and RelatedResourcesPanel
 
 **Files:**
 - Create: `frontend/src/lib/components/panels/OwnerChain.svelte`
+- Modify: `frontend/src/lib/components/panels/OverviewPanel.svelte` — embed `OwnerChain`
+- Create: `frontend/src/lib/components/panels/RelatedResourcesPanel.svelte`
+- Create: `frontend/src/lib/__tests__/RelatedResourcesPanel.svelte.test.ts`
+- Modify: `frontend/src/lib/components/ResourceDetail.svelte` — register `RelatedResourcesPanel`
 
-- [ ] **Step 1: Implement**
+### OwnerChain component
+
+- [ ] **Step 1: Implement OwnerChain**
 
 ```svelte
 <script lang="ts">
@@ -374,7 +359,7 @@ jj new && jj desc -m "ResourceStore: populate resourceCache from List and Watch 
 
 - [ ] **Step 2: Embed in OverviewPanel**
 
-Open the Overview panel file (located in Phase 5 Task 3). Near the top of its template, add:
+Open the Overview panel file (located in Phase 5 Task 2). Near the top of its template, add:
 
 ```svelte
 <script lang="ts">
@@ -400,20 +385,9 @@ Ensure `ResourceDetail.svelte` passes `contextName` to the overview panel (it sh
 Run: `cd frontend && pnpm check`
 Expected: exits 0.
 
-- [ ] **Step 4: Commit**
+### RelatedResourcesPanel component
 
-```bash
-jj new && jj desc -m "OwnerChain: breadcrumb to owners up to 5 levels deep"
-```
-
----
-
-## Task 5: RelatedResourcesPanel component
-
-**Files:**
-- Create: `frontend/src/lib/components/panels/RelatedResourcesPanel.svelte`
-
-- [ ] **Step 1: Implement**
+- [ ] **Step 4: Implement RelatedResourcesPanel**
 
 ```svelte
 <script lang="ts">
@@ -465,7 +439,7 @@ jj new && jj desc -m "OwnerChain: breadcrumb to owners up to 5 levels deep"
 {/if}
 ```
 
-- [ ] **Step 2: Register in ResourceDetail**
+- [ ] **Step 5: Register in ResourceDetail**
 
 Open `frontend/src/lib/components/ResourceDetail.svelte`, add import and entry to panel map:
 
@@ -478,7 +452,7 @@ import RelatedResourcesPanel from "./panels/RelatedResourcesPanel.svelte";
 
 Ensure the `contextName` prop is passed to this panel.
 
-- [ ] **Step 3: Tests**
+- [ ] **Step 6: Tests**
 
 Create `frontend/src/lib/__tests__/RelatedResourcesPanel.svelte.test.ts`:
 
@@ -523,20 +497,16 @@ describe("RelatedResourcesPanel", () => {
 });
 ```
 
-- [ ] **Step 4: Run tests**
+- [ ] **Step 7: Run tests**
 
 Run: `cd frontend && npx vitest run src/lib/__tests__/RelatedResourcesPanel.svelte.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-jj new && jj desc -m "RelatedResourcesPanel: reverse-lookup owner UID in watched resources"
-```
+The controller prepared a fresh working-copy commit for Task 2. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 6: Manual verification
+## Task 3: Manual verification
 
 - [ ] **Step 1: Launch dev mode**
 
@@ -552,17 +522,13 @@ Navigate to a Pod detail page. Confirm:
 
 Navigate to the Deployment that owns the Pod. Open the Related tab. Confirm the Pod(s) and ReplicaSet(s) appear, grouped by GVR.
 
-- [ ] **Step 4: Commit phase marker**
-
-```bash
-jj new && jj desc -m "docs: phase 6 owner chain and related resources complete"
-```
+No additional commit needed — the controller will close out Phase 6 after Task 3 passes.
 
 ---
 
 ## Self-Review Checklist
 
-- [x] Owner chain respects 5-level cap (loop guard).
+- [x] Owner chain respects 5-level cap (loop guard) (3 tasks not 6).
 - [x] Owner chain prefers controller reference when multiple owners.
 - [x] Related lookup only uses cached/watched resources (per spec).
 - [x] Cache hydrated from both initial List and Watch events.

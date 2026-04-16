@@ -27,10 +27,11 @@
 
 ---
 
-## Task 1: Audit which built-in descriptors lack "events"
+## Task 1: Add Events tab to all built-in descriptors
 
 **Files:**
 - Reference: `internal/resource/builtin.go`
+- Modify: `internal/resource/builtin.go`
 
 - [ ] **Step 1: List descriptors and their detailPanels**
 
@@ -41,18 +42,9 @@ Inspect the output to identify descriptors whose `DetailPanels` slice does NOT c
 
 Create a short note in the implementation branch (not committed): every GVR missing `"events"`. Typical candidates: ConfigMaps, Secrets, ServiceAccounts, RoleBindings, NetworkPolicies, ResourceQuotas, LimitRanges, CRDs themselves. (The spec doesn't require ALL built-ins to gain Events — some resources like Secrets genuinely don't emit events — but the spec says "universal". Proceed with adding to all unless the resource is cluster-scoped system meta like Node.)
 
-- [ ] **Step 3: No commit yet — this task produces the edit list**
+- [ ] **Step 3: Add `"events"` to `DetailPanels` for each missing descriptor**
 
----
-
-## Task 2: Add "events" to missing built-in descriptors
-
-**Files:**
-- Modify: `internal/resource/builtin.go`
-
-- [ ] **Step 1: Add `"events"` to `DetailPanels` for each missing descriptor**
-
-For each descriptor identified in Task 1, add `"events"` to the `DetailPanels` slice. Place it after `"overview"` and before `"yaml"`. Example edit pattern:
+For each descriptor identified above, add `"events"` to the `DetailPanels` slice. Place it after `"overview"` and before `"yaml"`. Example edit pattern:
 
 Before:
 ```go
@@ -64,25 +56,21 @@ After:
 DetailPanels: []string{"overview", "labels", "events", "yaml"},
 ```
 
-- [ ] **Step 2: Verify compilation**
+- [ ] **Step 4: Verify compilation**
 
 Run: `go build ./internal/resource/`
 Expected: exits 0.
 
-- [ ] **Step 3: Run existing tests**
+- [ ] **Step 5: Run existing tests**
 
 Run: `go test ./internal/resource/ -v`
 Expected: all PASS (builtin descriptors have validation tests for CEL expressions which remain unchanged).
 
-- [ ] **Step 4: Commit**
-
-```bash
-jj desc -m "resource: add Events tab to all built-in descriptors"
-```
+The controller prepared a fresh working-copy commit for Task 1. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 3: Support cluster-scoped events in ResourceService.GetEvents
+## Task 2: Support cluster-scoped events in ResourceService.GetEvents
 
 **Files:**
 - Modify: `internal/services/resource.go` — `GetEvents` method
@@ -172,15 +160,11 @@ Expected: PASS.
 Run: `wails3 generate bindings`
 Expected: no diff (or trivial diff).
 
-- [ ] **Step 7: Commit**
-
-```bash
-jj new && jj desc -m "services: support cluster-scoped GetEvents via empty namespace"
-```
+The controller prepared a fresh working-copy commit for Task 2. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 4: EventsPanel — pass cluster scope and wire real-time watch
+## Task 3: EventsPanel — pass cluster scope and wire real-time watch
 
 **Files:**
 - Modify: `frontend/src/lib/components/panels/EventsPanel.svelte`
@@ -369,15 +353,11 @@ Expected: all PASS.
 Run: `cd frontend && pnpm check`
 Expected: 0 errors.
 
-- [ ] **Step 7: Commit**
-
-```bash
-jj new && jj desc -m "EventsPanel: real-time watch, cluster-scoped support, severity color"
-```
+The controller prepared a fresh working-copy commit for Task 3. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 5: Manual verification
+## Task 4: Manual verification
 
 - [ ] **Step 1: Launch dev mode, open a CRD detail page**
 
@@ -389,17 +369,13 @@ Connect to a cluster, trigger an event on a CR (e.g. kick a reconciliation), nav
 - New events appear without manual refresh (watch works).
 - Cluster-scoped resources (e.g. a ClusterRole) show events across namespaces.
 
-- [ ] **Step 2: Commit the phase marker**
-
-```bash
-jj new && jj desc -m "docs: phase 3 universal Events tab complete"
-```
+No additional commit needed — the controller will close out Phase 3 after Task 4 passes.
 
 ---
 
 ## Self-Review Checklist
 
-- [x] Events tab is now universal via auto-generated descriptors (Phase 2) + added to all built-ins (Task 2).
+- [x] Events tab is now universal via auto-generated descriptors (Phase 2) + added to all built-ins (Task 1, 4 tasks not 5).
 - [x] Cluster-scoped resources handled via empty-namespace path.
 - [x] Real-time updates via watch subscription.
 - [x] Severity color coding (Warning events tinted).

@@ -24,7 +24,7 @@
 - Create: `frontend/src/lib/__tests__/ConditionsPanel.svelte.test.ts`
 - Create: `frontend/src/lib/__tests__/HealthBadge.svelte.test.ts`
 - Modify: `frontend/src/lib/components/ResourceDetail.svelte` — register `ConditionsPanel`, show `ValidationWarningBanner` at top
-- Modify: `frontend/src/lib/components/ResourceList.svelte` — render `HealthBadge` column (details in Task 5)
+- Modify: `frontend/src/lib/components/ResourceList.svelte` — render `HealthBadge` column (details in Task 3)
 
 ---
 
@@ -263,19 +263,20 @@ export function findWarnings(conditions: Condition[]): Warning[] {
 Run: `cd frontend && npx vitest run src/lib/kubernetes/__tests__/conditions.test.ts`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-jj desc -m "kubernetes: condition classification, health, and warning helpers"
-```
+The controller prepared a fresh working-copy commit for Task 1. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 2: ConditionsPanel component
+## Task 2: Build condition-based UI components
 
 **Files:**
 - Create: `frontend/src/lib/components/panels/ConditionsPanel.svelte`
 - Create: `frontend/src/lib/__tests__/ConditionsPanel.svelte.test.ts`
+- Create: `frontend/src/lib/components/ValidationWarningBanner.svelte`
+- Create: `frontend/src/lib/components/HealthBadge.svelte`
+- Create: `frontend/src/lib/__tests__/HealthBadge.svelte.test.ts`
+
+### ConditionsPanel
 
 - [ ] **Step 1: Write failing test**
 
@@ -314,7 +315,7 @@ describe("ConditionsPanel", () => {
 Run: `cd frontend && npx vitest run src/lib/__tests__/ConditionsPanel.svelte.test.ts`
 Expected: FAIL — component not found.
 
-- [ ] **Step 3: Implement**
+- [ ] **Step 3: Implement ConditionsPanel**
 
 Create `frontend/src/lib/components/panels/ConditionsPanel.svelte`:
 
@@ -366,25 +367,14 @@ Create `frontend/src/lib/components/panels/ConditionsPanel.svelte`:
 {/if}
 ```
 
-- [ ] **Step 4: Run test**
+- [ ] **Step 4: Run ConditionsPanel test**
 
 Run: `cd frontend && npx vitest run src/lib/__tests__/ConditionsPanel.svelte.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+### ValidationWarningBanner
 
-```bash
-jj new && jj desc -m "ConditionsPanel: detail tab for status.conditions"
-```
-
----
-
-## Task 3: ValidationWarningBanner component
-
-**Files:**
-- Create: `frontend/src/lib/components/ValidationWarningBanner.svelte`
-
-- [ ] **Step 1: Implement (no dedicated test — render path exercised via ResourceDetail tests)**
+- [ ] **Step 5: Implement ValidationWarningBanner (no dedicated test — render path exercised via ResourceDetail tests)**
 
 Create `frontend/src/lib/components/ValidationWarningBanner.svelte`:
 
@@ -416,26 +406,14 @@ Create `frontend/src/lib/components/ValidationWarningBanner.svelte`:
 {/if}
 ```
 
-- [ ] **Step 2: Type-check**
+- [ ] **Step 6: Type-check**
 
 Run: `cd frontend && pnpm check`
 Expected: exits 0.
 
-- [ ] **Step 3: Commit**
+### HealthBadge
 
-```bash
-jj new && jj desc -m "ValidationWarningBanner: surface problematic conditions"
-```
-
----
-
-## Task 4: HealthBadge component
-
-**Files:**
-- Create: `frontend/src/lib/components/HealthBadge.svelte`
-- Create: `frontend/src/lib/__tests__/HealthBadge.svelte.test.ts`
-
-- [ ] **Step 1: Write failing test**
+- [ ] **Step 7: Write failing test**
 
 Create `frontend/src/lib/__tests__/HealthBadge.svelte.test.ts`:
 
@@ -470,12 +448,12 @@ describe("HealthBadge", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [ ] **Step 8: Run to verify failure**
 
 Run: `cd frontend && npx vitest run src/lib/__tests__/HealthBadge.svelte.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement**
+- [ ] **Step 9: Implement HealthBadge**
 
 Create `frontend/src/lib/components/HealthBadge.svelte`:
 
@@ -511,20 +489,16 @@ Create `frontend/src/lib/components/HealthBadge.svelte`:
 {/if}
 ```
 
-- [ ] **Step 4: Run test**
+- [ ] **Step 10: Run HealthBadge test**
 
 Run: `cd frontend && npx vitest run src/lib/__tests__/HealthBadge.svelte.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-jj new && jj desc -m "HealthBadge: compact condition-based health indicator"
-```
+The controller prepared a fresh working-copy commit for Task 2. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 5: Integrate into ResourceDetail and ResourceList
+## Task 3: Integrate into ResourceDetail and ResourceList
 
 **Files:**
 - Modify: `frontend/src/lib/components/ResourceDetail.svelte`
@@ -586,27 +560,23 @@ Expected: PASS.
 
 Run: `task dev`. Navigate to a Deployment list — confirm a green/red dot appears next to the Name. Open a detail page, confirm the Conditions tab works and the warning banner shows when a condition is negative.
 
-- [ ] **Step 6: Commit**
-
-```bash
-jj new && jj desc -m "integration: ConditionsPanel, ValidationWarningBanner, HealthBadge wired in"
-```
+The controller prepared a fresh working-copy commit for Task 3. Do NOT run `jj new` or `jj desc` — snapshot captures your changes automatically.
 
 ---
 
-## Task 6: Phase marker
+## Task 4: Phase marker / manual verification
 
-- [ ] **Step 1: Commit phase marker**
+- [ ] **Step 1: Final checks**
 
-```bash
-jj new && jj desc -m "docs: phase 4 conditions & health complete"
-```
+Confirm all previous tasks are complete, tests pass, and the feature works end-to-end in `task dev`.
+
+No additional commit needed — the controller will close out Phase 4 after Task 4 passes.
 
 ---
 
 ## Self-Review Checklist
 
-- [x] `ConditionsPanel` covered by spec §3a.
+- [x] `ConditionsPanel` covered by spec §3a (4 tasks not 6).
 - [x] `HealthBadge` covered by spec §3a.
 - [x] `ValidationWarningBanner` covered by spec §3f.
 - [x] Classification logic in a single shared module (DRY).
