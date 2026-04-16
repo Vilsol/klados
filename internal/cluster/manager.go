@@ -463,10 +463,40 @@ func (m *Manager) DeleteNamespace(ctx context.Context, contextName, name string)
 	return err
 }
 
+// APIResource describes a discoverable resource on the cluster, including
+// optional metadata useful for rendering (printer columns, subresources,
+// scale subresource paths for CRDs).
 type APIResource struct {
-	GVR        string `json:"gvr"`
-	Kind       string `json:"kind"`
-	Namespaced bool   `json:"namespaced"`
+	GVR            string                    `json:"gvr"`
+	Kind           string                    `json:"kind"`
+	Namespaced     bool                      `json:"namespaced"`
+	Subresources   ResourceSubresources      `json:"subresources"`
+	PrinterColumns []AdditionalPrinterColumn `json:"printerColumns,omitempty"`
+	ScaleSpec      *ScaleSubresourceSpec     `json:"scaleSpec,omitempty"`
+}
+
+// ResourceSubresources captures which well-known subresources are supported.
+type ResourceSubresources struct {
+	Scale  bool `json:"scale"`
+	Status bool `json:"status"`
+}
+
+// AdditionalPrinterColumn mirrors the CRD printer column definition used by
+// kubectl's column rendering.
+type AdditionalPrinterColumn struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"`        // "string" | "integer" | "number" | "boolean" | "date"
+	Format      string `json:"format,omitempty"`
+	Description string `json:"description,omitempty"`
+	Priority    int32  `json:"priority"`    // 0 = visible by default
+	JSONPath    string `json:"jsonPath"`
+}
+
+// ScaleSubresourceSpec captures the paths the CRD declared for its scale
+// subresource. Defaults are "spec.replicas" / "status.replicas".
+type ScaleSubresourceSpec struct {
+	SpecReplicasPath   string `json:"specReplicasPath"`
+	StatusReplicasPath string `json:"statusReplicasPath"`
 }
 
 func (m *Manager) DiscoverResources(contextName string) ([]APIResource, error) {
