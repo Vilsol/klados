@@ -35,3 +35,4 @@ examples/plugin-node-annotator/dist/
 # Debug/scratch files
 frontend/scroll-debug.log
 terminal.md
+coverage.out
