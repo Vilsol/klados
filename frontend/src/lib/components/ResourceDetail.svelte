@@ -49,7 +49,9 @@
   import WebhookConfigPanel from "./panels/WebhookConfigPanel.svelte";
   import ConditionsPanel from "./panels/ConditionsPanel.svelte";
   import MetadataPanel from "./panels/MetadataPanel.svelte";
+  import DriftPanel from "./panels/DriftPanel.svelte";
   import ActionsToolbar from "./panels/ActionsToolbar.svelte";
+  import { getLastAppliedConfig } from "../kubernetes/metadata";
   import ValidationWarningBanner from "./ValidationWarningBanner.svelte";
   import MetricsTab from "./charts/MetricsTab.svelte";
   import {YAMLEditor} from "@klados/ui";
@@ -90,6 +92,7 @@
     ["webhooks", WebhookConfigPanel as PanelComponent],
     ["conditions", ConditionsPanel as PanelComponent],
     ["metadata", MetadataPanel as PanelComponent],
+    ["drift", DriftPanel as PanelComponent],
   ]);
 
   const panelLabels: Record<string, string> = {
@@ -125,6 +128,7 @@
     webhooks: "Webhooks",
     conditions: "Conditions",
     metadata: "Metadata",
+    drift: "Drift",
   };
 
   let {
@@ -165,7 +169,11 @@
   }
 
   const foldedIntoOverview = new Set(["labels", "containers"]);
-  const visiblePanels = $derived(descriptor.detailPanels.filter((p) => panelComponents.has(p) && !foldedIntoOverview.has(p)));
+  const visiblePanels = $derived.by(() => {
+    const all = descriptor.detailPanels.filter((p) => panelComponents.has(p) && !foldedIntoOverview.has(p));
+    if (getLastAppliedConfig(obj)) return all;
+    return all.filter((p) => p !== "drift");
+  });
   const pluginTabs = $derived(slotRegistry.getDetailTabs(gvr));
   let activePanel = $state("");
   $effect(() => {

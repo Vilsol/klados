@@ -1,6 +1,6 @@
 <script lang="ts">
   import {evalExpr} from "$lib/registry/index";
-  import {getFinalizers} from "$lib/kubernetes/metadata";
+  import {getFinalizers, LAST_APPLIED_ANNOTATION} from "$lib/kubernetes/metadata";
   import type {DescriptorDef} from "$lib/registry/index";
   import {formatAge} from "$lib/utils/age";
   import {getControllerRef, type ControllerRef} from "$lib/utils/relationships";
@@ -115,7 +115,9 @@
   }
 
   const labels = $derived(Object.entries(obj.metadata?.labels ?? {}));
-  const annotations = $derived(Object.entries(obj.metadata?.annotations ?? {}));
+  const annotations = $derived(
+    Object.entries(obj.metadata?.annotations ?? {}).filter(([k]) => k !== LAST_APPLIED_ANNOTATION),
+  );
 
   // Containers state
   const hasContainersPanel = $derived(descriptor.detailPanels.includes("containers"));
