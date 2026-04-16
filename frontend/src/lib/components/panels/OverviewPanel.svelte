@@ -1,5 +1,6 @@
 <script lang="ts">
   import {evalExpr} from "$lib/registry/index";
+  import {getFinalizers} from "$lib/kubernetes/metadata";
   import type {DescriptorDef} from "$lib/registry/index";
   import {formatAge} from "$lib/utils/age";
   import {getControllerRef, type ControllerRef} from "$lib/utils/relationships";
@@ -164,6 +165,8 @@
   }
 
   let showInitContainers = $state(false);
+
+  const finalizers = $derived(getFinalizers(obj));
 </script>
 
 <div class="overflow-auto h-full p-4 flex flex-col gap-4">
@@ -480,6 +483,18 @@
               {/if}
             </div>
           </div>
+        {/each}
+      </div>
+    </section>
+  {/if}
+
+  <!-- Finalizers -->
+  {#if finalizers.length > 0}
+    <section class="bg-surface border border-border rounded-lg p-4">
+      <SectionHeader class="mb-3">Finalizers</SectionHeader>
+      <div class="flex flex-wrap gap-2">
+        {#each finalizers as f}
+          <span class="rounded bg-bg border border-border px-2 py-0.5 font-mono text-xs">{f}</span>
         {/each}
       </div>
     </section>

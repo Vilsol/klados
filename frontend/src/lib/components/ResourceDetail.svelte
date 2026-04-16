@@ -48,6 +48,7 @@
   import HPAPanel from "./panels/HPAPanel.svelte";
   import WebhookConfigPanel from "./panels/WebhookConfigPanel.svelte";
   import ConditionsPanel from "./panels/ConditionsPanel.svelte";
+  import MetadataPanel from "./panels/MetadataPanel.svelte";
   import ActionsToolbar from "./panels/ActionsToolbar.svelte";
   import ValidationWarningBanner from "./ValidationWarningBanner.svelte";
   import MetricsTab from "./charts/MetricsTab.svelte";
@@ -88,6 +89,7 @@
     ["pdb", PDBPanel as PanelComponent],
     ["webhooks", WebhookConfigPanel as PanelComponent],
     ["conditions", ConditionsPanel as PanelComponent],
+    ["metadata", MetadataPanel as PanelComponent],
   ]);
 
   const panelLabels: Record<string, string> = {
@@ -122,6 +124,7 @@
     pdb: "Budget",
     webhooks: "Webhooks",
     conditions: "Conditions",
+    metadata: "Metadata",
   };
 
   let {
@@ -351,7 +354,7 @@
           <div class="overflow-auto h-full"><PanelCmp {obj} /></div>
         {:else if panel === 'endpointslice'}
           <div class="overflow-auto h-full"><PanelCmp {obj} {ctxName} /></div>
-        {:else if panel === 'netpol' || panel === 'webhooks' || panel === 'conditions'}
+        {:else if panel === 'netpol' || panel === 'webhooks' || panel === 'conditions' || panel === 'metadata'}
           <div class="overflow-auto h-full"><PanelCmp {obj} /></div>
         {:else if panel === 'hpa'}
           <div class="overflow-auto h-full"><PanelCmp {obj} {ctxName} /></div>
