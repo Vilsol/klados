@@ -25,6 +25,7 @@
   import type {KubernetesResource} from "$lib/types";
   import {shortcutStore} from "$lib/stores/shortcuts.svelte";
   import {shortcutActions} from "$lib/stores/shortcutActions.svelte";
+  import HealthBadge from "./HealthBadge.svelte";
 
   function itemKey(obj: KubernetesResource): string {
     const ns = obj.metadata?.namespace ?? "";
@@ -524,7 +525,9 @@
     {@const col = getColumnDef(column.name)}
     {#if col}
       {@const value = renderCell(col, item)}
-      {#if col.name === 'Namespace'}
+      {#if col.name === 'Name'}
+        <span class="flex items-center gap-1.5 truncate" title={renderValue(value, col.renderType)}><HealthBadge obj={item} />{renderValue(value, col.renderType)}</span>
+      {:else if col.name === 'Namespace'}
         <button
           type="button"
           class="hover:text-accent cursor-pointer truncate text-left"

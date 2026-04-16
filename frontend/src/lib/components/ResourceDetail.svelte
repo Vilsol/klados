@@ -47,7 +47,9 @@
   import NetworkPolicyPanel from "./panels/NetworkPolicyPanel.svelte";
   import HPAPanel from "./panels/HPAPanel.svelte";
   import WebhookConfigPanel from "./panels/WebhookConfigPanel.svelte";
+  import ConditionsPanel from "./panels/ConditionsPanel.svelte";
   import ActionsToolbar from "./panels/ActionsToolbar.svelte";
+  import ValidationWarningBanner from "./ValidationWarningBanner.svelte";
   import MetricsTab from "./charts/MetricsTab.svelte";
   import {YAMLEditor} from "@klados/ui";
   import type {KubernetesResource} from "$lib/types";
@@ -85,6 +87,7 @@
     ["hpa", HPAPanel as PanelComponent],
     ["pdb", PDBPanel as PanelComponent],
     ["webhooks", WebhookConfigPanel as PanelComponent],
+    ["conditions", ConditionsPanel as PanelComponent],
   ]);
 
   const panelLabels: Record<string, string> = {
@@ -118,6 +121,7 @@
     hpa: "Scaling",
     pdb: "Budget",
     webhooks: "Webhooks",
+    conditions: "Conditions",
   };
 
   let {
@@ -210,6 +214,9 @@
   {#if descriptor.actions.length > 0}
     <ActionsToolbar {obj} {ctxName} {gvr} {namespace} {name} actions={descriptor.actions} {onrefresh} />
   {/if}
+
+  <!-- Validation warnings -->
+  <ValidationWarningBanner {obj} />
 
   <!-- Panel tab bar -->
   <div class="flex items-center border-b border-border bg-surface shrink-0 overflow-x-auto">
@@ -344,7 +351,7 @@
           <div class="overflow-auto h-full"><PanelCmp {obj} /></div>
         {:else if panel === 'endpointslice'}
           <div class="overflow-auto h-full"><PanelCmp {obj} {ctxName} /></div>
-        {:else if panel === 'netpol' || panel === 'webhooks'}
+        {:else if panel === 'netpol' || panel === 'webhooks' || panel === 'conditions'}
           <div class="overflow-auto h-full"><PanelCmp {obj} /></div>
         {:else if panel === 'hpa'}
           <div class="overflow-auto h-full"><PanelCmp {obj} {ctxName} /></div>
