@@ -242,7 +242,7 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "configmap", "labels", "yaml"},
+		DetailPanels: []string{"overview", "configmap", "labels", "events", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
 	{
@@ -258,7 +258,7 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "secret", "labels", "yaml"},
+		DetailPanels: []string{"overview", "secret", "labels", "events", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
 	{
@@ -352,7 +352,7 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Established", Expr: "status.established", RenderType: RenderBadge},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "crd", "crd-schema", "labels", "yaml"},
+		DetailPanels: []string{"overview", "crd", "crd-schema", "labels", "events", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
 	{
@@ -367,7 +367,7 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "serviceaccount", "labels", "yaml"},
+		DetailPanels: []string{"overview", "serviceaccount", "labels", "events", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
 	{
@@ -382,7 +382,7 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "rules", "labels", "yaml"},
+		DetailPanels: []string{"overview", "rules", "labels", "events", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
 	{
@@ -396,7 +396,7 @@ var builtinDescriptors = []*Descriptor{
 		OverviewFields: []OverviewField{
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "rules", "labels", "yaml"},
+		DetailPanels: []string{"overview", "rules", "labels", "events", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
 	{
@@ -412,7 +412,7 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "binding", "labels", "yaml"},
+		DetailPanels: []string{"overview", "binding", "labels", "events", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
 	{
@@ -427,7 +427,7 @@ var builtinDescriptors = []*Descriptor{
 		OverviewFields: []OverviewField{
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "binding", "labels", "yaml"},
+		DetailPanels: []string{"overview", "binding", "labels", "events", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
 	{
@@ -469,7 +469,7 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Default", Expr: "status.isDefault", RenderType: RenderBadge},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "sc-parameters", "labels", "yaml"},
+		DetailPanels: []string{"overview", "sc-parameters", "labels", "events", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
 	{
@@ -484,7 +484,7 @@ var builtinDescriptors = []*Descriptor{
 			{Label: "Attach Required", Expr: "string(spec.attachRequired)", RenderType: RenderBadge},
 			{Label: "Age", Expr: "metadata.creationTimestamp", RenderType: RenderAge},
 		},
-		DetailPanels: []string{"overview", "csi-capabilities", "labels", "yaml"},
+		DetailPanels: []string{"overview", "csi-capabilities", "labels", "events", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
 	{
