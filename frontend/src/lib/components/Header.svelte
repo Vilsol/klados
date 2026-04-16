@@ -7,8 +7,10 @@
   import {slotRegistry} from "$lib/plugins/slots.svelte.js";
   import {loadPluginComponent} from "$lib/plugins/loader.js";
   import {streamingStore} from "$lib/stores/streaming.svelte.js";
-  import {Events} from "@wailsio/runtime";
+  import {Events, System} from "@wailsio/runtime";
   import {ListActive} from "../../../bindings/github.com/Vilsol/klados/internal/services/drainservice.js";
+
+  const isMac = System.IsMac();
 
   const ctx = $derived(clusterStore.activeContext);
   const selected = $derived(ctx ? clusterStore.getSelectedNamespaces(ctx) : []);
@@ -46,7 +48,7 @@
   );
 </script>
 
-<header class="flex items-center h-12 px-4 border-b border-border bg-surface shrink-0 gap-4">
+<header class="flex items-center h-12 px-4 border-b border-border bg-surface shrink-0 gap-4" class:pl-20={isMac}>
   <span class="font-semibold text-sm tracking-wide">Klados</span>
 
   <div class="flex items-center gap-2 ml-4">

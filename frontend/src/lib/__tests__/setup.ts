@@ -64,6 +64,11 @@ vi.mock("@wailsio/runtime", () => ({
   Call: {
     ByID: vi.fn().mockResolvedValue(undefined),
   },
+  System: {
+    IsMac: vi.fn().mockReturnValue(false),
+    IsLinux: vi.fn().mockReturnValue(false),
+    IsWindows: vi.fn().mockReturnValue(false),
+  },
   CancellablePromise: Promise,
   Create: {
     Array: (fn: (v: unknown) => unknown) => (arr: unknown[]) => arr?.map(fn) ?? [],

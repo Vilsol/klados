@@ -3,9 +3,9 @@ set -e
 
 # Build configuration
 APP_NAME="klados"
-BUNDLE_ID="com.example.klados"
-VERSION="0.1.0"
-BUILD_NUMBER="0.1.0"
+BUNDLE_ID="com.mycompany.myproduct"
+VERSION="0.0.1"
+BUILD_NUMBER="0.0.1"
 BUILD_DIR="build/ios"
 TARGET="simulator"
 
