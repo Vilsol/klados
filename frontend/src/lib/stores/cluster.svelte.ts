@@ -19,7 +19,8 @@ import {preferencesStore} from "./preferences.svelte";
 const log = getLogger("cluster");
 // biome-ignore lint/style/noExportedImports: re-exported for consumers
 import {type KubeContext, ConnectionStatus} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js";
-import {buildKindGVRMap, resolveGVR, type APIResource} from "$lib/utils/relationships";
+import {buildKindGVRMap, resolveGVR} from "$lib/utils/relationships";
+import type {APIResource} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/index.js";
 
 export type {KubeContext};
 export {ConnectionStatus};

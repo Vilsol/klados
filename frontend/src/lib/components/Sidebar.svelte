@@ -8,6 +8,7 @@
   import {ListAPIResources} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {ListForwards, StopForward} from "../../../bindings/github.com/Vilsol/klados/internal/services/portforwardservice.js";
   import {GetPluginSidebarEntries} from "../../../bindings/github.com/Vilsol/klados/internal/services/pluginservice.js";
+  import type {APIResource} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/index.js";
   import {notificationStore} from "$lib/stores/notification.svelte.js";
   import {unwrapError} from "$lib/utils/async.js";
   import {descriptorRegistry} from "$lib/registry/index";
@@ -17,12 +18,6 @@
   import {getLogger} from "$lib/logger";
 
   const log = getLogger("sidebar");
-
-  interface APIResource {
-    gvr: string;
-    kind: string;
-    namespaced: boolean;
-  }
 
   const gvrGroups: Record<string, string[]> = {
     Workloads: [

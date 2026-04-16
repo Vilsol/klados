@@ -61,11 +61,11 @@ describe("gvrToApiVersion", () => {
 
 describe("buildKindGVRMap", () => {
   it("builds correct map from APIResource array", () => {
-    const resources: APIResource[] = [
+    const resources = [
       {gvr: "apps.v1.replicasets", kind: "ReplicaSet", namespaced: true},
       {gvr: "core.v1.pods", kind: "Pod", namespaced: true},
       {gvr: "networking.k8s.io.v1.ingresses", kind: "Ingress", namespaced: true},
-    ];
+    ] as unknown as APIResource[];
     const map = buildKindGVRMap(resources);
     expect(map.get("apps/v1:ReplicaSet")).toBe("apps.v1.replicasets");
     expect(map.get("v1:Pod")).toBe("core.v1.pods");

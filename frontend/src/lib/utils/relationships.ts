@@ -5,11 +5,8 @@ export interface ControllerRef {
   uid: string;
 }
 
-export interface APIResource {
-  gvr: string;
-  kind: string;
-  namespaced: boolean;
-}
+import type { APIResource } from "../../../bindings/github.com/Vilsol/klados/internal/cluster/index.js";
+export type { APIResource };
 
 export function getControllerRef(obj: unknown): ControllerRef | null {
   const refs = (obj as Record<string, unknown> | undefined)?.metadata;
