@@ -181,6 +181,22 @@ func TestResourceEngine_Get_Error(t *testing.T) {
 	testza.AssertNotNil(t, err)
 }
 
+func TestResourceEngine_Scale_UnknownContext(t *testing.T) {
+	enricherReg := resource.NewEnricherRegistry()
+	engine := resource.NewResourceEngine(&errorProvider{}, enricherReg)
+
+	err := engine.Scale(context.Background(), "ctx", "apps.v1.deployments", "default", "my-deploy", 3)
+	testza.AssertNotNil(t, err)
+}
+
+func TestResourceEngine_ScaleViaMergePatch_UnknownContext(t *testing.T) {
+	enricherReg := resource.NewEnricherRegistry()
+	engine := resource.NewResourceEngine(&errorProvider{}, enricherReg)
+
+	err := engine.ScaleViaMergePatch(context.Background(), "ctx", "apps.v1.deployments", "default", "my-deploy", 3)
+	testza.AssertNotNil(t, err)
+}
+
 func TestParseGVR(t *testing.T) {
 	tests := []struct {
 		input   string

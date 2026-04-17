@@ -6,8 +6,10 @@ import (
 	"strings"
 	"time"
 
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
@@ -276,4 +278,49 @@ func (e *ResourceEngine) Patch(ctx context.Context, contextName, gvr, namespace,
 
 	e.enrich(contextName, gvr, updated)
 	return updated.Object, nil
+}
+
+// Scale updates a resource's replica count via the scale subresource. Works
+// for any resource that declares a scale subresource, including CRDs.
+func (e *ResourceEngine) Scale(ctx context.Context, contextName, gvr, namespace, name string, replicas int32) error {
+	conn, err := e.clusterMgr.GetConnection(contextName)
+	if err != nil {
+		return err
+	}
+	parsed, err := ParseGVR(gvr)
+	if err != nil {
+		return err
+	}
+
+	current, err := conn.Dynamic.Resource(parsed).Namespace(namespace).Get(
+		ctx, name, metav1.GetOptions{}, "scale",
+	)
+	if err != nil {
+		return err
+	}
+
+	var scale autoscalingv1.Scale
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(current.Object, &scale); err != nil {
+		return err
+	}
+	scale.Spec.Replicas = replicas
+
+	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&scale)
+	if err != nil {
+		return err
+	}
+	current.Object = u
+
+	_, err = conn.Dynamic.Resource(parsed).Namespace(namespace).Update(
+		ctx, current, metav1.UpdateOptions{}, "scale",
+	)
+	return err
+}
+
+// ScaleViaMergePatch is the legacy fallback for resources without a scale
+// subresource. Preserves pre-Phase-7 behavior.
+func (e *ResourceEngine) ScaleViaMergePatch(ctx context.Context, contextName, gvr, namespace, name string, replicas int32) error {
+	patch := []byte(fmt.Sprintf(`{"spec":{"replicas":%d}}`, replicas))
+	_, err := e.Patch(ctx, contextName, gvr, namespace, name, types.MergePatchType, patch)
+	return err
 }

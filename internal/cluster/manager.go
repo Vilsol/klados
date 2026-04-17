@@ -91,21 +91,23 @@ type Connection struct {
 }
 
 type Manager struct {
-	mu          deadlock.RWMutex
-	connections map[string]*Connection
-	contexts    []KubeContext
-	rawConfig   *clientcmdapi.Config
-	emitEvent   func(string, any)
-	config      *config.Config
-	ctx         context.Context
+	mu                  deadlock.RWMutex
+	connections         map[string]*Connection
+	contexts            []KubeContext
+	rawConfig           *clientcmdapi.Config
+	emitEvent           func(string, any)
+	config              *config.Config
+	ctx                 context.Context
+	discoveredResources map[string][]APIResource
 }
 
 func NewManager(emitEvent func(string, any), cfg *config.Config, ctx context.Context) *Manager {
 	return &Manager{
-		connections: make(map[string]*Connection),
-		emitEvent:   emitEvent,
-		config:      cfg,
-		ctx:         ctx,
+		connections:         make(map[string]*Connection),
+		emitEvent:           emitEvent,
+		config:              cfg,
+		ctx:                 ctx,
+		discoveredResources: map[string][]APIResource{},
 	}
 }
 
@@ -545,7 +547,29 @@ func (m *Manager) DiscoverResources(contextName string) ([]APIResource, error) {
 		}
 	}
 
+	m.mu.Lock()
+	if m.discoveredResources == nil {
+		m.discoveredResources = map[string][]APIResource{}
+	}
+	m.discoveredResources[contextName] = primary
+	m.mu.Unlock()
+
 	return primary, nil
+}
+
+// HasScaleSubresource returns true when the given GVR declared a scale
+// subresource during the most recent discovery pass for this context. Returns
+// false when discovery hasn't run, the context is unknown, or the resource
+// lacks scale.
+func (m *Manager) HasScaleSubresource(contextName, gvr string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for _, r := range m.discoveredResources[contextName] {
+		if r.GVR == gvr {
+			return r.Subresources.Scale
+		}
+	}
+	return false
 }
 
 type groupVersion struct{ group, version string }

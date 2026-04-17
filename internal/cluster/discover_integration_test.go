@@ -124,3 +124,18 @@ func TestDiscoverResources_EmitsEnrichedPayload(t *testing.T) {
 	testza.AssertEqual(t, 1, len(widget.PrinterColumns))
 	testza.AssertEqual(t, "Replicas", widget.PrinterColumns[0].Name)
 }
+
+func TestHasScaleSubresource(t *testing.T) {
+	m := &Manager{
+		discoveredResources: map[string][]APIResource{
+			"c": {
+				{GVR: "apps.v1.deployments", Subresources: ResourceSubresources{Scale: true}},
+				{GVR: "core.v1.pods", Subresources: ResourceSubresources{}},
+			},
+		},
+	}
+	testza.AssertTrue(t, m.HasScaleSubresource("c", "apps.v1.deployments"))
+	testza.AssertFalse(t, m.HasScaleSubresource("c", "core.v1.pods"))
+	testza.AssertFalse(t, m.HasScaleSubresource("c", "unknown"))
+	testza.AssertFalse(t, m.HasScaleSubresource("other-ctx", "apps.v1.deployments"))
+}
