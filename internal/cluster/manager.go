@@ -57,6 +57,8 @@ type KubeContext struct {
 	Status        ConnectionStatus `json:"status"`
 	ServerVersion string           `json:"serverVersion"`
 	Provider      string           `json:"provider"`
+	SourcePath    string           `json:"sourcePath"`
+	IsDefault     bool             `json:"isDefault"`
 }
 
 func detectProvider(clusterName, serverVersion string) string {
@@ -111,9 +113,15 @@ func NewManager(emitEvent func(string, any), cfg *config.Config, ctx context.Con
 	}
 }
 
-func (m *Manager) LoadKubeconfigs(extraPaths []string) error {
-	rules := clientcmd.NewDefaultClientConfigLoadingRules()
+type sourceEntry struct {
+	path      string
+	isDefault bool
+}
 
+func (m *Manager) LoadKubeconfigs(extraPaths []string) error {
+	defaultPaths := clientcmd.NewDefaultClientConfigLoadingRules().Precedence
+
+	rules := clientcmd.NewDefaultClientConfigLoadingRules()
 	if len(extraPaths) > 0 {
 		rules.Precedence = append(rules.Precedence, extraPaths...)
 	}
@@ -121,6 +129,25 @@ func (m *Manager) LoadKubeconfigs(extraPaths []string) error {
 	cfg, err := rules.Load()
 	if err != nil {
 		return fmt.Errorf("loading kubeconfigs: %w", err)
+	}
+
+	defaultSet := make(map[string]bool, len(defaultPaths))
+	for _, p := range defaultPaths {
+		defaultSet[p] = true
+	}
+
+	sources := make(map[string]sourceEntry)
+	for _, p := range append(defaultPaths, extraPaths...) {
+		fileCfg, loadErr := clientcmd.LoadFromFile(p)
+		if loadErr != nil {
+			continue
+		}
+		isDefault := defaultSet[p]
+		for name := range fileCfg.Contexts {
+			if _, seen := sources[name]; !seen {
+				sources[name] = sourceEntry{path: p, isDefault: isDefault}
+			}
+		}
 	}
 
 	m.mu.Lock()
@@ -140,6 +167,10 @@ func (m *Manager) LoadKubeconfigs(extraPaths []string) error {
 			User:      ctx.AuthInfo,
 			Namespace: ns,
 			Status:    StatusDisconnected,
+		}
+		if src, ok := sources[name]; ok {
+			kc.SourcePath = src.path
+			kc.IsDefault = src.isDefault
 		}
 		if conn, ok := m.connections[name]; ok {
 			kc.Status = conn.Status
@@ -394,6 +425,12 @@ func (m *Manager) Disconnect(contextName string) error {
 	}
 	m.emitStatus(contextName, StatusDisconnected)
 	return nil
+}
+
+func (m *Manager) RawConfig() *clientcmdapi.Config {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.rawConfig
 }
 
 func (m *Manager) GetConnection(contextName string) (*Connection, error) {

@@ -79,6 +79,91 @@ func TestLoadKubeconfigs_ExtraPaths(t *testing.T) {
 	testza.AssertTrue(t, len(contexts) >= 2)
 }
 
+func writeExtraKubeconfig(t *testing.T, contextName string) string {
+	t.Helper()
+	dir := t.TempDir()
+	p := filepath.Join(dir, "extra-config")
+	content := `apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    server: https://127.0.0.1:9999
+  name: extra-cluster
+contexts:
+- context:
+    cluster: extra-cluster
+    user: extra-user
+  name: ` + contextName + `
+users:
+- name: extra-user
+  user:
+    token: extra-token
+`
+	testza.AssertNoError(t, os.WriteFile(p, []byte(content), 0o600))
+	return p
+}
+
+func TestLoadKubeconfigs_SourcePath_ExtraPath(t *testing.T) {
+	extraPath := writeExtraKubeconfig(t, "extra-context")
+	t.Setenv("KUBECONFIG", "")
+
+	mgr := NewManager(nil, nil, noopLogger())
+	testza.AssertNoError(t, mgr.LoadKubeconfigs([]string{extraPath}))
+
+	contexts := mgr.ListContexts()
+	var found *KubeContext
+	for i := range contexts {
+		if contexts[i].Name == "extra-context" {
+			found = &contexts[i]
+			break
+		}
+	}
+	testza.AssertNotNil(t, found)
+	testza.AssertEqual(t, extraPath, found.SourcePath)
+	testza.AssertFalse(t, found.IsDefault)
+}
+
+func TestLoadKubeconfigs_SourcePath_DefaultIsDefault(t *testing.T) {
+	p := writeTestKubeconfig(t)
+	t.Setenv("KUBECONFIG", p)
+
+	mgr := NewManager(nil, nil, noopLogger())
+	testza.AssertNoError(t, mgr.LoadKubeconfigs(nil))
+
+	contexts := mgr.ListContexts()
+	var found *KubeContext
+	for i := range contexts {
+		if contexts[i].Name == "test-context" {
+			found = &contexts[i]
+			break
+		}
+	}
+	testza.AssertNotNil(t, found)
+	testza.AssertEqual(t, p, found.SourcePath)
+	testza.AssertTrue(t, found.IsDefault)
+}
+
+func TestLoadKubeconfigs_SourcePath_Precedence(t *testing.T) {
+	// same context name in two files — earlier file wins
+	first := writeExtraKubeconfig(t, "shared-context")
+	second := writeExtraKubeconfig(t, "shared-context")
+	t.Setenv("KUBECONFIG", "")
+
+	mgr := NewManager(nil, nil, noopLogger())
+	testza.AssertNoError(t, mgr.LoadKubeconfigs([]string{first, second}))
+
+	contexts := mgr.ListContexts()
+	var found *KubeContext
+	for i := range contexts {
+		if contexts[i].Name == "shared-context" {
+			found = &contexts[i]
+			break
+		}
+	}
+	testza.AssertNotNil(t, found)
+	testza.AssertEqual(t, first, found.SourcePath)
+}
+
 func TestDisconnectNonexistent(t *testing.T) {
 	mgr := NewManager(func(string, any) {}, nil, noopLogger())
 	err := mgr.Disconnect("test-context")
