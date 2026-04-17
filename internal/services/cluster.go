@@ -10,6 +10,7 @@ import (
 
 	"github.com/Vilsol/klados/internal/cluster"
 	"github.com/Vilsol/klados/internal/config"
+	"github.com/Vilsol/klados/internal/metrics"
 	"github.com/Vilsol/klados/internal/session"
 	"github.com/adrg/xdg"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -169,6 +170,110 @@ func (c *ClusterService) ImportKubeconfigContent(content string) ([]cluster.Kube
 		return nil, err
 	}
 	return c.AddKubeconfigPath(path)
+}
+
+func (c *ClusterService) RemoveKubeconfigPath(path string) ([]cluster.KubeContext, error) {
+	for _, p := range clientcmd.NewDefaultClientConfigLoadingRules().Precedence {
+		if p == path {
+			return nil, fmt.Errorf("cannot forget default kubeconfig path")
+		}
+	}
+
+	cfg := c.appService.Config()
+	if err := cfg.Update(func(cfg *config.Config) {
+		filtered := cfg.KubeconfigPaths[:0]
+		for _, p := range cfg.KubeconfigPaths {
+			if p != path {
+				filtered = append(filtered, p)
+			}
+		}
+		cfg.KubeconfigPaths = append([]string(nil), filtered...)
+	}); err != nil {
+		return nil, err
+	}
+
+	if err := c.manager().LoadKubeconfigs(cfg.KubeconfigPaths); err != nil {
+		return nil, err
+	}
+
+	newContexts := c.manager().ListContexts()
+	alive := make(map[string]struct{}, len(newContexts))
+	for _, kc := range newContexts {
+		alive[kc.Name] = struct{}{}
+	}
+	_ = cfg.Update(func(cfg *config.Config) {
+		for name := range cfg.Clusters {
+			if _, ok := alive[name]; !ok {
+				delete(cfg.Clusters, name)
+			}
+		}
+	})
+
+	return newContexts, nil
+}
+
+type CapabilityState string
+
+const (
+	CapabilityAvailable   CapabilityState = "available"
+	CapabilityUnavailable CapabilityState = "unavailable"
+	CapabilityUnknown     CapabilityState = "unknown"
+)
+
+type ClusterInfo struct {
+	Context          cluster.KubeContext `json:"context"`
+	ServerURL        string              `json:"serverUrl"`
+	MetricsServer    CapabilityState     `json:"metricsServer"`
+	PrometheusURL    string              `json:"prometheusUrl"`
+	PrometheusSource string              `json:"prometheusSource"`
+}
+
+func (c *ClusterService) GetClusterInfo(ctxName string) (ClusterInfo, error) {
+	info := ClusterInfo{MetricsServer: CapabilityUnknown}
+
+	var found *cluster.KubeContext
+	for _, kc := range c.manager().ListContexts() {
+		if kc.Name == ctxName {
+			kcCopy := kc
+			found = &kcCopy
+			break
+		}
+	}
+	if found == nil {
+		return info, fmt.Errorf("context not found: %s", ctxName)
+	}
+	info.Context = *found
+
+	if raw := c.manager().RawConfig(); raw != nil {
+		if kctx, ok := raw.Contexts[ctxName]; ok {
+			if clst, ok := raw.Clusters[kctx.Cluster]; ok {
+				info.ServerURL = clst.Server
+			}
+		}
+	}
+
+	resolved := c.appService.Config().ResolveForCluster(ctxName)
+	if resolved.Metrics != nil && resolved.Metrics.PrometheusURL != "" {
+		info.PrometheusURL = resolved.Metrics.PrometheusURL
+		info.PrometheusSource = "configured"
+	}
+
+	conn, err := c.manager().GetConnection(ctxName)
+	if err == nil && conn.Status == cluster.StatusConnected {
+		cap := conn.MetricsCapability
+		if cap.HasMetricsServer {
+			info.MetricsServer = CapabilityAvailable
+		} else {
+			info.MetricsServer = CapabilityUnavailable
+		}
+		if info.PrometheusURL == "" {
+			if url, found := metrics.DetectPrometheus(c.ctx, conn.Clientset, conn.Discovery, conn.Dynamic, conn.Config, ""); found {
+				info.PrometheusURL = url
+				info.PrometheusSource = "detected"
+			}
+		}
+	}
+	return info, nil
 }
 
 func clusterEventPayload(contextName string) []byte {

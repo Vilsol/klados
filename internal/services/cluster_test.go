@@ -9,6 +9,7 @@ import (
 
 	"github.com/MarvinJWendt/testza"
 	"github.com/Vilsol/klados/internal/cluster"
+	"github.com/Vilsol/klados/internal/config"
 	"github.com/Vilsol/klados/internal/session"
 )
 
@@ -111,4 +112,142 @@ func TestRemoveString(t *testing.T) {
 
 	result = removeString([]string{"a"}, "x")
 	testza.AssertEqual(t, []string{"a"}, result)
+}
+
+func writeSecondKubeconfig(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	p := filepath.Join(dir, "config2")
+	content := `apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    server: https://127.0.0.2:6443
+  name: second-cluster
+contexts:
+- context:
+    cluster: second-cluster
+    user: second-user
+  name: second-context
+current-context: second-context
+users:
+- name: second-user
+  user:
+    token: fake-token-2
+`
+	testza.AssertNoError(t, os.WriteFile(p, []byte(content), 0o600))
+	return p
+}
+
+func setupClusterServiceWithConfig(t *testing.T) (*ClusterService, *config.Config) {
+	t.Helper()
+	p := writeTestKubeconfig(t)
+	t.Setenv("KUBECONFIG", p)
+
+	mgr := cluster.NewManager(func(string, any) {}, nil, context.Background())
+	testza.AssertNoError(t, mgr.LoadKubeconfigs(nil))
+
+	sess := &session.Session{
+		ConnectedClusters: []string{},
+		ActiveNamespaces:  map[string]string{},
+	}
+
+	cfg := config.DefaultConfig()
+	appSvc := &AppService{clusterMgr: mgr, config: cfg}
+	svc := &ClusterService{
+		appService: appSvc,
+		session:    sess,
+		ctx:        context.Background(),
+	}
+
+	return svc, cfg
+}
+
+func TestRemoveKubeconfigPath_RemovesAndReloads(t *testing.T) {
+	svc, cfg := setupClusterServiceWithConfig(t)
+
+	second := writeSecondKubeconfig(t)
+	_, err := svc.AddKubeconfigPath(second)
+	testza.AssertNoError(t, err)
+
+	contexts, err := svc.RemoveKubeconfigPath(second)
+	testza.AssertNoError(t, err)
+
+	for _, p := range cfg.KubeconfigPaths {
+		testza.AssertNotEqual(t, second, p)
+	}
+	for _, kc := range contexts {
+		testza.AssertNotEqual(t, "second-context", kc.Name)
+	}
+}
+
+func TestRemoveKubeconfigPath_NoOpWhenAbsent(t *testing.T) {
+	svc, cfg := setupClusterServiceWithConfig(t)
+
+	before := len(cfg.KubeconfigPaths)
+	contexts, err := svc.RemoveKubeconfigPath("/nonexistent/path/config")
+	testza.AssertNoError(t, err)
+	testza.AssertEqual(t, before, len(cfg.KubeconfigPaths))
+	testza.AssertTrue(t, len(contexts) > 0)
+}
+
+func TestRemoveKubeconfigPath_RejectsDefault(t *testing.T) {
+	svc, _ := setupClusterServiceWithConfig(t)
+
+	defaultPath := writeTestKubeconfig(t)
+	t.Setenv("KUBECONFIG", defaultPath)
+
+	_, err := svc.RemoveKubeconfigPath(defaultPath)
+	testza.AssertNotNil(t, err)
+	testza.AssertContains(t, err.Error(), "cannot forget default kubeconfig path")
+}
+
+func TestRemoveKubeconfigPath_PrunesClusterPrefs(t *testing.T) {
+	svc, cfg := setupClusterServiceWithConfig(t)
+
+	second := writeSecondKubeconfig(t)
+	_, err := svc.AddKubeconfigPath(second)
+	testza.AssertNoError(t, err)
+
+	testza.AssertNoError(t, cfg.Update(func(c *config.Config) {
+		if c.Clusters == nil {
+			c.Clusters = make(map[string]*config.ClusterPrefs)
+		}
+		c.Clusters["second-context"] = &config.ClusterPrefs{}
+	}))
+
+	_, err = svc.RemoveKubeconfigPath(second)
+	testza.AssertNoError(t, err)
+
+	cfg.Read(func(c *config.Config) {
+		_, exists := c.Clusters["second-context"]
+		testza.AssertFalse(t, exists)
+	})
+}
+
+func TestGetClusterInfo_Disconnected(t *testing.T) {
+	svc, _ := setupClusterServiceWithConfig(t)
+
+	info, err := svc.GetClusterInfo("test-context")
+	testza.AssertNoError(t, err)
+	testza.AssertEqual(t, "test-context", info.Context.Name)
+	testza.AssertEqual(t, "https://127.0.0.1:6443", info.ServerURL)
+	testza.AssertEqual(t, CapabilityUnknown, info.MetricsServer)
+	testza.AssertEqual(t, "", info.PrometheusURL)
+}
+
+func TestGetClusterInfo_ConfiguredPrometheus(t *testing.T) {
+	svc, cfg := setupClusterServiceWithConfig(t)
+
+	testza.AssertNoError(t, cfg.Update(func(c *config.Config) {
+		if c.Metrics == nil {
+			c.Metrics = make(map[string]*config.MetricsConfig)
+		}
+		c.Metrics["test-context"] = &config.MetricsConfig{PrometheusURL: "http://prometheus.example.com"}
+	}))
+
+	info, err := svc.GetClusterInfo("test-context")
+	testza.AssertNoError(t, err)
+	testza.AssertEqual(t, "http://prometheus.example.com", info.PrometheusURL)
+	testza.AssertEqual(t, "configured", info.PrometheusSource)
 }
