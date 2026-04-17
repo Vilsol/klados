@@ -304,6 +304,9 @@ func (e *ResourceEngine) Scale(ctx context.Context, contextName, gvr, namespace,
 		return err
 	}
 	scale.Spec.Replicas = replicas
+	// Preserve resourceVersion for optimistic concurrency — FromUnstructured
+	// into a typed Scale can drop metadata fields the converter doesn't know.
+	scale.ResourceVersion = current.GetResourceVersion()
 
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&scale)
 	if err != nil {

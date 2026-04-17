@@ -212,6 +212,40 @@ func makeEvent(name, namespace string, uid types.UID) *corev1.Event {
 	}
 }
 
+func TestResourceService_ScaleResource_UsesSubresource_WhenAvailable(t *testing.T) {
+	deplGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
+
+	scheme := runtime.NewScheme()
+	_ = appsv1.AddToScheme(scheme)
+
+	dyn := fake.NewSimpleDynamicClientWithCustomListKinds(scheme, map[schema.GroupVersionResource]string{
+		deplGVR: "DeploymentList",
+	}, makeDeployment("my-deploy", "default", 2))
+
+	subresourceCalled := false
+	dyn.PrependReactor("update", "deployments", func(action k8stesting.Action) (bool, runtime.Object, error) {
+		if action.GetSubresource() == "scale" {
+			subresourceCalled = true
+		}
+		return false, nil, nil
+	})
+
+	mgr := cluster.NewManager(func(string, any) {}, nil, context.Background())
+	mgr.SetConnectionForTest("ctx", &cluster.Connection{Dynamic: dyn})
+	mgr.SetDiscoveredResourcesForTest("ctx", []cluster.APIResource{
+		{GVR: "apps.v1.deployments", Subresources: cluster.ResourceSubresources{Scale: true}},
+	})
+
+	enricherReg := resource.NewEnricherRegistry()
+	eng := resource.NewResourceEngine(&fakeConnProvider{dyn}, enricherReg)
+	appSvc := &AppService{clusterMgr: mgr}
+	svc := &ResourceService{appService: appSvc, engine: eng, ctx: context.Background()}
+
+	err := svc.ScaleResource("ctx", "apps.v1.deployments", "default", "my-deploy", 5)
+	testza.AssertNoError(t, err)
+	testza.AssertTrue(t, subresourceCalled)
+}
+
 func TestGetEvents_ClusterScoped_SearchesAllNamespaces(t *testing.T) {
 	const targetUID = types.UID("cluster-scoped-uid")
 

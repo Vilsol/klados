@@ -77,7 +77,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 ### ReplicaSets
 - [x] `MVP` List with desired/current/ready
 - [x] `MVP` Detail view — owned pods
-- [ ] `v2` Scale (rarely used directly, but available)
+- [x] `v2` Scale (rarely used directly, but available)
 
 ### Jobs
 - [x] `MVP` List with completions, duration, status
@@ -335,8 +335,8 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Find and replace
 
 ### Resource Relationships
-- [ ] `v2` Owner reference chain visualization
-- [ ] `v2` Deployment → ReplicaSet → Pod hierarchy
+- [x] `v2` Owner reference chain visualization
+- [x] `v2` Deployment → ReplicaSet → Pod hierarchy
 - [ ] `v2` Service → Endpoint → Pod mapping
 - [ ] `v2` Ingress → Service → Pod flow
 - [ ] `v2` PVC → PV binding

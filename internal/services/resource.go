@@ -12,8 +12,9 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	batchv1 "k8s.io/api/batch/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	errors "k8s.io/apimachinery/pkg/api/errors"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"gopkg.in/yaml.v3"
@@ -189,9 +190,21 @@ func (s *ResourceService) GetEvents(contextName, namespace, uid string) ([]map[s
 }
 
 func (s *ResourceService) ScaleResource(contextName, gvr, namespace, name string, replicas int32) error {
-	patch := []byte(fmt.Sprintf(`{"spec":{"replicas":%d}}`, replicas))
-	_, err := s.engine.Patch(s.ctx, contextName, gvr, namespace, name, types.MergePatchType, patch)
-	return err
+	var mgr *cluster.Manager
+	if s.appService != nil {
+		mgr = s.appService.ClusterManager()
+	}
+	if mgr != nil && mgr.HasScaleSubresource(contextName, gvr) {
+		err := s.engine.Scale(s.ctx, contextName, gvr, namespace, name, replicas)
+		if err == nil {
+			return nil
+		}
+		if !errors.IsNotFound(err) && !errors.IsMethodNotSupported(err) {
+			return err
+		}
+		// 404 / 405 → subresource unexpectedly absent; fall through to MergePatch.
+	}
+	return s.engine.ScaleViaMergePatch(s.ctx, contextName, gvr, namespace, name, replicas)
 }
 
 func (s *ResourceService) ExpandPVC(contextName, namespace, name, newSize string) error {
