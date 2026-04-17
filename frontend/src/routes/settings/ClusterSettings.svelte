@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from "svelte";
   import {GetClusterPrefs, SetClusterPrefs} from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
-  import type {ClusterPrefs} from "../../../bindings/github.com/Vilsol/klados/internal/config/models.js";
+  import {ClusterPrefs, MetricsConfig} from "../../../bindings/github.com/Vilsol/klados/internal/config/models.js";
   import {GetClusterInfo} from "../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js";
   import type {ClusterInfo} from "../../../bindings/github.com/Vilsol/klados/internal/services/models.js";
   import {ConnectionStatus} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js";
@@ -19,6 +19,7 @@
   let compactOverride = $state<boolean>(false);
   let compactValue = $state<boolean>(false);
   let favoriteNamespaces = $state<string[]>([]);
+  let prometheusUrl = $state<string>("");
   let newNamespace = $state<string>("");
   let info = $state<ClusterInfo | null>(null);
 
@@ -33,6 +34,7 @@
         compactOverride = prefs.compactRows != null;
         compactValue = prefs.compactRows ?? false;
         favoriteNamespaces = prefs.favoriteNamespaces ?? [];
+        prometheusUrl = prefs.metrics?.prometheusUrl ?? "";
       }
       try {
         info = await GetClusterInfo(ctxName);
@@ -60,6 +62,7 @@
       readOnly: readOnlyOverride ? readOnlyValue : undefined,
       compactRows: compactOverride ? compactValue : undefined,
       favoriteNamespaces: favoriteNamespaces.length > 0 ? favoriteNamespaces : undefined,
+      metrics: prometheusUrl ? new MetricsConfig({prometheusUrl}) : undefined,
     } as ClusterPrefs);
   }
 
@@ -261,4 +264,25 @@
       <p class="text-sm text-muted-foreground">No favorite namespaces configured.</p>
     {/if}
   </div>
+
+  <section class="space-y-2">
+    <h3 class="text-sm font-semibold text-fg">Metrics</h3>
+    <label class="block text-sm font-medium text-fg mb-1">
+      Prometheus URL
+      <input
+        type="text"
+        value={prometheusUrl}
+        oninput={(e) => { prometheusUrl = (e.target as HTMLInputElement).value; save(); }}
+        placeholder={info?.prometheusUrl && info.prometheusSource === "detected" ? info.prometheusUrl : "https://prometheus.example/api/v1"}
+        class="w-full px-3 py-1.5 rounded border border-border bg-surface text-fg text-sm"
+      >
+    </label>
+    <p class="text-xs text-muted">
+      {#if info?.prometheusUrl}
+        Effective: {info.prometheusUrl} <span class="text-muted">({info.prometheusSource})</span>
+      {:else}
+        No Prometheus endpoint detected or configured.
+      {/if}
+    </p>
+  </section>
 </div>
