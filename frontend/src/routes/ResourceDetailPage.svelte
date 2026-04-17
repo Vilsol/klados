@@ -74,7 +74,16 @@
     <div class="p-4 text-sm text-destructive">{error}</div>
   {:else if obj && descriptor}
     <div class="flex-1 overflow-hidden">
-      <ResourceDetail bind:obj {descriptor} {ctxName} {gvr} namespace={ns} {name} onrefresh={load} />
+      <ResourceDetail
+        bind:obj
+        {descriptor}
+        {ctxName}
+        {gvr}
+        namespace={ns}
+        {name}
+        onrefresh={load}
+        onopenresource={(g, n2, nm) => push(`/c/${encodeURIComponent(ctxName)}/${g}/${encodeURIComponent(n2)}/${encodeURIComponent(nm)}`)}
+      />
     </div>
   {:else if obj}
     <pre

@@ -34,34 +34,63 @@ describe("getConditions", () => {
 });
 
 describe("computeHealth", () => {
-  const c = (type: string, status: "True" | "False" | "Unknown"): Condition => ({
-    type, status, reason: "", message: "", lastTransitionTime: "",
-  });
+  function objWith(conds: Array<{ type: string; status: "True" | "False" | "Unknown" }>) {
+    return { status: { conditions: conds } };
+  }
 
   it("returns unknown when no conditions", () => {
-    expect(computeHealth([])).toEqual({ level: "unknown", reason: "no conditions" });
+    expect(computeHealth({})).toEqual({ level: "unknown", reason: "no conditions" });
   });
 
   it("returns healthy when Ready=True and no negatives", () => {
-    expect(computeHealth([c("Ready", "True")]).level).toBe("healthy");
+    expect(computeHealth(objWith([{ type: "Ready", status: "True" }])).level).toBe("healthy");
   });
 
   it("returns unhealthy when Ready=False", () => {
-    expect(computeHealth([c("Ready", "False")]).level).toBe("unhealthy");
+    expect(computeHealth(objWith([{ type: "Ready", status: "False" }])).level).toBe("unhealthy");
   });
 
   it("returns unhealthy when Degraded=True", () => {
-    expect(computeHealth([c("Degraded", "True"), c("Ready", "True")]).level).toBe("unhealthy");
+    expect(computeHealth(objWith([
+      { type: "Degraded", status: "True" },
+      { type: "Ready", status: "True" },
+    ])).level).toBe("unhealthy");
   });
 
   it("returns progressing when only Progressing=True among positives", () => {
-    expect(computeHealth([c("Progressing", "True")]).level).toBe("progressing");
+    expect(computeHealth(objWith([{ type: "Progressing", status: "True" }])).level).toBe("progressing");
   });
 
-  it("falls back to True/False ratio when no recognized types", () => {
-    const h = computeHealth([c("CustomOne", "True"), c("CustomTwo", "True"), c("CustomThree", "False")]);
-    expect(h.level).toBe("mixed");
-    expect(h.reason).toBe("2/3 True");
+  it("returns healthy when Available=True and Progressing=True (stable Deployment)", () => {
+    expect(computeHealth(objWith([
+      { type: "Available", status: "True" },
+      { type: "Progressing", status: "True" },
+    ])).level).toBe("healthy");
+  });
+
+  it("returns unknown (no badge) when only unrecognized condition types", () => {
+    expect(computeHealth(objWith([
+      { type: "FilesystemReadOnly", status: "False" },
+      { type: "WaitForBackingImage", status: "False" },
+    ])).level).toBe("unknown");
+  });
+
+  it("honors pod phase Succeeded over Ready=False", () => {
+    const obj = {
+      status: {
+        phase: "Succeeded",
+        conditions: [{ type: "Ready", status: "False" }],
+      },
+    };
+    expect(computeHealth(obj).level).toBe("healthy");
+  });
+
+  it("marks Failed pods unhealthy via phase", () => {
+    expect(computeHealth({ status: { phase: "Failed" } }).level).toBe("unhealthy");
+  });
+
+  it("marks Pending pods progressing via phase", () => {
+    expect(computeHealth({ status: { phase: "Pending" } }).level).toBe("progressing");
   });
 });
 

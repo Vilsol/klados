@@ -6,7 +6,7 @@ export interface Condition {
   lastTransitionTime?: string;
 }
 
-export type HealthLevel = "healthy" | "unhealthy" | "progressing" | "mixed" | "unknown";
+export type HealthLevel = "healthy" | "unhealthy" | "progressing" | "unknown";
 
 export interface Health {
   level: HealthLevel;
@@ -59,18 +59,36 @@ export function getConditions(obj: unknown): Condition[] {
   return out;
 }
 
-export function computeHealth(conditions: Condition[]): Health {
+export function computeHealth(obj: unknown): Health {
+  // Pod phase is authoritative for terminal states — Ready=False is expected on
+  // Succeeded pods (e.g. completed Job pods), so condition-based evaluation would
+  // mislabel them unhealthy.
+  const phase = (obj as any)?.status?.phase;
+  if (typeof phase === "string") {
+    switch (phase) {
+      case "Succeeded":
+        return { level: "healthy", reason: "Succeeded" };
+      case "Failed":
+        return { level: "unhealthy", reason: "Failed" };
+      case "Pending":
+        return { level: "progressing", reason: "Pending" };
+    }
+  }
+
+  const conditions = getConditions(obj);
   if (conditions.length === 0) return { level: "unknown", reason: "no conditions" };
 
   let anyNegativeTrue = false;
   let anyPositiveFalse = false;
   let anyPositiveTrue = false;
   let anyProgressingTrue = false;
+  let recognized = 0;
 
   for (const c of conditions) {
     const isPos = POSITIVE_TYPES.has(c.type);
     const isNeg = NEGATIVE_TYPES.has(c.type);
     const isProg = PROGRESSING_TYPES.has(c.type);
+    if (isPos || isNeg || isProg) recognized++;
 
     if (isNeg && c.status === "True") anyNegativeTrue = true;
     if (isPos && c.status === "False") anyPositiveFalse = true;
@@ -81,15 +99,20 @@ export function computeHealth(conditions: Condition[]): Health {
   if (anyNegativeTrue || anyPositiveFalse) {
     return { level: "unhealthy", reason: "negative condition active" };
   }
-  if (anyPositiveTrue && !anyProgressingTrue) {
+  // A positive condition being True dominates Progressing=True — a stable
+  // Deployment reports both Available=True and Progressing=True (reason:
+  // NewReplicaSetAvailable), and that should read as healthy.
+  if (anyPositiveTrue) {
     return { level: "healthy", reason: "positive conditions met" };
   }
   if (anyProgressingTrue) {
     return { level: "progressing", reason: "progressing" };
   }
-  const total = conditions.length;
-  const trues = conditions.filter((c) => c.status === "True").length;
-  return { level: "mixed", reason: `${trues}/${total} True` };
+  // No recognized condition types (e.g. Longhorn Replica exposes only custom
+  // boolean flags like FilesystemReadOnly). Render nothing rather than a
+  // confusing ratio.
+  if (recognized === 0) return { level: "unknown", reason: "no recognized conditions" };
+  return { level: "unknown", reason: "indeterminate" };
 }
 
 export interface Warning {

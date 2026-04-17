@@ -169,6 +169,18 @@
     return () => clearInterval(id);
   });
 
+  async function openResourceDrawer(g: string, namespace: string, name: string) {
+    try {
+      const item = await GetResource(ctxName, g, namespace, name);
+      if (item) {
+        selectedItem = item as K8sObject;
+        selectedGVR = g;
+      }
+    } catch {
+      notificationStore.push("Resource not found", "error");
+    }
+  }
+
   async function openOwnerDrawer(ref: ControllerRef, namespace: string) {
     const ownerGVR = clusterStore.resolveOwnerGVR(ref.apiVersion, ref.kind);
     if (!ownerGVR) {
@@ -258,6 +270,7 @@
               name={obj.metadata?.name ?? ''}
               {onrefresh}
               onopenowner={openOwnerDrawer}
+              onopenresource={openResourceDrawer}
             />
           {/snippet}
         </DetailDrawer>

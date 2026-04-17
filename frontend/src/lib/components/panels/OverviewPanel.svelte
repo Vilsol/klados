@@ -26,6 +26,7 @@
     namespace = "",
     name = "",
     onopenowner,
+    onopenresource,
   }: {
     obj: Record<string, KubernetesResource>;
     onupdate?: (updated: Record<string, KubernetesResource>) => void;
@@ -35,6 +36,7 @@
     namespace?: string;
     name?: string;
     onopenowner?: (ref: ControllerRef, namespace: string) => void;
+    onopenresource?: (gvr: string, namespace: string, name: string) => void;
   } = $props();
 
   const basePluginURL = $derived(
@@ -61,7 +63,9 @@
   }
 
   // Labels/annotations state
-  const hasLabelsPanel = $derived(descriptor.detailPanels.includes("labels"));
+  const hasLabelsPanel = $derived(
+    descriptor.detailPanels.includes("labels") || descriptor.detailPanels.includes("metadata"),
+  );
   let editingLabels = $state(false);
   let saving = $state(false);
   let editLabels = $state<[string, string][]>([]);
@@ -176,7 +180,7 @@
   <!-- Overview fields card -->
   <section class="bg-surface border border-border rounded-lg p-4">
     <SectionHeader class="mb-3">Details</SectionHeader>
-    <OwnerChain contextName={ctxName} {obj} />
+    <OwnerChain contextName={ctxName} {obj} {onopenresource} />
     <div class="grid grid-cols-3 gap-x-6 gap-y-3">
       {#each descriptor.overviewFields as field}
         <div class="min-w-0">

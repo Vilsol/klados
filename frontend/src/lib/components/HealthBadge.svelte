@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { computeHealth, getConditions } from "../kubernetes/conditions";
+  import { computeHealth } from "../kubernetes/conditions";
 
   interface Props { obj: Record<string, unknown>; }
   let { obj }: Props = $props();
 
-  let health = $derived(computeHealth(getConditions(obj)));
+  let health = $derived(computeHealth(obj));
 
   function dotClass(level: string): string {
     switch (level) {
@@ -16,13 +16,9 @@
   }
 </script>
 
-{#if health.level === "unknown"}
-  <!-- render nothing when there are no conditions -->
-{:else if health.level === "mixed"}
-  <span class="text-xs text-muted">{health.reason}</span>
-{:else}
+{#if health.level !== "unknown"}
   <span
-    class="inline-block w-2.5 h-2.5 rounded-full {dotClass(health.level)}"
+    class="inline-block w-2.5 h-2.5 rounded-full shrink-0 {dotClass(health.level)}"
     title={health.reason}
     aria-label={health.reason}
   ></span>

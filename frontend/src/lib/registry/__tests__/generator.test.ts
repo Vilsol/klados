@@ -57,7 +57,7 @@ const baseResource = (over: Partial<APIResource> = {}): APIResource => ({
 }) as unknown as APIResource;
 
 describe("generateDescriptor", () => {
-  it("prepends Name/Namespace/Age and appends printer columns", () => {
+  it("prepends Name/Namespace, appends printer columns, and keeps Age last", () => {
     const d = generateDescriptor(baseResource({
       printerColumns: [
         { name: "Replicas", type: "integer", jsonPath: ".spec.replicas", priority: 0 },
@@ -65,10 +65,10 @@ describe("generateDescriptor", () => {
       ] as APIResource["printerColumns"],
     }));
 
-    expect(d.columns.map((c) => c.name)).toEqual(["Name", "Namespace", "Age", "Replicas", "Ready"]);
-    expect(d.columns[3].expr).toBe("spec.replicas");
-    expect(d.columns[3].renderType).toBe("text");
-    expect(d.columns[4].hidden).toBe(true);
+    expect(d.columns.map((c) => c.name)).toEqual(["Name", "Namespace", "Replicas", "Ready", "Age"]);
+    expect(d.columns[2].expr).toBe("spec.replicas");
+    expect(d.columns[2].renderType).toBe("text");
+    expect(d.columns[3].hidden).toBe(true);
   });
 
   it("omits Namespace column for cluster-scoped resources", () => {

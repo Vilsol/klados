@@ -52,9 +52,9 @@ export function generateDescriptor(r: APIResource): Descriptor {
   if (r.namespaced) {
     columns.push(new Column({ name: "Namespace", expr: "metadata.namespace", renderType: BindingRenderType.RenderText }));
   }
-  columns.push(new Column({ name: "Age", expr: "metadata.creationTimestamp", renderType: BindingRenderType.RenderAge }));
 
   const existingNames = new Set(columns.map((c) => c.name));
+  existingNames.add("Age");
   for (const pc of r.printerColumns ?? []) {
     const expr = jsonPathToCEL(pc.jsonPath);
     if (!expr) continue;
@@ -75,6 +75,9 @@ export function generateDescriptor(r: APIResource): Descriptor {
       existingNames.add("Replicas");
     }
   }
+
+  // Age always sits last so printer columns and Replicas don't push it inward.
+  columns.push(new Column({ name: "Age", expr: "metadata.creationTimestamp", renderType: BindingRenderType.RenderAge }));
 
   const panels = [...UNIVERSAL_PANELS];
   if (r.subresources?.status) panels.push("status");

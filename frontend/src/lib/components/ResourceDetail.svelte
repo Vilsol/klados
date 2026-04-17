@@ -144,6 +144,7 @@
     onrefresh,
     onupdate,
     onopenowner,
+    onopenresource,
   }: {
     obj: Record<string, KubernetesResource>;
     descriptor: DescriptorDef;
@@ -154,6 +155,7 @@
     onrefresh: () => void;
     onupdate?: (updated: Record<string, KubernetesResource>) => void;
     onopenowner?: (ref: ControllerRef, namespace: string) => void;
+    onopenresource?: (gvr: string, namespace: string, name: string) => void;
   } = $props();
 
   const splittablePanels = new Set<string>(["logs", "terminal", "aggregate-logs", "yaml"]);
@@ -171,7 +173,7 @@
     });
   }
 
-  const foldedIntoOverview = new Set(["labels", "containers"]);
+  const foldedIntoOverview = new Set(["labels", "containers", "metadata"]);
   const visiblePanels = $derived.by(() => {
     const all = descriptor.detailPanels.filter((p) => panelComponents.has(p) && !foldedIntoOverview.has(p));
     if (getLastAppliedConfig(obj)) return all;
@@ -304,6 +306,7 @@
             {namespace}
             {name}
             {onopenowner}
+            {onopenresource}
           />
         {:else if panel === 'yaml'}
           {#key uid}
@@ -370,7 +373,7 @@
         {:else if panel === 'hpa'}
           <div class="overflow-auto h-full"><PanelCmp {obj} {ctxName} /></div>
         {:else if panel === 'related'}
-          <div class="overflow-auto h-full"><PanelCmp {obj} contextName={ctxName} /></div>
+          <div class="overflow-auto h-full"><PanelCmp {obj} contextName={ctxName} {onopenresource} /></div>
         {/if}
       {/if}
     {/each}

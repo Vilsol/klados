@@ -62,7 +62,13 @@ class ColumnStore {
       visible: visibleSet.has(c.name),
     }));
 
-    this.sortState = prefs?.sort ? {column: prefs.sort.column, direction: prefs.sort.direction as "asc" | "desc"} : null;
+    if (prefs?.sort) {
+      this.sortState = {column: prefs.sort.column, direction: prefs.sort.direction as "asc" | "desc"};
+    } else {
+      // Default: sort by Age descending (newest first) when the column exists.
+      const ageCol = this.visibleColumns.find((c) => c.renderType === "age");
+      this.sortState = ageCol ? {column: ageCol.name, direction: "desc"} : null;
+    }
   }
 
   setColumnVisible(name: string, visible: boolean): void {

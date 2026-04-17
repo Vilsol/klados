@@ -5,8 +5,9 @@
   interface Props {
     contextName: string;
     obj: Record<string, unknown>;
+    onopenresource?: (gvr: string, namespace: string, name: string) => void;
   }
-  let {contextName, obj}: Props = $props();
+  let {contextName, obj, onopenresource}: Props = $props();
 
   let uid = $derived(((obj as any)?.metadata?.uid as string) ?? "");
   let groups = $derived(uid ? resourceCache.findByOwnerUID(contextName, uid) : []);
@@ -14,7 +15,11 @@
   function nav(gvr: string, item: Record<string, unknown>) {
     const ns = (item as any)?.metadata?.namespace ?? "";
     const name = (item as any)?.metadata?.name ?? "";
-    push(`/c/${encodeURIComponent(contextName)}/${gvr}/${encodeURIComponent(ns)}/${encodeURIComponent(name)}`);
+    if (onopenresource) {
+      onopenresource(gvr, ns, name);
+    } else {
+      push(`/c/${encodeURIComponent(contextName)}/${gvr}/${encodeURIComponent(ns)}/${encodeURIComponent(name)}`);
+    }
   }
 </script>
 
