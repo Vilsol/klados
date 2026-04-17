@@ -2,6 +2,9 @@
   import {onMount} from "svelte";
   import {GetClusterPrefs, SetClusterPrefs} from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
   import type {ClusterPrefs} from "../../../bindings/github.com/Vilsol/klados/internal/config/models.js";
+  import {GetClusterInfo} from "../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js";
+  import type {ClusterInfo} from "../../../bindings/github.com/Vilsol/klados/internal/services/models.js";
+  import {ConnectionStatus} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js";
 
   interface Props {
     ctxName: string;
@@ -17,6 +20,7 @@
   let compactValue = $state<boolean>(false);
   let favoriteNamespaces = $state<string[]>([]);
   let newNamespace = $state<string>("");
+  let info = $state<ClusterInfo | null>(null);
 
   onMount(() => {
     (async () => {
@@ -30,8 +34,24 @@
         compactValue = prefs.compactRows ?? false;
         favoriteNamespaces = prefs.favoriteNamespaces ?? [];
       }
+      try {
+        info = await GetClusterInfo(ctxName);
+      } catch (e) {
+        console.warn("GetClusterInfo failed", e);
+      }
     })();
   });
+
+  const statusLabels: Record<number, string> = {
+    [ConnectionStatus.StatusDisconnected]: "disconnected",
+    [ConnectionStatus.StatusConnecting]: "connecting",
+    [ConnectionStatus.StatusConnected]: "connected",
+    [ConnectionStatus.StatusError]: "error",
+  };
+
+  function statusLabel(s: ConnectionStatus): string {
+    return statusLabels[s as number] ?? "unknown";
+  }
 
   function save() {
     SetClusterPrefs(ctxName, {
@@ -96,6 +116,38 @@
 
 <div class="max-w-2xl space-y-8">
   <h2 class="text-base font-medium text-fg mb-4">Cluster: {ctxName}</h2>
+
+  {#if info}
+    <section class="space-y-2">
+      <h3 class="text-sm font-semibold text-fg">Cluster Info</h3>
+      <dl class="grid grid-cols-[140px_1fr] gap-y-1 text-sm">
+        <dt class="text-muted">Context</dt><dd class="text-fg">{info.context.name}</dd>
+        <dt class="text-muted">Cluster</dt><dd class="text-fg">{info.context.cluster || "—"}</dd>
+        <dt class="text-muted">User</dt><dd class="text-fg">{info.context.user || "—"}</dd>
+        <dt class="text-muted">Default namespace</dt><dd class="text-fg">{info.context.namespace || "—"}</dd>
+        <dt class="text-muted">Server URL</dt><dd class="text-fg break-all">{info.serverUrl || "—"}</dd>
+        {#if info.context.serverVersion}
+          <dt class="text-muted">Server version</dt><dd class="text-fg">{info.context.serverVersion}</dd>
+        {/if}
+        <dt class="text-muted">Kubeconfig</dt>
+        <dd class="text-fg break-all">
+          {info.context.sourcePath || "—"}
+          {#if info.context.isDefault}<span class="ml-1 text-xs text-muted">(default)</span>{/if}
+        </dd>
+        <dt class="text-muted">Status</dt><dd class="text-fg">{statusLabel(info.context.status)}</dd>
+        <dt class="text-muted">metrics-server</dt><dd class="text-fg">{info.metricsServer}</dd>
+        <dt class="text-muted">Prometheus</dt>
+        <dd class="text-fg break-all">
+          {#if info.prometheusUrl}
+            {info.prometheusUrl}
+            <span class="ml-1 text-xs text-muted">({info.prometheusSource})</span>
+          {:else}
+            not detected
+          {/if}
+        </dd>
+      </dl>
+    </section>
+  {/if}
 
   <div>
     <label class="block text-sm font-medium text-fg mb-1"
