@@ -1,7 +1,7 @@
 <script lang="ts">
   import {onMount} from "svelte";
   import {push} from "svelte-spa-router";
-  import {Columns3, Unplug} from "lucide-svelte";
+  import {Columns3, Unplug, Settings} from "lucide-svelte";
   import {clusterStore} from "$lib/stores/cluster.svelte";
   import type {KubeContext} from "$lib/stores/cluster.svelte";
   import DataTable, {type DataTableColumn} from "$lib/components/DataTable.svelte";
@@ -234,7 +234,16 @@
 
   {#snippet rowSuffix({ item: ctx })}
     {@const status = clusterStore.connectionStatus[ctx.name] ?? "disconnected"}
-    <div class="flex items-center justify-end">
+    <div class="flex items-center justify-end gap-1">
+      <button
+        type="button"
+        onclick={(e) => { e.stopPropagation(); push(`/settings/clusters/${encodeURIComponent(ctx.name)}`) }}
+        class="p-1 rounded text-muted hover:text-fg hover:bg-surface-hover transition-colors"
+        title="Cluster settings"
+        aria-label="Settings for {ctx.name}"
+      >
+        <Settings size={13} />
+      </button>
       {#if status !== "disconnected"}
         <button
           type="button"
