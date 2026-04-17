@@ -1,10 +1,13 @@
 <script lang="ts">
   import {onMount} from "svelte";
+  import {push} from "svelte-spa-router";
   import {GetClusterPrefs, SetClusterPrefs} from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
   import {ClusterPrefs, MetricsConfig} from "../../../bindings/github.com/Vilsol/klados/internal/config/models.js";
-  import {GetClusterInfo} from "../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js";
+  import {Disconnect, GetClusterInfo, RemoveKubeconfigPath} from "../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js";
   import type {ClusterInfo} from "../../../bindings/github.com/Vilsol/klados/internal/services/models.js";
   import {ConnectionStatus} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js";
+  import {ConfirmDialog} from "@klados/ui";
+  import {clusterStore} from "$lib/stores/cluster.svelte.js";
 
   interface Props {
     ctxName: string;
@@ -22,6 +25,7 @@
   let prometheusUrl = $state<string>("");
   let newNamespace = $state<string>("");
   let info = $state<ClusterInfo | null>(null);
+  let forgetConfirmOpen = $state(false);
 
   onMount(() => {
     (async () => {
@@ -54,6 +58,9 @@
   function statusLabel(s: ConnectionStatus): string {
     return statusLabels[s as number] ?? "unknown";
   }
+
+  const canForget = $derived(Boolean(info && info.context.sourcePath && !info.context.isDefault));
+  const isConnected = $derived(info?.context.status === ConnectionStatus.StatusConnected);
 
   function save() {
     SetClusterPrefs(ctxName, {
@@ -285,4 +292,54 @@
       {/if}
     </p>
   </section>
+
+  <section class="space-y-3 pt-6 border-t border-destructive/30">
+    <h3 class="text-sm font-semibold text-destructive">Actions</h3>
+
+    <div class="flex flex-col gap-2">
+      <button
+        type="button"
+        disabled={!isConnected}
+        onclick={async () => {
+          try {
+            await Disconnect(ctxName);
+            info = await GetClusterInfo(ctxName);
+          } catch (e) {
+            console.warn("disconnect failed", e);
+          }
+        }}
+        class="self-start px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        Disconnect
+      </button>
+
+      {#if canForget}
+        <button
+          type="button"
+          onclick={() => forgetConfirmOpen = true}
+          class="self-start px-3 py-1.5 text-sm rounded border border-destructive/50 text-destructive hover:bg-destructive/10"
+        >
+          Forget cluster
+        </button>
+      {/if}
+    </div>
+  </section>
 </div>
+
+<ConfirmDialog
+  bind:open={forgetConfirmOpen}
+  title="Forget cluster"
+  message="This will remove the kubeconfig file path from Klados. The cluster will no longer appear in the list."
+  confirmLabel="Forget"
+  onconfirm={async () => {
+    if (!info) return;
+    try {
+      await RemoveKubeconfigPath(info.context.sourcePath);
+      forgetConfirmOpen = false;
+      await clusterStore.loadContexts();
+      push("/");
+    } catch (e) {
+      console.warn("forget failed", e);
+    }
+  }}
+/>
