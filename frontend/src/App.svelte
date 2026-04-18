@@ -9,6 +9,7 @@
   import {sessionStore} from "$lib/stores/session.svelte";
   import {setTheme} from "$lib/theme.svelte";
   import {descriptorRegistry} from "$lib/registry/index";
+  import "$lib/navTiming";
   import {shortcutStore} from "$lib/stores/shortcuts.svelte";
   import {Events} from "@wailsio/runtime";
   import {LogFrontend, GetSession, SaveUIState} from "../bindings/github.com/Vilsol/klados/internal/services/appservice.js";
