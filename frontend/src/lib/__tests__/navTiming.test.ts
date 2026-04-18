@@ -12,7 +12,7 @@ vi.mock("$lib/logger", () => ({
 }));
 
 vi.mock("svelte-spa-router", () => ({
-  location: {subscribe: vi.fn(() => () => {})},
+  router: {location: ""},
 }));
 
 type RafCb = (t: number) => void;

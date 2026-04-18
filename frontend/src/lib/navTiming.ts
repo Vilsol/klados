@@ -1,4 +1,4 @@
-import {location} from "svelte-spa-router";
+import {router} from "svelte-spa-router";
 import {getLogger} from "$lib/logger";
 
 const QUIET_WINDOW_MS = 500;
@@ -143,12 +143,17 @@ function bootstrap(): void {
     return;
   }
   bootstrapped = true;
+  if (typeof window === "undefined") {
+    return;
+  }
   let first = true;
-  location.subscribe((route) => {
+  const notify = () => {
     const navStart = first ? 0 : performance.now();
     first = false;
-    start(route ?? "", navStart);
-  });
+    start(router.location ?? "", navStart);
+  };
+  notify();
+  window.addEventListener("hashchange", notify);
 }
 
 bootstrap();

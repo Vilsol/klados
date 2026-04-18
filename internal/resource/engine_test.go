@@ -53,7 +53,7 @@ func makePod(name, namespace string) *corev1.Pod {
 func TestResourceEngine_List(t *testing.T) {
 	engine, _ := newFakeEngine(makePod("test-pod", "default"))
 
-	items, err := engine.List(context.Background(), "ctx", "core.v1.pods", "default")
+	items, _, err := engine.List(context.Background(), "ctx", "core.v1.pods", "default")
 	testza.AssertNoError(t, err)
 	testza.AssertEqual(t, 1, len(items))
 
@@ -65,7 +65,7 @@ func TestResourceEngine_List(t *testing.T) {
 func TestResourceEngine_List_AllNamespaces(t *testing.T) {
 	engine, _ := newFakeEngine(makePod("pod-a", "ns1"), makePod("pod-b", "ns2"))
 
-	items, err := engine.List(context.Background(), "ctx", "core.v1.pods", "")
+	items, _, err := engine.List(context.Background(), "ctx", "core.v1.pods", "")
 	testza.AssertNoError(t, err)
 	testza.AssertEqual(t, 2, len(items))
 }
@@ -169,7 +169,7 @@ func TestResourceEngine_List_Error(t *testing.T) {
 	enricherReg := resource.NewEnricherRegistry()
 	engine := resource.NewResourceEngine(&errorProvider{}, enricherReg)
 
-	_, err := engine.List(context.Background(), "ctx", "core.v1.pods", "default")
+	_, _, err := engine.List(context.Background(), "ctx", "core.v1.pods", "default")
 	testza.AssertNotNil(t, err)
 }
 

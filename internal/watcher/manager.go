@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Vilsol/slox"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/watch"
@@ -57,7 +58,7 @@ func NewWatchManager(mgr ConnectionProvider, enricherReg *resource.EnricherRegis
 	}
 }
 
-func (m *WatchManager) StartWatch(contextName, gvr, namespace string) error {
+func (m *WatchManager) StartWatch(contextName, gvr, namespace, resourceVersion string) error {
 	key := watchKey{contextName, gvr, namespace}
 
 	m.mu.Lock()
@@ -71,7 +72,7 @@ func (m *WatchManager) StartWatch(contextName, gvr, namespace string) error {
 		return nil
 	}
 
-	slox.Debug(m.ctx, "watch started", "context", contextName, "gvr", gvr, "namespace", namespace)
+	slox.Debug(m.ctx, "watch started", "context", contextName, "gvr", gvr, "namespace", namespace, "rv", resourceVersion)
 
 	conn, err := m.clusterMgr.GetConnection(contextName)
 	if err != nil {
@@ -93,11 +94,12 @@ func (m *WatchManager) StartWatch(contextName, gvr, namespace string) error {
 
 	enrichers := m.enricherReg.GetAll(gvr)
 	eventName := fmt.Sprintf("watch:%s:%s:%s", contextName, gvr, namespace)
+	resyncName := eventName + ":resync"
 
 	ctx, cancel := context.WithCancel(context.Background())
 	m.watches[key] = &watchState{cancel: cancel}
 
-	go m.runWatch(ctx, ri, enrichers, eventName, key, contextName)
+	go m.runWatch(ctx, ri, enrichers, eventName, resyncName, key, contextName, resourceVersion)
 	return nil
 }
 
@@ -106,9 +108,12 @@ func (m *WatchManager) runWatch(
 	ri dynamic.ResourceInterface,
 	enrichers []resource.Enricher,
 	eventName string,
+	resyncName string,
 	key watchKey,
 	contextName string,
+	initialRV string,
 ) {
+	currentRV := initialRV
 	for {
 		select {
 		case <-ctx.Done():
@@ -116,8 +121,16 @@ func (m *WatchManager) runWatch(
 		default:
 		}
 
-		wi, err := ri.Watch(ctx, metav1.ListOptions{})
+		wi, err := ri.Watch(ctx, metav1.ListOptions{
+			ResourceVersion:     currentRV,
+			AllowWatchBookmarks: true,
+		})
 		if err != nil {
+			if k8serrors.IsGone(err) {
+				slox.Warn(m.ctx, "watch RV too old, requesting resync", "event", eventName, "rv", currentRV)
+				m.emitEvent(resyncName, nil)
+				return
+			}
 			slox.Warn(m.ctx, "watch failed, retrying", "event", eventName, "error", err)
 			select {
 			case <-ctx.Done():
@@ -127,7 +140,13 @@ func (m *WatchManager) runWatch(
 			continue
 		}
 
-		m.processEvents(ctx, wi, enrichers, eventName, contextName)
+		nextRV, gone := m.processEvents(ctx, wi, enrichers, eventName, contextName, currentRV)
+		if gone {
+			slox.Warn(m.ctx, "watch stream returned Gone, requesting resync", "event", eventName, "rv", currentRV)
+			m.emitEvent(resyncName, nil)
+			return
+		}
+		currentRV = nextRV
 	}
 }
 
@@ -137,20 +156,39 @@ func (m *WatchManager) processEvents(
 	enrichers []resource.Enricher,
 	eventName string,
 	contextName string,
-) {
+	currentRV string,
+) (string, bool) {
 	defer wi.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return currentRV, false
 		case event, ok := <-wi.ResultChan():
 			if !ok {
-				return
+				return currentRV, false
+			}
+
+			if event.Type == watch.Error {
+				if status, ok := event.Object.(*metav1.Status); ok {
+					if status.Reason == metav1.StatusReasonGone || status.Code == 410 {
+						return currentRV, true
+					}
+					slox.Warn(m.ctx, "watch error event", "event", eventName, "reason", status.Reason, "message", status.Message)
+				}
+				return currentRV, false
 			}
 
 			obj, ok := event.Object.(*unstructured.Unstructured)
 			if !ok {
+				continue
+			}
+
+			if rv := obj.GetResourceVersion(); rv != "" {
+				currentRV = rv
+			}
+
+			if event.Type == watch.Bookmark {
 				continue
 			}
 

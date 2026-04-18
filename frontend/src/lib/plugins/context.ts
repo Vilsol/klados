@@ -39,9 +39,12 @@ export function createPluginContext(manifest: PluginManifest, host: HostServices
         assertGVRPermission(manifest, gvr, "watch");
         const clusterName = host.clusterName;
         const watchNs = ns ?? "";
-        StartWatch(clusterName, gvr, watchNs);
         const eventName = `watch:${clusterName}:${gvr}:${watchNs}`;
+        // Subscribe before calling StartWatch so events fired between those
+        // two steps aren't dropped.
         const unsub = Events.On(eventName, (wailsEvent: unknown) => callback((wailsEvent as {data: unknown}).data));
+        // Plugins don't pre-list, so watch starts from "now" (empty RV).
+        StartWatch(clusterName, gvr, watchNs, "");
         return () => {
           unsub();
           StopWatch(clusterName, gvr, watchNs);

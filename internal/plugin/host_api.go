@@ -324,7 +324,7 @@ func (h *hostAPI) dispatch(method string, reqBytes []byte) []byte {
 		if ctxName == "" {
 			return errorJSON("no active cluster context")
 		}
-		if err := h.deps.WatchManager.StartWatch(ctxName, gvr, ns); err != nil {
+		if err := h.deps.WatchManager.StartWatch(ctxName, gvr, ns, ""); err != nil {
 			return errorJSON(err.Error())
 		}
 		if h.eventCh != nil {

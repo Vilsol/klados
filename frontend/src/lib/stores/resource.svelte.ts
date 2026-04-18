@@ -1,5 +1,5 @@
 import {Events} from "@wailsio/runtime";
-import {ListResources, StartWatch, StopWatch} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+import {ListResourcesWithVersion, StartWatch, StopWatch} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
 import {getLogger} from "$lib/logger";
 import type {KubernetesResource} from "$lib/types";
 import {resourceCache} from "./resourceCache.svelte";
@@ -25,18 +25,20 @@ class ResourceStore {
   private gvr = "";
   private namespace = "";
   private eventName = "";
+  private resyncEventName = "";
   private unsub: (() => void) | null = null;
+  private unsubResync: (() => void) | null = null;
   private generation = 0;
 
   async start(contextName: string, gvr: string, namespace: string) {
     this.stop();
     const gen = this.generation; // captured after stop() bumped it
-    const t0 = performance.now();
 
     this.contextName = contextName;
     this.gvr = gvr;
     this.namespace = namespace;
     this.eventName = `watch:${contextName}:${gvr}:${namespace}`;
+    this.resyncEventName = `${this.eventName}:resync`;
     this.loading = true;
     this.error = null;
     this.lastLoadMs = null;
@@ -45,18 +47,36 @@ class ResourceStore {
     this.unsub = Events.On(this.eventName, (wailsEvent: unknown) => {
       this.handleEvent((wailsEvent as {data: WatchEvent}).data);
     });
+    this.unsubResync = Events.On(this.resyncEventName, () => {
+      this.resync(contextName, gvr, namespace, gen).catch((e) =>
+        log.warn("resync failed", {contextName, gvr, namespace, error: String(e)}),
+      );
+    });
 
+    await this.loadAndWatch(contextName, gvr, namespace, gen, performance.now());
+  }
+
+  private async loadAndWatch(
+    contextName: string,
+    gvr: string,
+    namespace: string,
+    gen: number,
+    t0: number,
+  ) {
     try {
       const tList = performance.now();
-      const list = await ListResources(contextName, gvr, namespace);
+      const result = await ListResourcesWithVersion(contextName, gvr, namespace);
       if (gen !== this.generation) {
-        return; // superseded by a newer start/stop
+        return;
       }
       const listMs = performance.now() - tList;
 
+      const items = result?.items ?? [];
+      const rv = result?.resourceVersion ?? "";
+
       const map = new Map<string, KubernetesResource>();
-      for (const obj of list ?? []) {
-        map.set(resourceKey(obj), obj);
+      for (const obj of items) {
+        map.set(resourceKey(obj), obj as KubernetesResource);
         resourceCache.upsert(contextName, gvr, obj as Record<string, unknown>);
       }
       this.items = Array.from(map.values());
@@ -77,8 +97,10 @@ class ResourceStore {
         });
       });
 
-      // Start watch in background — event listener is already subscribed
-      StartWatch(contextName, gvr, namespace).catch((e) => log.warn("StartWatch failed", {contextName, gvr, namespace, error: String(e)}));
+      // Start watch in background — event listener is already subscribed.
+      // Pass the list's resourceVersion so the server doesn't replay every existing
+      // object as a synthetic ADDED event.
+      StartWatch(contextName, gvr, namespace, rv).catch((e) => log.warn("StartWatch failed", {contextName, gvr, namespace, error: String(e)}));
     } catch (e) {
       if (gen !== this.generation) {
         return;
@@ -88,11 +110,22 @@ class ResourceStore {
     }
   }
 
+  // Called when the backend signals that the watch hit a 410 Gone and needs a fresh list.
+  private async resync(contextName: string, gvr: string, namespace: string, gen: number) {
+    if (gen !== this.generation) return;
+    log.info("watch resync", {contextName, gvr, namespace});
+    await this.loadAndWatch(contextName, gvr, namespace, gen, performance.now());
+  }
+
   stop() {
     this.generation++;
     if (this.unsub) {
       this.unsub();
       this.unsub = null;
+    }
+    if (this.unsubResync) {
+      this.unsubResync();
+      this.unsubResync = null;
     }
     if (this.contextName && this.gvr) {
       StopWatch(this.contextName, this.gvr, this.namespace).catch((e) => log.warn("StopWatch failed", {error: String(e)}));

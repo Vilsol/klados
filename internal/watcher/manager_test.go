@@ -32,7 +32,7 @@ func newTestManager(emit func(string, any)) *watcher.WatchManager {
 func TestWatchManager_StartStopLifecycle(t *testing.T) {
 	mgr := newTestManager(func(string, any) {})
 
-	err := mgr.StartWatch("ctx", "core.v1.pods", "default")
+	err := mgr.StartWatch("ctx", "core.v1.pods", "default", "")
 	testza.AssertNotNil(t, err) // expected: fakeProvider returns error
 
 	mgr.StopAll()

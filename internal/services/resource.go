@@ -83,9 +83,26 @@ func (s *ResourceService) ServiceShutdown() error {
 	return nil
 }
 
+type ListResult struct {
+	Items           []map[string]any `json:"items"`
+	ResourceVersion string           `json:"resourceVersion"`
+}
+
 func (s *ResourceService) ListResources(contextName, gvr, namespace string) ([]map[string]any, error) {
 	namespace = s.sanitizeNamespace(gvr, namespace)
-	return s.engine.List(s.ctx, contextName, gvr, namespace)
+	items, _, err := s.engine.List(s.ctx, contextName, gvr, namespace)
+	return items, err
+}
+
+// ListResourcesWithVersion returns list items along with the list's ResourceVersion
+// so the caller can seed a subsequent watch without triggering a synthetic ADDED replay.
+func (s *ResourceService) ListResourcesWithVersion(contextName, gvr, namespace string) (*ListResult, error) {
+	namespace = s.sanitizeNamespace(gvr, namespace)
+	items, rv, err := s.engine.List(s.ctx, contextName, gvr, namespace)
+	if err != nil {
+		return nil, err
+	}
+	return &ListResult{Items: items, ResourceVersion: rv}, nil
 }
 
 func (s *ResourceService) GetResource(contextName, gvr, namespace, name string) (map[string]any, error) {
@@ -98,9 +115,9 @@ func (s *ResourceService) DeleteResource(contextName, gvr, namespace, name strin
 	return s.engine.Delete(s.ctx, contextName, gvr, namespace, name)
 }
 
-func (s *ResourceService) StartWatch(contextName, gvr, namespace string) error {
+func (s *ResourceService) StartWatch(contextName, gvr, namespace, resourceVersion string) error {
 	namespace = s.sanitizeNamespace(gvr, namespace)
-	return s.watchMgr.StartWatch(contextName, gvr, namespace)
+	return s.watchMgr.StartWatch(contextName, gvr, namespace, resourceVersion)
 }
 
 // sanitizeNamespace strips the namespace for cluster-scoped resources to prevent

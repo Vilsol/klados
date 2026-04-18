@@ -186,9 +186,9 @@ func TestResourceService_DeleteResource(t *testing.T) {
 	})
 	eng := resource.NewResourceEngine(&fakeConnProvider{dyn}, resource.NewEnricherRegistry())
 	svc2 := &ResourceService{engine: eng, ctx: context.Background()}
-	list, err := svc2.ListResources("ctx", "apps.v1.deployments", "default")
+	items, err := svc2.ListResources("ctx", "apps.v1.deployments", "default")
 	testza.AssertNoError(t, err)
-	testza.AssertEqual(t, 0, len(list))
+	testza.AssertEqual(t, 0, len(items))
 }
 
 func newTestResourceServiceWithClientset(clientset *kfake.Clientset) *ResourceService {

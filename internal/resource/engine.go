@@ -84,21 +84,22 @@ func (e *ResourceEngine) enrich(contextName, gvr string, item *unstructured.Unst
 	}
 }
 
-func (e *ResourceEngine) List(ctx context.Context, contextName, gvr, namespace string) ([]map[string]any, error) {
+func (e *ResourceEngine) List(ctx context.Context, contextName, gvr, namespace string) ([]map[string]any, string, error) {
 	t0 := time.Now()
 
 	client, err := e.client(ctx, contextName, gvr, namespace)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	tClient := time.Since(t0)
 
 	list, err := client.List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("listing %s: %w", gvr, err)
+		return nil, "", fmt.Errorf("listing %s: %w", gvr, err)
 	}
 	tList := time.Since(t0)
 
+	rv := list.GetResourceVersion()
 	result := make([]map[string]any, len(list.Items))
 	for i := range list.Items {
 		e.enrich(contextName, gvr, &list.Items[i])
@@ -110,13 +111,14 @@ func (e *ResourceEngine) List(ctx context.Context, contextName, gvr, namespace s
 		"gvr", gvr,
 		"namespace", namespace,
 		"items", len(result),
+		"rv", rv,
 		"client_ms", tClient.Milliseconds(),
 		"k8s_list_ms", (tList - tClient).Milliseconds(),
 		"enrich_ms", (tEnrich - tList).Milliseconds(),
 		"total_ms", tEnrich.Milliseconds(),
 	)
 
-	return result, nil
+	return result, rv, nil
 }
 
 // ListRaw lists resources without running enrichers. Used by plugin host API
