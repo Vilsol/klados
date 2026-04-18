@@ -426,7 +426,7 @@
                   {#if isSectionOpen(c.name, 'ports')}
                     <div class="pl-4 pb-2 flex flex-wrap gap-1">
                       {#each c.ports as p}
-                        <PortButton port={p.containerPort} protocol={p.protocol ?? 'TCP'} onclick={() => pfPort = p.containerPort} />
+                        <PortButton port={p.containerPort} protocol={p.protocol ?? 'TCP'} name={p.name} onclick={() => pfPort = p.containerPort} />
                       {/each}
                     </div>
                   {/if}

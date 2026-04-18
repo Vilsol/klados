@@ -40,6 +40,22 @@
   // Validated container: always valid for the current pod's container list
   const effectContainer = $derived(containers.some((c) => c.name === selectedContainer) ? selectedContainer : (containers[0]?.name ?? ""));
 
+  // Reactive readiness: true once the target container has produced (or is producing) logs.
+  // - previous=false: container must be running or terminated at least once
+  // - previous=true:  lastState.terminated must exist
+  // "" (All) falls through to ready so the multi-container path still works.
+  const containerReady = $derived.by(() => {
+    if (!effectContainer) return true;
+    const statuses = [
+      ...(obj.status?.containerStatuses ?? []),
+      ...(obj.status?.initContainerStatuses ?? []),
+    ] as KubernetesResource[];
+    const cs = statuses.find((s) => s.name === effectContainer);
+    if (!cs) return false;
+    if (previous) return !!cs.lastState?.terminated;
+    return !!(cs.state?.running || cs.state?.terminated || cs.lastState?.terminated);
+  });
+
   let tailLines = $state<number | undefined>(200);
   let scrollToTopOnLoad = $state(false);
 
@@ -60,7 +76,8 @@
     const _ns = namespace;
     const _name = name;
     const _tail = tailLines;
-    if (!(container && streamingStore.config)) {
+    const ready = containerReady;
+    if (!(container && streamingStore.config && ready)) {
       return;
     }
 
@@ -279,6 +296,10 @@
           {scrollToTopOnLoad}
           fontSize={sessionStore.terminalFontSize}
         />
+      {:else if !containerReady}
+        <div class="flex items-center justify-center h-full text-sm text-muted">
+          {previous ? "No previous logs available — container has not terminated yet." : "Waiting for container to start…"}
+        </div>
       {:else}
         <div class="flex items-center justify-center h-full text-sm text-muted">Loading…</div>
       {/if}
