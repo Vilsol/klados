@@ -6,14 +6,21 @@
     SetFontSize,
     SetStartupBehavior,
     SetTerminalWebGL,
+    SetVolumeBrowser,
   } from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
-  import {preferencesStore} from "$lib/stores/preferences.svelte";
+  import type {VolumeBrowserConfig as VBConfig} from "$lib/stores/preferences.svelte";
+  import VolumeBrowserSettings from "./VolumeBrowserSettings.svelte";
 
   let theme = $state<string>("system");
   let fontSize = $state<number>(14);
   let startupBehavior = $state<string>("last");
   let startupCluster = $state<string>("");
   let terminalWebGL = $state<boolean>(false);
+  let volumeBrowser = $state<VBConfig>({
+    image: "alpine:edge",
+    mountPath: "/mnt/volume",
+    orphanCleanupOnStartup: "prompt",
+  });
 
   onMount(() => {
     (async () => {
@@ -24,9 +31,17 @@
         startupBehavior = config.startupBehavior || "last";
         startupCluster = config.startupCluster || "";
         terminalWebGL = config.terminalWebGL ?? false;
+        if (config.volumeBrowser) {
+          volumeBrowser = config.volumeBrowser as VBConfig;
+        }
       }
     })();
   });
+
+  function saveVolumeBrowser(next: VBConfig) {
+    volumeBrowser = next;
+    SetVolumeBrowser(next as never);
+  }
 
   function setTheme(value: string) {
     theme = value;
@@ -120,5 +135,10 @@
       <span class="text-sm text-fg">Use WebGL renderer for terminal</span>
     </label>
     <p class="text-sm text-muted-foreground mt-1">May improve performance for terminal output. Requires restart.</p>
+  </div>
+
+  <div>
+    <h2 class="text-base font-medium text-fg mb-4">Volume Browser</h2>
+    <VolumeBrowserSettings bind:value={volumeBrowser} onchange={saveVolumeBrowser} />
   </div>
 </div>

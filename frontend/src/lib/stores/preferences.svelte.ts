@@ -4,6 +4,23 @@ import {getLogger} from "$lib/logger";
 
 const log = getLogger("preferences");
 
+export interface ResourceReqs {
+  requests?: Record<string, string>;
+  limits?: Record<string, string>;
+}
+
+export interface VolumeBrowserConfig {
+  image?: string;
+  mountPath?: string;
+  readOnly?: boolean | null;
+  activeDeadlineSeconds?: number | null;
+  resources?: ResourceReqs | null;
+  nodeSelector?: Record<string, string>;
+  tolerations?: Record<string, unknown>[];
+  promptBeforeSpawn?: boolean | null;
+  orphanCleanupOnStartup?: string;
+}
+
 export interface ResolvedPrefs {
   theme: string;
   accentColor: string;
@@ -15,6 +32,7 @@ export interface ResolvedPrefs {
   savedFilters: Record<string, SavedFilter[]> | null;
   favoriteNamespaces: string[] | null;
   contextualAutocomplete: boolean;
+  volumeBrowser: VolumeBrowserConfig;
 }
 
 export interface SavedFilter {
@@ -36,6 +54,11 @@ class PreferencesStore {
     savedFilters: null,
     favoriteNamespaces: null,
     contextualAutocomplete: true,
+    volumeBrowser: {
+      image: "alpine:edge",
+      mountPath: "/mnt/volume",
+      orphanCleanupOnStartup: "prompt",
+    },
   });
 
   private activeContext = "";

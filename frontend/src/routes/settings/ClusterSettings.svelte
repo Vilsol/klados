@@ -3,6 +3,8 @@
   import {push} from "svelte-spa-router";
   import {GetClusterPrefs, SetClusterPrefs} from "../../../bindings/github.com/Vilsol/klados/internal/services/configservice.js";
   import {ClusterPrefs, MetricsConfig} from "../../../bindings/github.com/Vilsol/klados/internal/config/models.js";
+  import type {VolumeBrowserConfig as VBConfig} from "$lib/stores/preferences.svelte";
+  import VolumeBrowserSettings from "./VolumeBrowserSettings.svelte";
   import {Disconnect, GetClusterInfo, RemoveKubeconfigPath} from "../../../bindings/github.com/Vilsol/klados/internal/services/clusterservice.js";
   import type {ClusterInfo} from "../../../bindings/github.com/Vilsol/klados/internal/services/models.js";
   import {ConnectionStatus} from "../../../bindings/github.com/Vilsol/klados/internal/cluster/models.js";
@@ -23,6 +25,8 @@
   let compactValue = $state<boolean>(false);
   let favoriteNamespaces = $state<string[]>([]);
   let prometheusUrl = $state<string>("");
+  let volumeBrowserOverride = $state<boolean>(false);
+  let volumeBrowser = $state<VBConfig>({});
   let newNamespace = $state<string>("");
   let info = $state<ClusterInfo | null>(null);
   let forgetConfirmOpen = $state(false);
@@ -39,6 +43,8 @@
         compactValue = prefs.compactRows ?? false;
         favoriteNamespaces = prefs.favoriteNamespaces ?? [];
         prometheusUrl = prefs.metrics?.prometheusUrl ?? "";
+        volumeBrowserOverride = prefs.volumeBrowser != null;
+        volumeBrowser = (prefs.volumeBrowser as VBConfig | undefined) ?? {};
       }
       try {
         info = await GetClusterInfo(ctxName);
@@ -70,7 +76,21 @@
       compactRows: compactOverride ? compactValue : undefined,
       favoriteNamespaces: favoriteNamespaces.length > 0 ? favoriteNamespaces : undefined,
       metrics: prometheusUrl ? new MetricsConfig({prometheusUrl}) : undefined,
+      volumeBrowser: volumeBrowserOverride ? (volumeBrowser as never) : undefined,
     } as ClusterPrefs);
+  }
+
+  function toggleVolumeBrowserOverride(enabled: boolean) {
+    volumeBrowserOverride = enabled;
+    if (!enabled) {
+      volumeBrowser = {};
+    }
+    save();
+  }
+
+  function saveVolumeBrowser(next: VBConfig) {
+    volumeBrowser = next;
+    save();
   }
 
   function setDisplayName(value: string) {
@@ -291,6 +311,26 @@
         No Prometheus endpoint detected or configured.
       {/if}
     </p>
+  </section>
+
+  <section class="space-y-2">
+    <h3 class="text-sm font-semibold text-fg">Volume Browser</h3>
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={volumeBrowserOverride}
+        onchange={(e) => toggleVolumeBrowserOverride((e.target as HTMLInputElement).checked)}
+        class="accent-accent"
+      >
+      <span class="text-sm text-fg">Override global defaults for this cluster</span>
+    </label>
+    {#if volumeBrowserOverride}
+      <div class="ml-6 mt-2">
+        <VolumeBrowserSettings bind:value={volumeBrowser} onchange={saveVolumeBrowser} />
+      </div>
+    {:else}
+      <p class="text-sm text-muted-foreground ml-6">Using global defaults</p>
+    {/if}
   </section>
 
   <section class="space-y-3 pt-6 border-t border-destructive/30">

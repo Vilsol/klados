@@ -206,6 +206,16 @@ func (c *ConfigService) SetSavedFilters(gvr string, filters []config.SavedFilter
 	})
 }
 
+func (c *ConfigService) SetVolumeBrowser(vb *config.VolumeBrowserConfig) error {
+	return c.config.Update(func(cfg *config.Config) {
+		if vb == nil {
+			cfg.VolumeBrowser = config.VolumeBrowserConfig{}
+			return
+		}
+		cfg.VolumeBrowser = *vb
+	})
+}
+
 func (c *ConfigService) SetClusterSavedFilters(ctxName string, gvr string, filters []config.SavedFilter) error {
 	return c.config.Update(func(cfg *config.Config) {
 		if cfg.Clusters == nil {
