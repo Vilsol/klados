@@ -44,6 +44,7 @@ func Execute(assets embed.FS) {
 			portForwardSvc := services.NewPortForwardService(appSvc)
 			volumeBrowserSvc := services.NewVolumeBrowserService(appSvc)
 			clusterSvc.SetVolumeBrowserService(volumeBrowserSvc)
+			appSvc.SetVolumeBrowserService(volumeBrowserSvc)
 			metricsSvc := services.NewMetricsService(appSvc)
 			pluginSvc := services.NewPluginService(appSvc, resourceSvc)
 			windowSvc := services.NewWindowService()

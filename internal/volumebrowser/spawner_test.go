@@ -58,7 +58,7 @@ func TestSpawner_TruncatesLongPVCName(t *testing.T) {
 func TestSpawner_AllLabelsPresent(t *testing.T) {
 	pvc := boundPVC("data", "default", "pv-1", []string{"ReadWriteOnce"})
 	conn := connWithObjs(pvc)
-	sp := NewSpawner("session-xyz")
+	sp := NewSpawnerWithIdentity("session-xyz", "host-me", "user-me")
 	pod, err := sp.Spawn(context.Background(), conn, SpawnParams{
 		Request:  SpawnRequest{ContextName: "ctx1", Namespace: "default", PVCName: "data"},
 		Resolved: config.VolumeBrowserConfig{},
@@ -72,6 +72,24 @@ func TestSpawner_AllLabelsPresent(t *testing.T) {
 	testza.AssertEqual(t, PurposeValue, labels[LabelPurpose])
 	testza.AssertEqual(t, "data", labels[LabelPVC])
 	testza.AssertEqual(t, "session-xyz", labels[LabelSession])
+	testza.AssertEqual(t, "host-me", labels[LabelHost])
+	testza.AssertEqual(t, "user-me", labels[LabelUser])
+}
+
+func TestSanitizeLabelValue(t *testing.T) {
+	testza.AssertEqual(t, "my-host", SanitizeLabelValue("My.Host"[:0]+"My-Host"))
+	testza.AssertEqual(t, "abc", SanitizeLabelValue("---abc---"))
+	testza.AssertEqual(t, "unknown", SanitizeLabelValue(""))
+	testza.AssertEqual(t, "unknown", SanitizeLabelValue("!!!"))
+	// Non-alnum replaced with '-'.
+	testza.AssertEqual(t, "a-b-c", SanitizeLabelValue("a@b#c"))
+	// Truncation to 63 chars.
+	long := ""
+	for i := 0; i < 100; i++ {
+		long += "a"
+	}
+	got := SanitizeLabelValue(long)
+	testza.AssertEqual(t, 63, len(got))
 }
 
 func TestSpawner_NilResourcesOmitsResourcesBlock(t *testing.T) {

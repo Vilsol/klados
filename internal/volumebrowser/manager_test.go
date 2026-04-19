@@ -172,7 +172,7 @@ func containerMap(created interface {
 func TestManager_ScanOrphans(t *testing.T) {
 	orphan := orphanPod("stale", "default", "pvc-old", "session-old")
 	conn := connWithObjs(orphan)
-	mgr := NewManager(testCtx(), &fakeMultiProvider{conns: map[string]*cluster.Connection{"ctx1": conn}}, "session-new")
+	mgr := NewManagerWithIdentity(testCtx(), &fakeMultiProvider{conns: map[string]*cluster.Connection{"ctx1": conn}}, "session-new", "host-me", "user-me")
 
 	orphans, err := mgr.ScanOrphans(context.Background(), "ctx1")
 	testza.AssertNoError(t, err)

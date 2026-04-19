@@ -67,6 +67,8 @@ const (
 	LabelPurpose   = "klados.io/purpose"
 	LabelPVC       = "klados.io/pvc"
 	LabelSession   = "klados.io/session"
+	LabelHost      = "klados.io/host"
+	LabelUser      = "klados.io/user"
 	ManagedByValue = "klados"
 	PurposeValue   = "pvc-browser"
 )

@@ -20,6 +20,8 @@ type spawnKey struct{ ctx, ns, pvc string }
 type Manager struct {
 	ctx         context.Context
 	sessionUUID string
+	hostLabel   string
+	userLabel   string
 	connMgr     ConnectionProvider
 	tracker     *Tracker
 	spawner     *Spawner
@@ -29,12 +31,33 @@ type Manager struct {
 }
 
 func NewManager(ctx context.Context, connMgr ConnectionProvider, sessionUUID string) *Manager {
+	host := CurrentHostLabel()
+	user := CurrentUserLabel()
 	return &Manager{
 		ctx:           ctx,
 		sessionUUID:   sessionUUID,
+		hostLabel:     host,
+		userLabel:     user,
 		connMgr:       connMgr,
 		tracker:       NewTracker(),
-		spawner:       NewSpawner(sessionUUID),
+		spawner:       NewSpawnerWithIdentity(sessionUUID, host, user),
+		spawnInFlight: make(map[spawnKey]struct{}),
+	}
+}
+
+// NewManagerWithIdentity is like NewManager but lets the caller (typically a
+// test) pin the host+user labels instead of resolving from the environment.
+func NewManagerWithIdentity(ctx context.Context, connMgr ConnectionProvider, sessionUUID, host, user string) *Manager {
+	host = SanitizeLabelValue(host)
+	user = SanitizeLabelValue(user)
+	return &Manager{
+		ctx:           ctx,
+		sessionUUID:   sessionUUID,
+		hostLabel:     host,
+		userLabel:     user,
+		connMgr:       connMgr,
+		tracker:       NewTracker(),
+		spawner:       NewSpawnerWithIdentity(sessionUUID, host, user),
 		spawnInFlight: make(map[spawnKey]struct{}),
 	}
 }
@@ -42,6 +65,12 @@ func NewManager(ctx context.Context, connMgr ConnectionProvider, sessionUUID str
 // SessionUUID returns the session identifier used by this manager.
 // (Exposed so the orphan scanner callers can fabricate matching labels in tests.)
 func (m *Manager) SessionUUID() string { return m.sessionUUID }
+
+// HostLabel returns the sanitized host label used by this manager.
+func (m *Manager) HostLabel() string { return m.hostLabel }
+
+// UserLabel returns the sanitized user label used by this manager.
+func (m *Manager) UserLabel() string { return m.userLabel }
 
 func (m *Manager) acquireSpawnSlot(k spawnKey) bool {
 	m.spawnMu.Lock()
@@ -195,7 +224,7 @@ func (m *Manager) ScanOrphans(ctx context.Context, contextName string) ([]Orphan
 	if err != nil {
 		return nil, fmt.Errorf("getting connection: %w", err)
 	}
-	return ScanOrphans(ctx, conn, contextName, m.sessionUUID)
+	return ScanOrphans(ctx, conn, contextName, m.sessionUUID, m.hostLabel, m.userLabel)
 }
 
 // CleanupOrphans deletes every orphan pod (pvc-browser pods not owned by this
@@ -206,7 +235,7 @@ func (m *Manager) CleanupOrphans(ctx context.Context, contextName string) error 
 	if err != nil {
 		return fmt.Errorf("getting connection: %w", err)
 	}
-	orphans, err := ScanOrphans(ctx, conn, contextName, m.sessionUUID)
+	orphans, err := ScanOrphans(ctx, conn, contextName, m.sessionUUID, m.hostLabel, m.userLabel)
 	if err != nil {
 		return err
 	}

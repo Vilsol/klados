@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 // ---- fakes ----
 
 type fakeVBManager struct {
+	mu             sync.Mutex
 	spawnCalls     int
 	stopCalls      []string
 	stopAllCalled  bool
@@ -32,6 +34,20 @@ type fakeVBManager struct {
 	spawnResult    *volumebrowser.ManagedPod
 	callOrder      []string
 	stopAllDelay   time.Duration
+}
+
+func (f *fakeVBManager) cleanupCallsLen() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return len(f.cleanupCalls)
+}
+
+func (f *fakeVBManager) cleanupCallsSnapshot() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]string, len(f.cleanupCalls))
+	copy(out, f.cleanupCalls)
+	return out
 }
 
 func (f *fakeVBManager) Spawn(ctx context.Context, req volumebrowser.SpawnRequest, resolved config.VolumeBrowserConfig) (*volumebrowser.ManagedPod, error) {
@@ -90,8 +106,11 @@ func (f *fakeVBManager) ScanOrphans(ctx context.Context, contextName string) ([]
 }
 
 func (f *fakeVBManager) CleanupOrphans(ctx context.Context, contextName string) error {
+	f.mu.Lock()
 	f.cleanupCalls = append(f.cleanupCalls, contextName)
-	return f.cleanupErr
+	err := f.cleanupErr
+	f.mu.Unlock()
+	return err
 }
 
 func (f *fakeVBManager) FindByPVC(ctxName, namespace, pvc string) (*volumebrowser.ManagedPod, bool) {
@@ -282,7 +301,7 @@ func TestVolumeBrowserService_OnClusterConnected_Modes(t *testing.T) {
 					// Poll: break when expected side-effects happened (or ignore mode never does anything).
 					if tc.mode == "ignore" {
 						done = true
-					} else if tc.wantCleanupCall && len(mgr.cleanupCalls) > 0 {
+					} else if tc.wantCleanupCall && mgr.cleanupCallsLen() > 0 {
 						done = true
 					} else if tc.wantEvent && len(eventsCh) > 0 {
 						done = true
@@ -295,11 +314,12 @@ func TestVolumeBrowserService_OnClusterConnected_Modes(t *testing.T) {
 				}
 			}
 
+			calls := mgr.cleanupCallsSnapshot()
 			if tc.wantCleanupCall {
-				testza.AssertLen(t, mgr.cleanupCalls, 1)
-				testza.AssertEqual(t, "c", mgr.cleanupCalls[0])
+				testza.AssertLen(t, calls, 1)
+				testza.AssertEqual(t, "c", calls[0])
 			} else {
-				testza.AssertLen(t, mgr.cleanupCalls, 0)
+				testza.AssertLen(t, calls, 0)
 			}
 
 			if tc.wantEvent {
@@ -319,6 +339,43 @@ func TestVolumeBrowserService_OnClusterConnected_Modes(t *testing.T) {
 					t.Fatalf("expected no event, got %q", ev.name)
 				default:
 				}
+			}
+		})
+	}
+}
+
+func TestVolumeBrowserService_TriggerOrphanScan_Modes(t *testing.T) {
+	orphan := volumebrowser.OrphanPod{ContextName: "c", Namespace: "ns", PodName: "p", PVCName: "pvc"}
+
+	tests := []struct {
+		name            string
+		mode            string
+		scanResult      []volumebrowser.OrphanPod
+		wantCleanupCall bool
+		wantLen         int
+	}{
+		{name: "prompt returns list", mode: "prompt", scanResult: []volumebrowser.OrphanPod{orphan}, wantCleanupCall: false, wantLen: 1},
+		{name: "auto cleans and returns empty", mode: "auto", scanResult: []volumebrowser.OrphanPod{orphan}, wantCleanupCall: true, wantLen: 0},
+		{name: "ignore returns empty without scan", mode: "ignore", scanResult: []volumebrowser.OrphanPod{orphan}, wantCleanupCall: false, wantLen: 0},
+		{name: "prompt with no orphans returns empty", mode: "prompt", scanResult: nil, wantCleanupCall: false, wantLen: 0},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mgr := &fakeVBManager{scanResult: tc.scanResult}
+			cfg := &fakeCfgResolver{prefs: config.ResolvedPrefs{
+				VolumeBrowser: config.VolumeBrowserConfig{OrphanCleanupOnStartup: tc.mode},
+			}}
+			svc := newVolumeBrowserServiceForTest(mgr, cfg)
+
+			out, err := svc.TriggerOrphanScan("c")
+			testza.AssertNoError(t, err)
+			testza.AssertLen(t, out, tc.wantLen)
+
+			if tc.wantCleanupCall {
+				testza.AssertLen(t, mgr.cleanupCalls, 1)
+			} else {
+				testza.AssertLen(t, mgr.cleanupCalls, 0)
 			}
 		})
 	}

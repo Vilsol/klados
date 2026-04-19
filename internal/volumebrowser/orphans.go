@@ -11,10 +11,17 @@ import (
 	"github.com/Vilsol/klados/internal/cluster"
 )
 
-// ScanOrphans lists pods cluster-wide with the pvc-browser label and returns
-// those whose session label does NOT match the current sessionUUID.
-func ScanOrphans(ctx context.Context, conn *cluster.Connection, contextName, sessionUUID string) ([]OrphanPod, error) {
-	selector := fmt.Sprintf("%s=%s", LabelPurpose, PurposeValue)
+// ScanOrphans lists pods cluster-wide that belong to the same klados user on
+// the same host (matched via labels), and returns the subset whose session
+// label does NOT match the current sessionUUID. Scoping by host+user ensures
+// that two klados instances pointed at the same cluster by different humans
+// never see each other's live pods as orphans.
+func ScanOrphans(ctx context.Context, conn *cluster.Connection, contextName, sessionUUID, hostLabel, userLabel string) ([]OrphanPod, error) {
+	selector := fmt.Sprintf("%s=%s,%s=%s,%s=%s",
+		LabelPurpose, PurposeValue,
+		LabelHost, hostLabel,
+		LabelUser, userLabel,
+	)
 	list, err := conn.Dynamic.Resource(podGVR).Namespace("").List(ctx, metav1.ListOptions{
 		LabelSelector: selector,
 	})

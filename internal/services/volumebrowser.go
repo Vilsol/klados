@@ -261,41 +261,72 @@ func (s *VolumeBrowserService) OnClusterConnected(contextName string) {
 	if s.manager == nil || s.cfg == nil {
 		return
 	}
-	go s.runOrphanScan(contextName)
+	go func() {
+		dtos, _, err := s.runOrphanScan(contextName)
+		if err != nil {
+			return
+		}
+		if len(dtos) > 0 && s.emitEvent != nil {
+			s.emitEvent(fmt.Sprintf("volumebrowser:orphans:%s", contextName), dtos)
+		}
+	}()
 }
 
-func (s *VolumeBrowserService) runOrphanScan(contextName string) {
+// TriggerOrphanScan runs the scan and applies the OrphanCleanupOnStartup
+// dispatch (auto/prompt/ignore) synchronously, returning the orphan list for
+// prompt mode. For ignore or after-auto-cleanup it returns an empty slice.
+// Used by the frontend on-mount pull path to avoid races against the
+// OnClusterConnected event.
+func (s *VolumeBrowserService) TriggerOrphanScan(contextName string) ([]OrphanPodDTO, error) {
+	if s.manager == nil || s.cfg == nil {
+		return []OrphanPodDTO{}, nil
+	}
+	dtos, _, err := s.runOrphanScan(contextName)
+	if err != nil {
+		return nil, err
+	}
+	if dtos == nil {
+		return []OrphanPodDTO{}, nil
+	}
+	return dtos, nil
+}
+
+// runOrphanScan scans for orphan pods and applies the configured cleanup mode.
+// Returns (dtos, cleanupApplied, err). For "prompt" mode dtos contains the
+// orphan list. For "auto" mode dtos is empty and cleanupApplied is true. For
+// "ignore" mode the scan is skipped entirely and dtos is empty.
+func (s *VolumeBrowserService) runOrphanScan(contextName string) ([]OrphanPodDTO, bool, error) {
 	mode := s.cfg.ResolveForCluster(contextName).VolumeBrowser.OrphanCleanupOnStartup
 	if mode == "" {
 		mode = "prompt"
 	}
 	if mode == "ignore" {
-		return
+		return nil, false, nil
 	}
 
 	orphans, err := s.manager.ScanOrphans(s.ctx, contextName)
 	if err != nil {
 		slox.Warn(s.ctx, "volumebrowser: orphan scan failed", "context", contextName, "error", err)
-		return
+		return nil, false, err
 	}
 	if len(orphans) == 0 {
-		return
+		return nil, false, nil
 	}
 
 	switch mode {
 	case "auto":
 		if err := s.manager.CleanupOrphans(s.ctx, contextName); err != nil {
 			slox.Warn(s.ctx, "volumebrowser: auto-cleanup failed", "context", contextName, "error", err)
-			return
+			return nil, false, err
 		}
 		slox.Info(s.ctx, "volumebrowser: auto-cleaned orphan pods", "context", contextName, "count", len(orphans))
+		return nil, true, nil
 	case "prompt":
 		dtos := make([]OrphanPodDTO, 0, len(orphans))
 		for _, o := range orphans {
 			dtos = append(dtos, orphanToDTO(o))
 		}
-		if s.emitEvent != nil {
-			s.emitEvent(fmt.Sprintf("volumebrowser:orphans:%s", contextName), dtos)
-		}
+		return dtos, false, nil
 	}
+	return nil, false, nil
 }

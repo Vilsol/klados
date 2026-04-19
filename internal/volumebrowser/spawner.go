@@ -17,10 +17,23 @@ import (
 // Spawner builds pod specs and creates them via the dynamic client.
 type Spawner struct {
 	sessionUUID string
+	host        string
+	user        string
 }
 
 func NewSpawner(sessionUUID string) *Spawner {
-	return &Spawner{sessionUUID: sessionUUID}
+	return &Spawner{
+		sessionUUID: sessionUUID,
+		host:        CurrentHostLabel(),
+		user:        CurrentUserLabel(),
+	}
+}
+
+// NewSpawnerWithIdentity constructs a Spawner with explicit (already sanitized)
+// host/user labels. Primarily used by Manager to share identity across spawner
+// and orphan scanner, and by tests to inject deterministic values.
+func NewSpawnerWithIdentity(sessionUUID, host, user string) *Spawner {
+	return &Spawner{sessionUUID: sessionUUID, host: host, user: user}
 }
 
 // SpawnParams bundles the inputs required to spawn a browser pod.
@@ -59,7 +72,7 @@ func (s *Spawner) Spawn(ctx context.Context, conn *cluster.Connection, params Sp
 		return nil, fmt.Errorf("generating pod name: %w", err)
 	}
 
-	podObj := buildPodSpec(podName, req.PVCName, nodeName, s.sessionUUID, cfg)
+	podObj := buildPodSpec(podName, req.PVCName, nodeName, s.sessionUUID, s.host, s.user, cfg)
 
 	created, err := conn.Dynamic.Resource(podGVR).Namespace(req.Namespace).Create(ctx, podObj, metav1.CreateOptions{})
 	if err != nil {
@@ -106,7 +119,7 @@ func truncate(s string, n int) string {
 	return s[:n]
 }
 
-func buildPodSpec(podName, pvcName, nodeName, sessionUUID string, cfg config.VolumeBrowserConfig) *unstructured.Unstructured {
+func buildPodSpec(podName, pvcName, nodeName, sessionUUID, hostLabel, userLabel string, cfg config.VolumeBrowserConfig) *unstructured.Unstructured {
 	// Resolve effective scalar values with defaults.
 	image := cfg.Image
 	if image == "" {
@@ -204,6 +217,8 @@ func buildPodSpec(podName, pvcName, nodeName, sessionUUID string, cfg config.Vol
 		LabelPurpose:   PurposeValue,
 		LabelPVC:       pvcName,
 		LabelSession:   sessionUUID,
+		LabelHost:      hostLabel,
+		LabelUser:      userLabel,
 	}
 
 	return &unstructured.Unstructured{

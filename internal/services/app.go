@@ -32,6 +32,7 @@ type AppService struct {
 	session              *session.Session
 	config             *config.Config
 	pluginSvc          *PluginService
+	volumeBrowserSvc   *VolumeBrowserService
 	ctx                context.Context
 	app                *application.App
 }
@@ -88,6 +89,9 @@ func (a *AppService) ServiceStartup(ctx context.Context, options application.Ser
 					slox.Warn(a.ctx, "failed to activate cluster on startup", "context", name, "error", err)
 				}
 				a.portForwardManager.ReconnectSaved(name)
+				if a.volumeBrowserSvc != nil {
+					a.volumeBrowserSvc.OnClusterConnected(name)
+				}
 			}(last)
 		}
 	}
@@ -185,6 +189,11 @@ func (a *AppService) Ctx() context.Context {
 //wails:ignore
 func (a *AppService) SetPluginService(svc *PluginService) {
 	a.pluginSvc = svc
+}
+
+//wails:ignore
+func (a *AppService) SetVolumeBrowserService(svc *VolumeBrowserService) {
+	a.volumeBrowserSvc = svc
 }
 
 //wails:ignore
