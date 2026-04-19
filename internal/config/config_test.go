@@ -219,7 +219,7 @@ func TestReadOnly_RoundTrip(t *testing.T) {
 	testza.AssertNoError(t, cfg.Save())
 	data, err = os.ReadFile(cfg.path)
 	testza.AssertNoError(t, err)
-	testza.AssertFalse(t, strings.Contains(string(data), "readOnly"))
+	testza.AssertFalse(t, strings.Contains(string(data), `"readOnly": true`))
 }
 
 func TestClusterPrefsRoundTrip(t *testing.T) {
@@ -304,6 +304,85 @@ func TestNewFieldsOmittedWhenEmpty(t *testing.T) {
 	testza.AssertFalse(t, strings.Contains(s, "startupBehavior"))
 	testza.AssertFalse(t, strings.Contains(s, "accentColor"))
 	testza.AssertFalse(t, strings.Contains(s, "fontSize"))
+}
+
+func TestDefaultConfig_VolumeBrowser(t *testing.T) {
+	cfg := DefaultConfig()
+	testza.AssertEqual(t, "alpine:edge", cfg.VolumeBrowser.Image)
+	testza.AssertEqual(t, "/mnt/volume", cfg.VolumeBrowser.MountPath)
+	testza.AssertNotNil(t, cfg.VolumeBrowser.ReadOnly)
+	testza.AssertFalse(t, *cfg.VolumeBrowser.ReadOnly)
+	testza.AssertNotNil(t, cfg.VolumeBrowser.ActiveDeadlineSeconds)
+	testza.AssertEqual(t, int64(3600), *cfg.VolumeBrowser.ActiveDeadlineSeconds)
+	testza.AssertNil(t, cfg.VolumeBrowser.Resources)
+	testza.AssertNil(t, cfg.VolumeBrowser.NodeSelector)
+	testza.AssertNil(t, cfg.VolumeBrowser.Tolerations)
+	testza.AssertNotNil(t, cfg.VolumeBrowser.PromptBeforeSpawn)
+	testza.AssertFalse(t, *cfg.VolumeBrowser.PromptBeforeSpawn)
+	testza.AssertEqual(t, "prompt", cfg.VolumeBrowser.OrphanCleanupOnStartup)
+}
+
+func TestVolumeBrowser_RoundTrip(t *testing.T) {
+	cfg := tempConfig(t)
+	deadline := int64(7200)
+	readOnly := true
+	promptBeforeSpawn := true
+	cfg.VolumeBrowser = VolumeBrowserConfig{
+		Image:                 "busybox:latest",
+		MountPath:             "/data",
+		ReadOnly:              &readOnly,
+		ActiveDeadlineSeconds: &deadline,
+		Resources: &ResourceReqs{
+			Requests: map[string]string{"cpu": "100m", "memory": "128Mi"},
+			Limits:   map[string]string{"cpu": "500m"},
+		},
+		NodeSelector: map[string]string{"disktype": "ssd"},
+		Tolerations: []map[string]any{
+			{"key": "dedicated", "operator": "Equal", "value": "gpu", "effect": "NoSchedule"},
+		},
+		PromptBeforeSpawn:      &promptBeforeSpawn,
+		OrphanCleanupOnStartup: "auto",
+	}
+	testza.AssertNoError(t, cfg.Save())
+
+	data, err := os.ReadFile(cfg.path)
+	testza.AssertNoError(t, err)
+
+	loaded := &Config{}
+	testza.AssertNoError(t, json.Unmarshal(data, loaded))
+	testza.AssertEqual(t, "busybox:latest", loaded.VolumeBrowser.Image)
+	testza.AssertEqual(t, "/data", loaded.VolumeBrowser.MountPath)
+	testza.AssertNotNil(t, loaded.VolumeBrowser.ReadOnly)
+	testza.AssertTrue(t, *loaded.VolumeBrowser.ReadOnly)
+	testza.AssertNotNil(t, loaded.VolumeBrowser.ActiveDeadlineSeconds)
+	testza.AssertEqual(t, int64(7200), *loaded.VolumeBrowser.ActiveDeadlineSeconds)
+	testza.AssertNotNil(t, loaded.VolumeBrowser.Resources)
+	testza.AssertEqual(t, "100m", loaded.VolumeBrowser.Resources.Requests["cpu"])
+	testza.AssertEqual(t, "128Mi", loaded.VolumeBrowser.Resources.Requests["memory"])
+	testza.AssertEqual(t, "500m", loaded.VolumeBrowser.Resources.Limits["cpu"])
+	testza.AssertEqual(t, "ssd", loaded.VolumeBrowser.NodeSelector["disktype"])
+	testza.AssertLen(t, loaded.VolumeBrowser.Tolerations, 1)
+	testza.AssertEqual(t, "dedicated", loaded.VolumeBrowser.Tolerations[0]["key"])
+	testza.AssertNotNil(t, loaded.VolumeBrowser.PromptBeforeSpawn)
+	testza.AssertTrue(t, *loaded.VolumeBrowser.PromptBeforeSpawn)
+	testza.AssertEqual(t, "auto", loaded.VolumeBrowser.OrphanCleanupOnStartup)
+}
+
+func TestVolumeBrowser_NilDeadlinePreserved(t *testing.T) {
+	cfg := tempConfig(t)
+	cfg.VolumeBrowser = VolumeBrowserConfig{
+		Image:                 "alpine:edge",
+		ActiveDeadlineSeconds: nil,
+	}
+	testza.AssertNoError(t, cfg.Save())
+
+	data, err := os.ReadFile(cfg.path)
+	testza.AssertNoError(t, err)
+	testza.AssertFalse(t, strings.Contains(string(data), "activeDeadlineSeconds"))
+
+	loaded := &Config{}
+	testza.AssertNoError(t, json.Unmarshal(data, loaded))
+	testza.AssertNil(t, loaded.VolumeBrowser.ActiveDeadlineSeconds)
 }
 
 func TestStartupBehaviorRoundTrip(t *testing.T) {

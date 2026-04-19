@@ -15,6 +15,37 @@ type MetricsConfig struct {
 	PrometheusURL string `json:"prometheusUrl,omitempty"`
 }
 
+type ResourceReqs struct {
+	Requests map[string]string `json:"requests,omitempty"`
+	Limits   map[string]string `json:"limits,omitempty"`
+}
+
+type VolumeBrowserConfig struct {
+	Image                  string            `json:"image,omitempty"`
+	MountPath              string            `json:"mountPath,omitempty"`
+	ReadOnly               *bool             `json:"readOnly,omitempty"`
+	ActiveDeadlineSeconds  *int64            `json:"activeDeadlineSeconds,omitempty"`
+	Resources              *ResourceReqs     `json:"resources,omitempty"`
+	NodeSelector           map[string]string `json:"nodeSelector,omitempty"`
+	Tolerations            []map[string]any  `json:"tolerations,omitempty"`
+	PromptBeforeSpawn      *bool             `json:"promptBeforeSpawn,omitempty"`
+	OrphanCleanupOnStartup string            `json:"orphanCleanupOnStartup,omitempty"`
+}
+
+func defaultVolumeBrowser() VolumeBrowserConfig {
+	deadline := int64(3600)
+	readOnly := false
+	promptBeforeSpawn := false
+	return VolumeBrowserConfig{
+		Image:                  "alpine:edge",
+		MountPath:              "/mnt/volume",
+		ReadOnly:               &readOnly,
+		ActiveDeadlineSeconds:  &deadline,
+		PromptBeforeSpawn:      &promptBeforeSpawn,
+		OrphanCleanupOnStartup: "prompt",
+	}
+}
+
 type ColumnSettings struct {
 	Width int `json:"width,omitempty"`
 }
@@ -31,14 +62,15 @@ type GVRColumnPrefs struct {
 }
 
 type ClusterPrefs struct {
-	ReadOnly     *bool                      `json:"readOnly,omitempty"`
-	CompactRows  *bool                      `json:"compactRows,omitempty"`
-	AccentColor  *string                    `json:"accentColor,omitempty"`
-	DisplayName  *string                    `json:"displayName,omitempty"`
-	Metrics      *MetricsConfig             `json:"metrics,omitempty"`
-	ColumnPrefs  map[string]*GVRColumnPrefs `json:"columnPrefs,omitempty"`
-	FavoriteNS   []string                   `json:"favoriteNamespaces,omitempty"`
-	SavedFilters map[string][]SavedFilter   `json:"savedFilters,omitempty"`
+	ReadOnly      *bool                      `json:"readOnly,omitempty"`
+	CompactRows   *bool                      `json:"compactRows,omitempty"`
+	AccentColor   *string                    `json:"accentColor,omitempty"`
+	DisplayName   *string                    `json:"displayName,omitempty"`
+	Metrics       *MetricsConfig             `json:"metrics,omitempty"`
+	ColumnPrefs   map[string]*GVRColumnPrefs `json:"columnPrefs,omitempty"`
+	FavoriteNS    []string                   `json:"favoriteNamespaces,omitempty"`
+	SavedFilters  map[string][]SavedFilter   `json:"savedFilters,omitempty"`
+	VolumeBrowser *VolumeBrowserConfig       `json:"volumeBrowser,omitempty"`
 }
 
 type SavedFilter struct {
@@ -61,25 +93,26 @@ type SavedPortForward struct {
 }
 
 type Config struct {
-	Theme                 string                       `json:"theme"`
-	KubeconfigPaths       []string                     `json:"kubeconfigPaths"`
-	TerminalWebGL         bool                         `json:"terminalWebGL"`
-	DisabledPlugins       []string                     `json:"disabledPlugins,omitempty"`
-	InsecureRegistries    []string                     `json:"insecureRegistries,omitempty"`
-	InsecureSkipTLSVerify bool                         `json:"insecureSkipTLSVerify,omitempty"`
-	Metrics               map[string]*MetricsConfig    `json:"metrics,omitempty"`
-	ColumnPrefs           map[string]*GVRColumnPrefs   `json:"columnPrefs,omitempty"`
-	CompactRows           bool                         `json:"compactRows,omitempty"`
-	ReadOnly              bool                         `json:"readOnly,omitempty"`
-	PortForwards          map[string][]SavedPortForward `json:"portForwards,omitempty"`
-	Clusters              map[string]*ClusterPrefs     `json:"clusters,omitempty"`
-	Keybindings           map[string]string            `json:"keybindings,omitempty"`
-	SavedFilters          map[string][]SavedFilter     `json:"savedFilters,omitempty"`
-	StartupBehavior       string                       `json:"startupBehavior,omitempty"`
-	StartupCluster        string                       `json:"startupCluster,omitempty"`
-	AccentColor           string                       `json:"accentColor,omitempty"`
-	FontSize              int                          `json:"fontSize,omitempty"`
-	ContextualAutocomplete *bool                        `json:"contextualAutocomplete,omitempty"`
+	Theme                  string                        `json:"theme"`
+	KubeconfigPaths        []string                      `json:"kubeconfigPaths"`
+	TerminalWebGL          bool                          `json:"terminalWebGL"`
+	DisabledPlugins        []string                      `json:"disabledPlugins,omitempty"`
+	InsecureRegistries     []string                      `json:"insecureRegistries,omitempty"`
+	InsecureSkipTLSVerify  bool                          `json:"insecureSkipTLSVerify,omitempty"`
+	Metrics                map[string]*MetricsConfig     `json:"metrics,omitempty"`
+	ColumnPrefs            map[string]*GVRColumnPrefs    `json:"columnPrefs,omitempty"`
+	CompactRows            bool                          `json:"compactRows,omitempty"`
+	ReadOnly               bool                          `json:"readOnly,omitempty"`
+	PortForwards           map[string][]SavedPortForward `json:"portForwards,omitempty"`
+	Clusters               map[string]*ClusterPrefs      `json:"clusters,omitempty"`
+	Keybindings            map[string]string             `json:"keybindings,omitempty"`
+	SavedFilters           map[string][]SavedFilter      `json:"savedFilters,omitempty"`
+	StartupBehavior        string                        `json:"startupBehavior,omitempty"`
+	StartupCluster         string                        `json:"startupCluster,omitempty"`
+	AccentColor            string                        `json:"accentColor,omitempty"`
+	FontSize               int                           `json:"fontSize,omitempty"`
+	ContextualAutocomplete *bool                         `json:"contextualAutocomplete,omitempty"`
+	VolumeBrowser          VolumeBrowserConfig           `json:"volumeBrowser,omitempty"`
 
 	mu   deadlock.Mutex
 	path string
@@ -90,6 +123,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		Theme:           "system",
 		KubeconfigPaths: []string{},
+		VolumeBrowser:   defaultVolumeBrowser(),
 	}
 }
 

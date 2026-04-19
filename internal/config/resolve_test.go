@@ -131,6 +131,125 @@ func TestResolveForCluster_SavedFilters_Merged(t *testing.T) {
 	testza.AssertLen(t, r.SavedFilters["core.v1.pods"], 2)
 }
 
+func TestResolveForCluster_VolumeBrowser_GlobalDefaults(t *testing.T) {
+	cfg := DefaultConfig()
+	r := cfg.ResolveForCluster("")
+	testza.AssertEqual(t, "alpine:edge", r.VolumeBrowser.Image)
+	testza.AssertEqual(t, "/mnt/volume", r.VolumeBrowser.MountPath)
+	testza.AssertNotNil(t, r.VolumeBrowser.ActiveDeadlineSeconds)
+	testza.AssertEqual(t, int64(3600), *r.VolumeBrowser.ActiveDeadlineSeconds)
+	testza.AssertEqual(t, "prompt", r.VolumeBrowser.OrphanCleanupOnStartup)
+}
+
+func TestResolveForCluster_VolumeBrowser_NoOverride(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.VolumeBrowser.Image = "custom:v1"
+	cfg.Clusters = map[string]*ClusterPrefs{
+		"prod": {FavoriteNS: []string{"default"}},
+	}
+
+	r := cfg.ResolveForCluster("prod")
+	testza.AssertEqual(t, "custom:v1", r.VolumeBrowser.Image)
+	testza.AssertEqual(t, "/mnt/volume", r.VolumeBrowser.MountPath)
+}
+
+func TestResolveForCluster_VolumeBrowser_PerClusterOverride(t *testing.T) {
+	cfg := DefaultConfig()
+	deadline := int64(600)
+	cfg.Clusters = map[string]*ClusterPrefs{
+		"prod": {
+			VolumeBrowser: &VolumeBrowserConfig{
+				Image:                 "busybox",
+				ActiveDeadlineSeconds: &deadline,
+				Resources: &ResourceReqs{
+					Requests: map[string]string{"cpu": "50m"},
+				},
+				NodeSelector: map[string]string{"zone": "us-east"},
+			},
+		},
+	}
+
+	r := cfg.ResolveForCluster("prod")
+	testza.AssertEqual(t, "busybox", r.VolumeBrowser.Image)
+	testza.AssertEqual(t, "/mnt/volume", r.VolumeBrowser.MountPath)
+	testza.AssertNotNil(t, r.VolumeBrowser.ActiveDeadlineSeconds)
+	testza.AssertEqual(t, int64(600), *r.VolumeBrowser.ActiveDeadlineSeconds)
+	testza.AssertNotNil(t, r.VolumeBrowser.Resources)
+	testza.AssertEqual(t, "50m", r.VolumeBrowser.Resources.Requests["cpu"])
+	testza.AssertEqual(t, "us-east", r.VolumeBrowser.NodeSelector["zone"])
+	testza.AssertEqual(t, "prompt", r.VolumeBrowser.OrphanCleanupOnStartup)
+}
+
+func TestResolveForCluster_VolumeBrowser_EmptyOverrideDoesNotClobber(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.VolumeBrowser.Image = "global:v1"
+	cfg.VolumeBrowser.MountPath = "/global"
+	cfg.Clusters = map[string]*ClusterPrefs{
+		"prod": {
+			VolumeBrowser: &VolumeBrowserConfig{},
+		},
+	}
+
+	r := cfg.ResolveForCluster("prod")
+	testza.AssertEqual(t, "global:v1", r.VolumeBrowser.Image)
+	testza.AssertEqual(t, "/global", r.VolumeBrowser.MountPath)
+	testza.AssertNotNil(t, r.VolumeBrowser.ActiveDeadlineSeconds)
+	testza.AssertEqual(t, int64(3600), *r.VolumeBrowser.ActiveDeadlineSeconds)
+}
+
+func TestResolveForCluster_VolumeBrowser_OverrideReadOnlyTrueToFalse(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.VolumeBrowser.ReadOnly = ptr(true)
+	cfg.Clusters = map[string]*ClusterPrefs{
+		"prod": {
+			VolumeBrowser: &VolumeBrowserConfig{
+				ReadOnly: ptr(false),
+			},
+		},
+	}
+
+	r := cfg.ResolveForCluster("prod")
+	testza.AssertNotNil(t, r.VolumeBrowser.ReadOnly)
+	testza.AssertFalse(t, *r.VolumeBrowser.ReadOnly)
+}
+
+func TestResolveForCluster_VolumeBrowser_NilResourcesInherit(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.VolumeBrowser.Resources = &ResourceReqs{
+		Requests: map[string]string{"cpu": "200m"},
+	}
+	cfg.Clusters = map[string]*ClusterPrefs{
+		"prod": {
+			VolumeBrowser: &VolumeBrowserConfig{Image: "override"},
+		},
+	}
+
+	r := cfg.ResolveForCluster("prod")
+	testza.AssertEqual(t, "override", r.VolumeBrowser.Image)
+	testza.AssertNotNil(t, r.VolumeBrowser.Resources)
+	testza.AssertEqual(t, "200m", r.VolumeBrowser.Resources.Requests["cpu"])
+}
+
+func TestResolveForCluster_VolumeBrowser_NilDeadlinePreservedAtGlobal(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.VolumeBrowser.ActiveDeadlineSeconds = nil
+
+	r := cfg.ResolveForCluster("")
+	testza.AssertNil(t, r.VolumeBrowser.ActiveDeadlineSeconds)
+}
+
+func TestResolveForCluster_VolumeBrowser_DeepCopy(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.VolumeBrowser.NodeSelector = map[string]string{"a": "1"}
+
+	r := cfg.ResolveForCluster("")
+	r.VolumeBrowser.NodeSelector["a"] = "mutated"
+	r.VolumeBrowser.Image = "mutated"
+
+	testza.AssertEqual(t, "1", cfg.VolumeBrowser.NodeSelector["a"])
+	testza.AssertEqual(t, "alpine:edge", cfg.VolumeBrowser.Image)
+}
+
 func TestResolveForCluster_Keybindings(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Keybindings = map[string]string{
