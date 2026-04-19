@@ -83,12 +83,12 @@ New block in `internal/config/config.go`, resolvable per-cluster through `intern
 type VolumeBrowserConfig struct {
     Image                  string              // default "alpine:edge"
     MountPath              string              // default "/mnt/volume"
-    ReadOnly               bool                // default false
+    ReadOnly               *bool               // default ptr(false); nil in per-cluster override falls through to global
     ActiveDeadlineSeconds  *int64              // default ptr(3600); nil = no deadline
     Resources              *ResourceReqs       // nil = no resource requests/limits set on the container
     NodeSelector           map[string]string   // default empty
     Tolerations            []corev1.Toleration // default empty
-    PromptBeforeSpawn      bool                // default false; Shift always prompts regardless
+    PromptBeforeSpawn      *bool               // default ptr(false); nil in per-cluster override falls through to global
     OrphanCleanupOnStartup string              // "prompt" | "auto" | "ignore"; default "prompt"
 }
 
