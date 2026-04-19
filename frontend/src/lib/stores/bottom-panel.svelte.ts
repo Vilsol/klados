@@ -1,3 +1,5 @@
+import {Stop as StopVolumeBrowser} from "../../../bindings/github.com/Vilsol/klados/internal/services/volumebrowserservice.js";
+
 export type PanelKind = "logs" | "terminal" | "terminal-pending" | "aggregate-logs" | "yaml";
 
 export interface PanelTab {
@@ -39,12 +41,27 @@ class BottomPanelStore {
     return id;
   }
 
-  closeTab(id: string) {
+  closeTab(id: string, opts?: {skipStop?: boolean}) {
+    const tab = this.tabs.find((t) => t.id === id);
+    if (
+      tab?.managedId &&
+      !opts?.skipStop &&
+      (tab.kind === "terminal" || tab.kind === "terminal-pending")
+    ) {
+      // Fire-and-forget: tear down the managed pod on tab close.
+      void StopVolumeBrowser(tab.managedId).catch(() => {
+        /* swallow — server may have already cleaned up */
+      });
+    }
     this.tabs = this.tabs.filter((t) => t.id !== id);
     if (this.activeTabId === id) {
       const visible = this.visibleTabs;
       this.activeTabId = visible.length > 0 ? (visible.at(-1)?.id ?? null) : null;
     }
+  }
+
+  setKind(id: string, kind: PanelKind) {
+    this.tabs = this.tabs.map((t) => (t.id === id ? {...t, kind} : t));
   }
 
   setActive(id: string) {

@@ -88,7 +88,7 @@
           >
             {#if tab.kind === 'logs'}
               <ScrollText size={13} />
-            {:else if tab.kind === 'terminal'}
+            {:else if tab.kind === 'terminal' || tab.kind === 'terminal-pending'}
               <TerminalSquare size={13} />
             {:else if tab.kind === 'aggregate-logs'}
               <Layers size={13} />
@@ -137,8 +137,16 @@
           <div class="absolute inset-0 overflow-hidden" style:display={tab.id === bottomPanelStore.activeTabId ? 'block' : 'none'}>
             {#if tab.kind === 'logs'}
               <LogsPanel obj={tab.obj} ctxName={tab.ctxName} namespace={tab.namespace} name={tab.name} />
-            {:else if tab.kind === 'terminal'}
-              <TerminalPanel obj={tab.obj} ctxName={tab.ctxName} namespace={tab.namespace} name={tab.name} />
+            {:else if tab.kind === 'terminal' || tab.kind === 'terminal-pending'}
+              <TerminalPanel
+                tabId={tab.id}
+                tabKind={tab.kind}
+                managedId={tab.managedId}
+                obj={tab.obj}
+                ctxName={tab.ctxName}
+                namespace={tab.namespace}
+                name={tab.name}
+              />
             {:else if tab.kind === 'aggregate-logs'}
               <AggregateLogsPanel obj={tab.obj} ctxName={tab.ctxName} namespace={tab.namespace} name={tab.name} />
             {:else if tab.kind === 'yaml'}

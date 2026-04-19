@@ -33,6 +33,20 @@ class ResourceCache {
   }
 
   /**
+   * Look up a single object in the given (ctx, gvr) by namespace + name.
+   * Returns undefined if the watch isn't active or the object isn't present.
+   */
+  findByNamespaceName(ctx: string, gvr: string, namespace: string, name: string): Record<string, unknown> | undefined {
+    const m = this.cache.get(this.keyFor(ctx, gvr));
+    if (!m) return undefined;
+    for (const obj of m.values()) {
+      const md = (obj as {metadata?: {namespace?: string; name?: string}}).metadata;
+      if (md?.namespace === namespace && md?.name === name) return obj;
+    }
+    return undefined;
+  }
+
+  /**
    * Scan all watched GVRs (in the given context) for objects whose
    * ownerReferences include the given ownerUid. Returns results grouped by
    * GVR for display.

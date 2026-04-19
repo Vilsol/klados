@@ -73,6 +73,37 @@ function overridesFromPrefs(cfg: VolumeBrowserConfig): SpawnOverridesDTO {
 class VolumeBrowserStore {
   dialog = $state<DialogState | null>(null);
   collision = $state<CollisionState | null>(null);
+  // Stash of last-used spawn requests, keyed by managed id. Consumed by
+  // retry() when the user hits "Delete & Retry" on a stuck pending terminal.
+  lastRequests = new Map<string, SpawnRequestDTO>();
+
+  /**
+   * Re-spawn the managed pod identified by `managedId` using the same request
+   * used to originally spawn it. Called by the terminal-pending panel's
+   * "Delete & Retry" action. No-op if the original request isn't known.
+   */
+  async retry(managedId: string): Promise<void> {
+    const req = this.lastRequests.get(managedId);
+    if (!req) {
+      notificationStore.error("Cannot retry volume browser", "Original request not found");
+      return;
+    }
+    const oldTab = bottomPanelStore.tabs.find((t) => t.managedId === managedId);
+    const oldTabId = oldTab?.id;
+    try {
+      const result = (await Replace(managedId, req)) as SpawnResult;
+      this.lastRequests.delete(managedId);
+      this.lastRequests.set(result.id, req);
+      if (oldTabId) {
+        // Server-side Replace already tore down the old pod — don't double-Stop.
+        bottomPanelStore.closeTab(oldTabId, {skipStop: true});
+      }
+      await this.afterSpawn(req.contextName, result);
+    } catch (e: unknown) {
+      notificationStore.error("Failed to retry volume browser", errorMessage(e));
+      log.error("volume-browser retry failed", {error: errorMessage(e)});
+    }
+  }
 
   async spawn(ctxName: string, namespace: string, pvcName: string, opts: SpawnOptions = {}): Promise<void> {
     const prefs = preferencesStore.prefs.volumeBrowser;
@@ -170,6 +201,7 @@ class VolumeBrowserStore {
       }
     }
 
+    this.lastRequests.set(result.id, req);
     await this.afterSpawn(ctxName, result);
   }
 

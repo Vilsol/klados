@@ -3,6 +3,9 @@
   import {OpenExecSession, CloseExecSession} from "../../../../bindings/github.com/Vilsol/klados/internal/services/execservice.js";
   import {streamingStore} from "$lib/stores/streaming.svelte";
   import {sessionStore} from "$lib/stores/session.svelte";
+  import {bottomPanelStore, type PanelKind} from "$lib/stores/bottom-panel.svelte";
+  import {volumeBrowserStore} from "$lib/stores/volumeBrowser.svelte";
+  import {resourceCache} from "$lib/stores/resourceCache.svelte";
   import {Terminal, Combobox} from "@klados/ui";
   import type {KubernetesResource} from "$lib/types";
 
@@ -11,12 +14,121 @@
     ctxName,
     namespace,
     name,
+    tabId,
+    tabKind = "terminal",
+    managedId,
   }: {
     obj: Record<string, KubernetesResource>;
     ctxName: string;
     namespace: string;
     name: string;
+    tabId?: string;
+    tabKind?: PanelKind;
+    managedId?: string;
   } = $props();
+
+  // ---- terminal-pending (volume browser) lifecycle ----
+  const STUCK_REASONS = new Set([
+    "ImagePullBackOff",
+    "ErrImagePull",
+    "CreateContainerConfigError",
+  ]);
+  const STUCK_TIMEOUT_MS = 60_000;
+
+  let pendingStart = $state(Date.now());
+  let nowTs = $state(Date.now());
+
+  // Tick every second while pending so the stuck-timeout derivation stays fresh.
+  $effect(() => {
+    if (tabKind !== "terminal-pending") return;
+    const h = setInterval(() => (nowTs = Date.now()), 1000);
+    return () => clearInterval(h);
+  });
+
+  $effect(() => {
+    if (tabKind === "terminal-pending") {
+      pendingStart = Date.now();
+    }
+  });
+
+  interface ContainerState {
+    waiting?: {reason?: string; message?: string};
+    running?: {startedAt?: string};
+    terminated?: {reason?: string};
+  }
+  interface ContainerStatus {
+    ready?: boolean;
+    state?: ContainerState;
+  }
+  interface PodStatus {
+    phase?: string;
+    containerStatuses?: ContainerStatus[];
+  }
+  interface Pod {
+    metadata?: {name?: string; namespace?: string};
+    status?: PodStatus;
+  }
+
+  // Live-watched pod from the global resource cache (requires an active pod watch for this ctx/ns).
+  const watchedPod = $derived<Pod | undefined>(
+    tabKind === "terminal-pending"
+      ? (resourceCache.findByNamespaceName(ctxName, "core.v1.pods", namespace, name) as
+          | Pod
+          | undefined)
+      : undefined,
+  );
+
+  const phase = $derived<string>(watchedPod?.status?.phase ?? "Pending");
+  const containerStatuses = $derived<ContainerStatus[]>(watchedPod?.status?.containerStatuses ?? []);
+  const firstState = $derived<ContainerState>(containerStatuses[0]?.state ?? {});
+  const firstReady = $derived<boolean>(!!containerStatuses[0]?.ready);
+
+  const waitingReason = $derived<string | undefined>(firstState?.waiting?.reason);
+  const waitingMessage = $derived<string | undefined>(firstState?.waiting?.message);
+  const containerStateLabel = $derived<string>(
+    firstState?.waiting
+      ? `Waiting (${firstState.waiting.reason ?? "unknown"})`
+      : firstState?.running
+        ? "Running"
+        : firstState?.terminated
+          ? `Terminated (${firstState.terminated.reason ?? "unknown"})`
+          : "Unknown",
+  );
+
+  const isStuck = $derived<boolean>(
+    tabKind === "terminal-pending" &&
+      phase === "Pending" &&
+      !!waitingReason &&
+      STUCK_REASONS.has(waitingReason) &&
+      nowTs - pendingStart > STUCK_TIMEOUT_MS,
+  );
+
+  // Transition terminal-pending → terminal when the pod is actually ready.
+  let transitioned = $state(false);
+  $effect(() => {
+    if (
+      !transitioned &&
+      tabKind === "terminal-pending" &&
+      tabId &&
+      phase === "Running" &&
+      firstReady
+    ) {
+      transitioned = true;
+      bottomPanelStore.setKind(tabId, "terminal");
+    }
+  });
+
+  function deletePending() {
+    // closeTab handles Stop teardown for managed terminal tabs — avoid double-Stop.
+    if (tabId) {
+      bottomPanelStore.closeTab(tabId);
+    }
+  }
+
+  async function deleteAndRetry() {
+    if (!managedId) return;
+    await volumeBrowserStore.retry(managedId);
+  }
 
   interface TermSession {
     id: string;
@@ -108,7 +220,46 @@
   });
 </script>
 
-{#if sessions.length > 0 && streamingStore.config}
+{#if tabKind === "terminal-pending"}
+  <div class="flex flex-col gap-4 p-4 overflow-auto h-full">
+    {#if isStuck}
+      <div class="flex flex-col gap-3 border border-destructive/50 bg-destructive/5 rounded p-3">
+        <div class="text-sm font-medium text-destructive" data-testid="pending-error">
+          Pod {name} failed to start: {waitingReason}
+        </div>
+        {#if waitingMessage}
+          <pre class="text-xs text-muted whitespace-pre-wrap break-words">{waitingMessage}</pre>
+        {/if}
+        <div class="flex gap-2">
+          <button
+            type="button"
+            onclick={deleteAndRetry}
+            class="px-3 py-1.5 text-sm bg-accent text-white rounded hover:opacity-90 transition-opacity"
+          >
+            Delete &amp; Retry
+          </button>
+          <button
+            type="button"
+            onclick={deletePending}
+            class="px-3 py-1.5 text-sm border border-border rounded hover:bg-surface-hover transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    {:else}
+      <div class="flex items-center gap-3" data-testid="pending-waiting">
+        <div
+          class="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin"
+          aria-hidden="true"
+        ></div>
+        <span class="text-sm text-muted">
+          Waiting for pod {name}: {phase}/{containerStateLabel}…
+        </span>
+      </div>
+    {/if}
+  </div>
+{:else if sessions.length > 0 && streamingStore.config}
   <div class="flex flex-col h-full overflow-hidden">
     <!-- Compact header: selectors + tab bar + new button -->
     <div class="flex items-center gap-2 px-2 py-1 border-b border-border bg-surface shrink-0 text-xs flex-wrap">
