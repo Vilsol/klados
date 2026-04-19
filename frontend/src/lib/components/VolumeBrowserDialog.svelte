@@ -59,7 +59,7 @@
   <Dialog.Portal>
     <Dialog.Overlay class="fixed inset-0 bg-black/50 z-40" />
     <Dialog.Content
-      class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-surface border border-border rounded-lg shadow-xl p-6 w-[560px] max-w-[92vw] max-h-[80vh] flex flex-col"
+      class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-bg text-fg border border-border rounded-lg shadow-xl p-6 w-[560px] max-w-[92vw] max-h-[80vh] flex flex-col"
     >
       <Dialog.Title class="text-base font-semibold mb-1">Browse Volume</Dialog.Title>
       <Dialog.Description class="text-xs text-muted mb-4">

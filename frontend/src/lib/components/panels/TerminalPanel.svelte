@@ -1,6 +1,7 @@
 <script lang="ts">
   import {onDestroy} from "svelte";
   import {OpenExecSession, CloseExecSession} from "../../../../bindings/github.com/Vilsol/klados/internal/services/execservice.js";
+  import {GetResource} from "../../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {streamingStore} from "$lib/stores/streaming.svelte";
   import {sessionStore} from "$lib/stores/session.svelte";
   import {bottomPanelStore, type PanelKind} from "$lib/stores/bottom-panel.svelte";
@@ -69,14 +70,50 @@
     status?: PodStatus;
   }
 
-  // Live-watched pod from the global resource cache (requires an active pod watch for this ctx/ns).
-  const watchedPod = $derived<Pod | undefined>(
+  // During terminal-pending we poll GetResource directly (every 2s) so we don't
+  // depend on a ResourceStore being active for pods in this namespace. The cache
+  // is used as a fallback when it happens to be populated (e.g. user is also
+  // viewing the Pods list).
+  let polledPod = $state<Pod | undefined>(undefined);
+
+  $effect(() => {
+    if (tabKind !== "terminal-pending") return;
+    const _ctx = ctxName;
+    const _ns = namespace;
+    const _name = name;
+    let cancelled = false;
+
+    const fetchOnce = async () => {
+      try {
+        const obj = (await GetResource(_ctx, "core.v1.pods", _ns, _name)) as Pod | undefined;
+        if (!cancelled && obj) {
+          polledPod = obj;
+          if (tabId) {
+            bottomPanelStore.setObj(tabId, obj as unknown as Record<string, unknown>);
+          }
+        }
+      } catch {
+        // transient — next tick may succeed
+      }
+    };
+    void fetchOnce();
+    const h = setInterval(fetchOnce, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(h);
+    };
+  });
+
+  const cachedPod = $derived<Pod | undefined>(
     tabKind === "terminal-pending"
       ? (resourceCache.findByNamespaceName(ctxName, "core.v1.pods", namespace, name) as
           | Pod
           | undefined)
       : undefined,
   );
+
+  // Prefer the cache (live watch updates) when present; otherwise use the polled result.
+  const watchedPod = $derived<Pod | undefined>(cachedPod ?? polledPod);
 
   const phase = $derived<string>(watchedPod?.status?.phase ?? "Pending");
   const containerStatuses = $derived<ContainerStatus[]>(watchedPod?.status?.containerStatuses ?? []);

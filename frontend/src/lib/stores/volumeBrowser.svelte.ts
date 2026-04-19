@@ -206,15 +206,9 @@ class VolumeBrowserStore {
   }
 
   private async afterSpawn(ctxName: string, result: SpawnResult): Promise<void> {
-    // Navigate to the pod detail page (drawer-equivalent)
-    try {
-      if (typeof window !== "undefined") {
-        window.location.hash = `#/c/${encodeURIComponent(ctxName)}/core.v1.pods/${encodeURIComponent(result.namespace)}/${encodeURIComponent(result.podName)}`;
-      }
-    } catch (e) {
-      log.warn("failed to navigate after spawn", {error: errorMessage(e)});
-    }
-
+    // No navigation — the bottom-panel terminal-pending tab is the primary UX.
+    // A global drawer-open primitive would be needed for drawer-style opening,
+    // and isn't worth the complexity for this feature.
     const tabId = bottomPanelStore.addTab({
       kind: "terminal-pending",
       ctxName,

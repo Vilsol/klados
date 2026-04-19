@@ -1,18 +1,23 @@
 import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, waitFor, fireEvent} from "@testing-library/svelte";
 
-const {mockOpenExecSession, mockCloseExecSession, mockStop, mockReplace, mockSpawn, mockAttachTab} = vi.hoisted(() => ({
+const {mockOpenExecSession, mockCloseExecSession, mockStop, mockReplace, mockSpawn, mockAttachTab, mockGetResource} = vi.hoisted(() => ({
   mockOpenExecSession: vi.fn().mockResolvedValue("session-id-abc"),
   mockCloseExecSession: vi.fn().mockResolvedValue(undefined),
   mockStop: vi.fn().mockResolvedValue(undefined),
   mockReplace: vi.fn(),
   mockSpawn: vi.fn(),
   mockAttachTab: vi.fn().mockResolvedValue(undefined),
+  mockGetResource: vi.fn().mockResolvedValue({}),
 }));
 
 vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/execservice.js", () => ({
   OpenExecSession: mockOpenExecSession,
   CloseExecSession: mockCloseExecSession,
+}));
+
+vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js", () => ({
+  GetResource: (...a: unknown[]) => mockGetResource(...a),
 }));
 
 vi.mock("../../../bindings/github.com/Vilsol/klados/internal/services/volumebrowserservice.js", () => ({

@@ -64,6 +64,10 @@ class BottomPanelStore {
     this.tabs = this.tabs.map((t) => (t.id === id ? {...t, kind} : t));
   }
 
+  setObj(id: string, obj: Record<string, unknown>) {
+    this.tabs = this.tabs.map((t) => (t.id === id ? {...t, obj} : t));
+  }
+
   setActive(id: string) {
     if (this.tabs.some((t) => t.id === id)) {
       this.activeTabId = id;
