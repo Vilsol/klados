@@ -112,6 +112,14 @@ func (m *Manager) findByPVC(ctxName, namespace, pvc string) *ManagedPod {
 	return nil
 }
 
+// FindByPVC returns the managed pod tracking the given (context, namespace, pvc),
+// or nil/false if none exists. Used by the service layer to build collision
+// errors at the Wails boundary.
+func (m *Manager) FindByPVC(ctxName, namespace, pvc string) (*ManagedPod, bool) {
+	p := m.findByPVC(ctxName, namespace, pvc)
+	return p, p != nil
+}
+
 // Stop deletes the pod referenced by id from the cluster and removes it from the tracker.
 // Returns an error if id is unknown or pod deletion fails.
 func (m *Manager) Stop(ctx context.Context, id string) error {
@@ -188,4 +196,26 @@ func (m *Manager) ScanOrphans(ctx context.Context, contextName string) ([]Orphan
 		return nil, fmt.Errorf("getting connection: %w", err)
 	}
 	return ScanOrphans(ctx, conn, contextName, m.sessionUUID)
+}
+
+// CleanupOrphans deletes every orphan pod (pvc-browser pods not owned by this
+// session) in the given context. Errors are logged; the returned error is the
+// last non-nil error encountered so callers can surface a single failure.
+func (m *Manager) CleanupOrphans(ctx context.Context, contextName string) error {
+	conn, err := m.connMgr.GetConnection(contextName)
+	if err != nil {
+		return fmt.Errorf("getting connection: %w", err)
+	}
+	orphans, err := ScanOrphans(ctx, conn, contextName, m.sessionUUID)
+	if err != nil {
+		return err
+	}
+	var lastErr error
+	for _, o := range orphans {
+		if err := conn.Dynamic.Resource(podGVR).Namespace(o.Namespace).Delete(ctx, o.PodName, metav1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
+			slox.Warn(m.ctx, "volumebrowser: failed to delete orphan pod", "pod", o.PodName, "namespace", o.Namespace, "error", err)
+			lastErr = err
+		}
+	}
+	return lastErr
 }

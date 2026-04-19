@@ -17,6 +17,9 @@ import (
 	"github.com/Vilsol/klados/internal/portforward"
 	"github.com/Vilsol/klados/internal/session"
 	"github.com/Vilsol/klados/internal/streaming"
+	"github.com/Vilsol/klados/internal/volumebrowser"
+
+	"github.com/google/uuid"
 )
 
 type AppService struct {
@@ -24,8 +27,9 @@ type AppService struct {
 	streamingSrv       *streaming.Server
 	logStreamer         *logs.Streamer
 	execManager        *exec.Manager
-	portForwardManager *portforward.Manager
-	session            *session.Session
+	portForwardManager   *portforward.Manager
+	volumeBrowserManager *volumebrowser.Manager
+	session              *session.Session
 	config             *config.Config
 	pluginSvc          *PluginService
 	ctx                context.Context
@@ -54,6 +58,7 @@ func (a *AppService) ServiceStartup(ctx context.Context, options application.Ser
 	a.logStreamer = logs.NewStreamer(a.clusterMgr, a.ctx)
 	a.execManager = exec.NewManager(a.clusterMgr, a.ctx)
 	a.portForwardManager = portforward.NewManager(a.clusterMgr, a.config, emitEvent, a.ctx)
+	a.volumeBrowserManager = volumebrowser.NewManager(a.ctx, a.clusterMgr, uuid.NewString())
 	a.streamingSrv = streaming.NewServer(emitEvent, a.ctx)
 	a.streamingSrv.RegisterHandlers(a.logStreamer, a.execManager)
 
@@ -161,6 +166,10 @@ func (a *AppService) ExecManager() *exec.Manager {
 
 func (a *AppService) PortForwardManager() *portforward.Manager {
 	return a.portForwardManager
+}
+
+func (a *AppService) VolumeBrowserManager() *volumebrowser.Manager {
+	return a.volumeBrowserManager
 }
 
 func (a *AppService) RegisterPluginsDir(dir string) {

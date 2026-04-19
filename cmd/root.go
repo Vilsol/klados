@@ -42,6 +42,7 @@ func Execute(assets embed.FS) {
 			logSvc := services.NewLogService(appSvc)
 			execSvc := services.NewExecService(appSvc)
 			portForwardSvc := services.NewPortForwardService(appSvc)
+			volumeBrowserSvc := services.NewVolumeBrowserService(appSvc)
 			metricsSvc := services.NewMetricsService(appSvc)
 			pluginSvc := services.NewPluginService(appSvc, resourceSvc)
 			windowSvc := services.NewWindowService()
@@ -60,6 +61,7 @@ func Execute(assets embed.FS) {
 					application.NewService(logSvc),
 					application.NewService(execSvc),
 					application.NewService(portForwardSvc),
+					application.NewService(volumeBrowserSvc),
 					application.NewService(drainSvc),
 					application.NewService(metricsSvc),
 					application.NewService(pluginSvc),

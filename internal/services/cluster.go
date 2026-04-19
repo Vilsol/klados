@@ -12,6 +12,7 @@ import (
 	"github.com/Vilsol/klados/internal/config"
 	"github.com/Vilsol/klados/internal/metrics"
 	"github.com/Vilsol/klados/internal/session"
+	"github.com/Vilsol/slox"
 	"github.com/adrg/xdg"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"k8s.io/client-go/tools/clientcmd"
@@ -67,6 +68,12 @@ func (c *ClusterService) Disconnect(contextName string) error {
 
 	c.session.ConnectedClusters = removeString(c.session.ConnectedClusters, contextName)
 	c.session.SaveDebounced()
+
+	if vbm := c.appService.VolumeBrowserManager(); vbm != nil {
+		if err := vbm.StopForContext(c.ctx, contextName); err != nil {
+			slox.Warn(c.ctx, "volumebrowser: cleanup on disconnect failed", "context", contextName, "error", err)
+		}
+	}
 
 	if ps := c.appService.PluginService(); ps != nil {
 		ps.EmitClusterEvent("cluster:disconnected", clusterEventPayload(contextName))
