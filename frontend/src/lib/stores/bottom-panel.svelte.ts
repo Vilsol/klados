@@ -1,4 +1,4 @@
-export type PanelKind = "logs" | "terminal" | "aggregate-logs" | "yaml";
+export type PanelKind = "logs" | "terminal" | "terminal-pending" | "aggregate-logs" | "yaml";
 
 export interface PanelTab {
   id: string;
@@ -11,6 +11,7 @@ export interface PanelTab {
   name: string;
   obj: Record<string, unknown>;
   poppedOut: boolean;
+  managedId?: string;
 }
 
 const MIN_HEIGHT = 120;

@@ -26,6 +26,7 @@
   import {shortcutStore} from "$lib/stores/shortcuts.svelte";
   import {shortcutActions} from "$lib/stores/shortcutActions.svelte";
   import HealthBadge from "./HealthBadge.svelte";
+  import {volumeBrowserStore} from "$lib/stores/volumeBrowser.svelte";
 
   function itemKey(obj: KubernetesResource): string {
     const ns = obj.metadata?.namespace ?? "";
@@ -640,6 +641,23 @@
         {/await}
       {/if}
     {/each}
+    {#if canMutate && gvr === 'core.v1.persistentvolumeclaims'}
+      <button
+        type="button"
+        class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover"
+        onclick={(e) => {
+          if (ctxMenu) {
+            const item = ctxMenu.item;
+            const ns = (item.metadata as { namespace?: string } | undefined)?.namespace ?? ''
+            const nm = (item.metadata as { name?: string } | undefined)?.name ?? ''
+            ctxMenu = null
+            void volumeBrowserStore.spawn(contextName, ns, nm, { shiftHeld: e.shiftKey })
+          }
+        }}
+      >
+        Browse Volume
+      </button>
+    {/if}
     {#if canMutate}
       <button
         type="button"

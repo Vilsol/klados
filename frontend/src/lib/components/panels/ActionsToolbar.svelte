@@ -23,6 +23,7 @@
   import type {ActionDef} from "$lib/registry/index";
   import {evalExpr} from "$lib/registry/index";
   import {clusterStore} from "$lib/stores/cluster.svelte";
+  import {volumeBrowserStore} from "$lib/stores/volumeBrowser.svelte";
   import type {KubernetesResource} from "$lib/types";
 
   let {
@@ -237,6 +238,22 @@
 </script>
 
 <div class="flex items-center gap-1.5 px-4 py-2 border-b border-border bg-surface flex-wrap">
+  {#if gvr === 'core.v1.persistentvolumeclaims'}
+    {@const canBrowse = clusterStore.canMutate()}
+    <Tooltip content={canBrowse ? '' : 'Read-only mode'}>
+      {#snippet trigger(props)}
+        <button
+          type="button"
+          {...props}
+          onclick={(e) => void volumeBrowserStore.spawn(ctxName, namespace, name, { shiftHeld: e.shiftKey })}
+          disabled={!canBrowse || busy}
+          class="text-xs px-2.5 py-1 rounded border border-border hover:bg-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Browse Volume
+        </button>
+      {/snippet}
+    </Tooltip>
+  {/if}
   {#each actions.filter(a => !destructiveActions.has(a.name)) as action}
     {@const disabled = isDisabled(action) || busy}
     {@const handler = getHandler(action.name)}

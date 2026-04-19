@@ -24,6 +24,11 @@
   import ShortcutHelpDialog from "$lib/components/ShortcutHelpDialog.svelte";
   import {shortcutActions} from "$lib/stores/shortcutActions.svelte";
   import {push} from "svelte-spa-router";
+  import VolumeBrowserDialog from "$lib/components/VolumeBrowserDialog.svelte";
+  import VolumeBrowserCollisionDialog from "$lib/components/VolumeBrowserCollisionDialog.svelte";
+  import {volumeBrowserStore} from "$lib/stores/volumeBrowser.svelte";
+  import {notificationStore} from "$lib/stores/notification.svelte";
+  import {focusedPVC} from "$lib/utils/focusedPVC";
 
   const panelId = new URLSearchParams(window.location.search).get("panel");
   let paletteOpen = $state(false);
@@ -222,6 +227,24 @@
       });
 
       shortcutStore.register({
+        id: "browse-volume",
+        keys: "",
+        description: "Browse volume of selected PVC",
+        category: "Resources",
+        action: () => {
+          if (!clusterStore.canMutate()) {
+            return;
+          }
+          const pvc = focusedPVC();
+          if (!pvc) {
+            notificationStore.push("Select a PVC to browse its volume", "info");
+            return;
+          }
+          void volumeBrowserStore.spawn(pvc.contextName, pvc.namespace, pvc.name);
+        },
+      });
+
+      shortcutStore.register({
         id: "refresh",
         keys: "F5",
         description: "Refresh resource list",
@@ -328,5 +351,27 @@
   />
   <ApplyManifestDialog bind:open={applyManifestStore.open} ctxName={clusterStore.activeContext ?? ''} />
   <ShortcutHelpDialog bind:open={shortcutsHelpOpen} />
+  {#if volumeBrowserStore.dialog}
+    {@const d = volumeBrowserStore.dialog}
+    <VolumeBrowserDialog
+      open={true}
+      namespace={d.namespace}
+      pvcName={d.pvcName}
+      initial={d.initial}
+      onsubmit={(overrides) => d.resolve(overrides)}
+      oncancel={() => d.resolve(null)}
+    />
+  {/if}
+  {#if volumeBrowserStore.collision}
+    {@const c = volumeBrowserStore.collision}
+    <VolumeBrowserCollisionDialog
+      open={true}
+      existingPodName={c.existingPodName}
+      pvcName={c.pvcName}
+      onattach={() => c.resolve('attach')}
+      onreplace={() => c.resolve('replace')}
+      oncancel={() => c.resolve('cancel')}
+    />
+  {/if}
 {/if}
 <Notification />

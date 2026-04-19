@@ -16,6 +16,7 @@
   const kindLabel: Record<PanelKind, string> = {
     logs: "Logs",
     terminal: "Terminal",
+    "terminal-pending": "Terminal",
     "aggregate-logs": "Logs",
     yaml: "YAML",
   };

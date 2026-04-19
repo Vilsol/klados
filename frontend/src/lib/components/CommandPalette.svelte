@@ -7,6 +7,9 @@
   import {slotRegistry} from "$lib/plugins/slots.svelte.js";
   import {createResourceStore} from "$lib/stores/createResource.svelte";
   import {applyManifestStore} from "$lib/stores/applyManifest.svelte";
+  import {volumeBrowserStore} from "$lib/stores/volumeBrowser.svelte";
+  import {notificationStore} from "$lib/stores/notification.svelte";
+  import {focusedPVC} from "$lib/utils/focusedPVC";
 
   let {open = $bindable(false)}: {open: boolean} = $props();
 
@@ -83,6 +86,28 @@
           applyManifestStore.openDialog();
         },
       });
+
+      if (clusterStore.canMutate()) {
+        items.push({
+          id: "volume:browse",
+          label: "Browse Volume",
+          subtitle: "Open the selected PVC in a volume browser",
+          category: "Actions",
+          action: () => {
+            open = false;
+            if (!clusterStore.canMutate()) {
+              notificationStore.push("Cluster is read-only", "error");
+              return;
+            }
+            const pvc = focusedPVC();
+            if (!pvc) {
+              notificationStore.push("Select a PVC to browse its volume", "info");
+              return;
+            }
+            void volumeBrowserStore.spawn(pvc.contextName, pvc.namespace, pvc.name, {forceDialog: true});
+          },
+        });
+      }
     }
 
     for (const c of clusterStore.contexts) {
