@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Vilsol/slox"
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/Vilsol/klados/internal/config"
@@ -36,6 +37,7 @@ type VolumeBrowserService struct {
 	appService *AppService
 	manager    volumeBrowserManager
 	cfg        configResolver
+	emitEvent  func(name string, data any)
 	ctx        context.Context
 }
 
@@ -52,6 +54,11 @@ func (s *VolumeBrowserService) ServiceStartup(ctx context.Context, _ application
 	s.ctx = ctx
 	s.manager = s.appService.VolumeBrowserManager()
 	s.cfg = s.appService.Config()
+	s.emitEvent = func(name string, data any) {
+		if app := application.Get(); app != nil {
+			app.Event.Emit(name, data)
+		}
+	}
 	return nil
 }
 
@@ -243,4 +250,52 @@ func (s *VolumeBrowserService) ScanOrphans(contextName string) ([]OrphanPodDTO, 
 // not owned by the current session.
 func (s *VolumeBrowserService) CleanupOrphans(contextName string) error {
 	return s.manager.CleanupOrphans(s.ctx, contextName)
+}
+
+// OnClusterConnected is an internal hook invoked by ClusterService after a
+// successful Connect. It runs an orphan scan asynchronously and dispatches
+// per the cluster's OrphanCleanupOnStartup setting.
+//
+//wails:ignore
+func (s *VolumeBrowserService) OnClusterConnected(contextName string) {
+	if s.manager == nil || s.cfg == nil {
+		return
+	}
+	go s.runOrphanScan(contextName)
+}
+
+func (s *VolumeBrowserService) runOrphanScan(contextName string) {
+	mode := s.cfg.ResolveForCluster(contextName).VolumeBrowser.OrphanCleanupOnStartup
+	if mode == "" {
+		mode = "prompt"
+	}
+	if mode == "ignore" {
+		return
+	}
+
+	orphans, err := s.manager.ScanOrphans(s.ctx, contextName)
+	if err != nil {
+		slox.Warn(s.ctx, "volumebrowser: orphan scan failed", "context", contextName, "error", err)
+		return
+	}
+	if len(orphans) == 0 {
+		return
+	}
+
+	switch mode {
+	case "auto":
+		if err := s.manager.CleanupOrphans(s.ctx, contextName); err != nil {
+			slox.Warn(s.ctx, "volumebrowser: auto-cleanup failed", "context", contextName, "error", err)
+			return
+		}
+		slox.Info(s.ctx, "volumebrowser: auto-cleaned orphan pods", "context", contextName, "count", len(orphans))
+	case "prompt":
+		dtos := make([]OrphanPodDTO, 0, len(orphans))
+		for _, o := range orphans {
+			dtos = append(dtos, orphanToDTO(o))
+		}
+		if s.emitEvent != nil {
+			s.emitEvent(fmt.Sprintf("volumebrowser:orphans:%s", contextName), dtos)
+		}
+	}
 }

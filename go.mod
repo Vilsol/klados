@@ -12,6 +12,7 @@ require (
 	github.com/gofiber/websocket/v2 v2.2.1
 	github.com/google/cel-go v0.27.0
 	github.com/google/gnostic-models v0.7.1
+	github.com/google/uuid v1.6.0
 	github.com/lmittmann/tint v1.1.3
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
 	github.com/sasha-s/go-deadlock v0.3.9
@@ -80,7 +81,6 @@ require (
 	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/btree v1.1.3 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/color v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect

@@ -47,6 +47,8 @@ vi.mock("../../../bindings/github.com/Vilsol/klados/internal/config/models.js", 
     ColumnSettings: makeModel(),
     MetricsConfig: makeModel(),
     SortPrefs: makeModel(),
+    ResourceReqs: makeModelWithCreateFrom(),
+    VolumeBrowserConfig: makeModelWithCreateFrom(),
   };
 });
 

@@ -17,6 +17,11 @@ vi.mock("../../../bindings/github.com/Vilsol/klados/internal/logs/models.js", ()
       Object.assign(this, opts);
     }
   },
+  Streamer: class Streamer {
+    static createFrom(source: unknown) {
+      return source;
+    }
+  },
 }));
 
 vi.mock("$lib/stores/streaming.svelte", () => ({

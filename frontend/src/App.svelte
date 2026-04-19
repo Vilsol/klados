@@ -26,6 +26,7 @@
   import {push} from "svelte-spa-router";
   import VolumeBrowserDialog from "$lib/components/VolumeBrowserDialog.svelte";
   import VolumeBrowserCollisionDialog from "$lib/components/VolumeBrowserCollisionDialog.svelte";
+  import OrphanCleanupToast from "$lib/components/OrphanCleanupToast.svelte";
   import {volumeBrowserStore} from "$lib/stores/volumeBrowser.svelte";
   import {notificationStore} from "$lib/stores/notification.svelte";
   import {focusedPVC} from "$lib/utils/focusedPVC";
@@ -373,5 +374,6 @@
       oncancel={() => c.resolve('cancel')}
     />
   {/if}
+  <OrphanCleanupToast />
 {/if}
 <Notification />

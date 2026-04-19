@@ -234,6 +234,96 @@ func TestVolumeBrowserService_CleanupOrphans_Delegates(t *testing.T) {
 	testza.AssertEqual(t, "c", mgr.cleanupCalls[0])
 }
 
+func TestVolumeBrowserService_OnClusterConnected_Modes(t *testing.T) {
+	orphan := volumebrowser.OrphanPod{ContextName: "c", Namespace: "ns", PodName: "p", PVCName: "pvc"}
+
+	tests := []struct {
+		name            string
+		mode            string
+		scanResult      []volumebrowser.OrphanPod
+		wantCleanupCall bool
+		wantEvent       bool
+	}{
+		{name: "auto deletes", mode: "auto", scanResult: []volumebrowser.OrphanPod{orphan}, wantCleanupCall: true, wantEvent: false},
+		{name: "prompt emits event", mode: "prompt", scanResult: []volumebrowser.OrphanPod{orphan}, wantCleanupCall: false, wantEvent: true},
+		{name: "ignore skips scan", mode: "ignore", scanResult: []volumebrowser.OrphanPod{orphan}, wantCleanupCall: false, wantEvent: false},
+		{name: "prompt with no orphans emits nothing", mode: "prompt", scanResult: nil, wantCleanupCall: false, wantEvent: false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mgr := &fakeVBManager{scanResult: tc.scanResult}
+			cfg := &fakeCfgResolver{prefs: config.ResolvedPrefs{
+				VolumeBrowser: config.VolumeBrowserConfig{OrphanCleanupOnStartup: tc.mode},
+			}}
+			svc := newVolumeBrowserServiceForTest(mgr, cfg)
+
+			eventsCh := make(chan struct {
+				name string
+				data any
+			}, 4)
+			svc.emitEvent = func(name string, data any) {
+				eventsCh <- struct {
+					name string
+					data any
+				}{name, data}
+			}
+
+			svc.OnClusterConnected("c")
+
+			// Wait for goroutine to finish up to 1s.
+			deadline := time.After(1 * time.Second)
+			for {
+				done := false
+				select {
+				case <-deadline:
+					done = true
+				case <-time.After(20 * time.Millisecond):
+					// Poll: break when expected side-effects happened (or ignore mode never does anything).
+					if tc.mode == "ignore" {
+						done = true
+					} else if tc.wantCleanupCall && len(mgr.cleanupCalls) > 0 {
+						done = true
+					} else if tc.wantEvent && len(eventsCh) > 0 {
+						done = true
+					} else if !tc.wantCleanupCall && !tc.wantEvent && len(tc.scanResult) == 0 {
+						done = true
+					}
+				}
+				if done {
+					break
+				}
+			}
+
+			if tc.wantCleanupCall {
+				testza.AssertLen(t, mgr.cleanupCalls, 1)
+				testza.AssertEqual(t, "c", mgr.cleanupCalls[0])
+			} else {
+				testza.AssertLen(t, mgr.cleanupCalls, 0)
+			}
+
+			if tc.wantEvent {
+				select {
+				case ev := <-eventsCh:
+					testza.AssertEqual(t, "volumebrowser:orphans:c", ev.name)
+					dtos, ok := ev.data.([]OrphanPodDTO)
+					testza.AssertTrue(t, ok)
+					testza.AssertLen(t, dtos, 1)
+					testza.AssertEqual(t, "p", dtos[0].PodName)
+				default:
+					t.Fatal("expected event, got none")
+				}
+			} else {
+				select {
+				case ev := <-eventsCh:
+					t.Fatalf("expected no event, got %q", ev.name)
+				default:
+				}
+			}
+		})
+	}
+}
+
 func TestVolumeBrowserService_ServiceShutdown_CallsStopAllWithinTimeout(t *testing.T) {
 	mgr := &fakeVBManager{}
 	svc := newVolumeBrowserServiceForTest(mgr, &fakeCfgResolver{})

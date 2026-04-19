@@ -14,10 +14,11 @@ export interface Toast {
 class NotificationStore {
   notifications = $state<Toast[]>([])
 
-  push(message: string, type: Toast['type'] = 'info', opts?: Pick<Toast, 'details' | 'actions'>) {
+  push(message: string, type: Toast['type'] = 'info', opts?: Pick<Toast, 'details' | 'actions'>): string {
     const id = crypto.randomUUID()
     this.notifications = [...this.notifications, { id, message, type, ...opts }]
     setTimeout(() => this.dismiss(id), 5000)
+    return id
   }
 
   success(message: string, details?: string) {

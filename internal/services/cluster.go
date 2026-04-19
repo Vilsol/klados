@@ -19,9 +19,10 @@ import (
 )
 
 type ClusterService struct {
-	appService *AppService
-	session    *session.Session
-	ctx        context.Context
+	appService       *AppService
+	session          *session.Session
+	volumeBrowserSvc *VolumeBrowserService
+	ctx              context.Context
 }
 
 func NewClusterService(appSvc *AppService, sess *session.Session) *ClusterService {
@@ -29,6 +30,11 @@ func NewClusterService(appSvc *AppService, sess *session.Session) *ClusterServic
 		appService: appSvc,
 		session:    sess,
 	}
+}
+
+//wails:ignore
+func (c *ClusterService) SetVolumeBrowserService(svc *VolumeBrowserService) {
+	c.volumeBrowserSvc = svc
 }
 
 func (c *ClusterService) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
@@ -57,6 +63,10 @@ func (c *ClusterService) Connect(contextName string) error {
 	}
 
 	go c.appService.PortForwardManager().ReconnectSaved(contextName)
+
+	if c.volumeBrowserSvc != nil {
+		c.volumeBrowserSvc.OnClusterConnected(contextName)
+	}
 
 	return nil
 }
