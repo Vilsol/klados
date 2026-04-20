@@ -8,7 +8,7 @@
     "build:dev": "vite build --minify false --mode development",
     "build": "vite build --mode production",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "check": "svelte-check-native --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "lint": "biome lint",
     "format": "biome format --write"
@@ -66,6 +66,8 @@
     "tslib": "^2.6.2",
     "typescript": "^6",
     "vite": "^8",
-    "vitest": "^4"
+    "vitest": "^4",
+    "@typescript/native-preview": "^7.0.0-dev.20260420.1",
+    "svelte-check-native": "^0.3.7"
   }
 }
