@@ -251,8 +251,8 @@ importers:
         specifier: ^4
         version: 4.4.6(picomatch@4.0.4)(svelte@5.55.1)(typescript@6.0.2)
       svelte-check-native:
-        specifier: ^0.3.7
-        version: 0.3.7(@typescript/native-preview@7.0.0-dev.20260420.1)
+        specifier: ^0.4.2
+        version: 0.4.2(@typescript/native-preview@7.0.0-dev.20260420.1)
       tailwindcss:
         specifier: ^4
         version: 4.2.2
@@ -2347,38 +2347,38 @@ packages:
   style-to-object@1.0.14:
     resolution: {integrity: sha512-LIN7rULI0jBscWQYaSswptyderlarFkjQ+t79nzty8tcIAceVomEVlLzH5VP4Cmsv6MtKhs7qaAiwlcp+Mgaxw==}
 
-  svelte-check-native-darwin-arm64@0.3.7:
-    resolution: {integrity: sha512-l4jy4YPeHSUGA8P/CP3L7oztwrJw68B6KiBi/vXN1H1jLRRlvjbyMgaN2VWx1B4f0tLzkgxs+FrQO33VFJcvIQ==}
+  svelte-check-native-darwin-arm64@0.4.2:
+    resolution: {integrity: sha512-Vh7B+Xz9Q8QodD7Pmgz4QVKjcU8IBhoTR7ATjryK0dbvPbKySUSmUr4zj8jWRRdQMwWm5FaQ3t7jLEqNC8ggzw==}
     engines: {node: '>=18'}
     cpu: [arm64]
     os: [darwin]
 
-  svelte-check-native-darwin-x64@0.3.7:
-    resolution: {integrity: sha512-x7uqHKmsYIHqMbqVtLxqAZxJ2KTr3PBtJEFFwTgV5ABYASIAaXlDxEdxLFJ/D4Tx4gBZ0Yhi7ewnB1oAJRgOUg==}
+  svelte-check-native-darwin-x64@0.4.2:
+    resolution: {integrity: sha512-X6JFmRRlykLzSAF0mfGbY/G3t4bQss40KT3w3hHYEf0NR+l3HuuR58dXPEWLckcvjU2KBkjhJLbuk8GEfjVLtg==}
     engines: {node: '>=18'}
     cpu: [x64]
     os: [darwin]
 
-  svelte-check-native-linux-arm64@0.3.7:
-    resolution: {integrity: sha512-AwKLLGel+T9+fIhVbXxLGZlVdcMdS2qUQ7vNG3vOeVOVGNiYcvgpUApBOC01fXdkrdfwuR+J8HBVV7kFjOamvw==}
+  svelte-check-native-linux-arm64@0.4.2:
+    resolution: {integrity: sha512-QI7/j+0Uohm4ERi4PvOYwGlaIoY7rcqsWKGgreh7WeOhohLjiUzoOPzIpoUI0cAshC5DN/kqGmbGqBpN4I6dFA==}
     engines: {node: '>=18'}
     cpu: [arm64]
     os: [linux]
 
-  svelte-check-native-linux-x64@0.3.7:
-    resolution: {integrity: sha512-4LQjleKmF2Uemalxi1XzL1f/Z9qbrN7vAtgyD8e4LgmTupWEkJUrhVAuCtKHVCOWRVQylxflxLP4l7MLMSBlzw==}
+  svelte-check-native-linux-x64@0.4.2:
+    resolution: {integrity: sha512-Xs2JZ/uobSN6MAkL5FzlHfXKOBzpwbXatRHP38/56JNjBZC7Kuis7k1rm17a4Uf9K+DwTG4QU+2cbo4QUTreBQ==}
     engines: {node: '>=18'}
     cpu: [x64]
     os: [linux]
 
-  svelte-check-native-win32-x64@0.3.7:
-    resolution: {integrity: sha512-JK+6nz6iQAOQxdglAcBcmqdU6Fsn5MS7cJz7Ft8lR+RvCw79Qf5a+BTBveqGJXCkNyubwJ7gVClNQKHN54Bnww==}
+  svelte-check-native-win32-x64@0.4.2:
+    resolution: {integrity: sha512-gtrEUr3W0EgRwZfl17xFL/CByc1+dXaI4uUlkUMjOI9EQj5lura6ewyn7fm38uP8eYvhM60Anm3MmcZsbHFNKw==}
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
 
-  svelte-check-native@0.3.7:
-    resolution: {integrity: sha512-LIykN0K/z1AJid4732ZxBK/b6sfko8n1zX1BrgxnUtVxMFOkHPROoO5roH1wbkuqnSIfXBjKeGBj1YvhTIy9SA==}
+  svelte-check-native@0.4.2:
+    resolution: {integrity: sha512-ajCfTA4bwMz0T9G6D/w69aNah5O4QNk157o6kFz8qXKv53WaidqXbDyRiAL3EmpvHuq/GGrgwKBQKqoQaHUqdw==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -4509,30 +4509,30 @@ snapshots:
     dependencies:
       inline-style-parser: 0.2.7
 
-  svelte-check-native-darwin-arm64@0.3.7:
+  svelte-check-native-darwin-arm64@0.4.2:
     optional: true
 
-  svelte-check-native-darwin-x64@0.3.7:
+  svelte-check-native-darwin-x64@0.4.2:
     optional: true
 
-  svelte-check-native-linux-arm64@0.3.7:
+  svelte-check-native-linux-arm64@0.4.2:
     optional: true
 
-  svelte-check-native-linux-x64@0.3.7:
+  svelte-check-native-linux-x64@0.4.2:
     optional: true
 
-  svelte-check-native-win32-x64@0.3.7:
+  svelte-check-native-win32-x64@0.4.2:
     optional: true
 
-  svelte-check-native@0.3.7(@typescript/native-preview@7.0.0-dev.20260420.1):
+  svelte-check-native@0.4.2(@typescript/native-preview@7.0.0-dev.20260420.1):
     dependencies:
       '@typescript/native-preview': 7.0.0-dev.20260420.1
     optionalDependencies:
-      svelte-check-native-darwin-arm64: 0.3.7
-      svelte-check-native-darwin-x64: 0.3.7
-      svelte-check-native-linux-arm64: 0.3.7
-      svelte-check-native-linux-x64: 0.3.7
-      svelte-check-native-win32-x64: 0.3.7
+      svelte-check-native-darwin-arm64: 0.4.2
+      svelte-check-native-darwin-x64: 0.4.2
+      svelte-check-native-linux-arm64: 0.4.2
+      svelte-check-native-linux-x64: 0.4.2
+      svelte-check-native-win32-x64: 0.4.2
 
   svelte-check@4.4.6(picomatch@4.0.4)(svelte@5.55.1)(typescript@6.0.2):
     dependencies:

@@ -68,6 +68,6 @@
     "vite": "^8",
     "vitest": "^4",
     "@typescript/native-preview": "^7.0.0-dev.20260420.1",
-    "svelte-check-native": "^0.3.7"
+    "svelte-check-native": "^0.4.2"
   }
 }
