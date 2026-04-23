@@ -77,13 +77,26 @@
       log.info("Port forward started", {localPort: local, remotePort: remote});
       oncreated?.(spec);
       if (openInBrowser) {
+        // Open the browser on the FIRST active status for this newly created
+        // forward only. Bound the listener with a timeout so it can't fire on
+        // a later ReconnectSaved → active for the same spec.id after the user
+        // disconnects and reconnects the cluster.
+        let done = false;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const cleanup = () => {
+          if (done) return;
+          done = true;
+          if (timer) clearTimeout(timer);
+          unsub();
+        };
         const unsub = Events.On(`portforward:${ctx}:${spec.id}`, (e: {data: {status?: string; localPort?: number}}) => {
           const fw = e.data;
           if (fw?.status === "active" && fw?.localPort && fw.localPort > 0) {
-            unsub();
+            cleanup();
             Browser.OpenURL(`http://localhost:${fw.localPort}`);
           }
         });
+        timer = setTimeout(cleanup, 60_000);
       }
       onclose();
     } catch (e: unknown) {

@@ -42,16 +42,27 @@
     onValueChange,
   }: Props = $props()
 
-  let searchValue = $state('')
+  let inputValue = $state('')
   let open = $state(false)
+  // Snapshot of which options were selected at the moment the dropdown opened.
+  // We pin ordering to this snapshot so that toggling options doesn't make
+  // items jump mid-interaction.
+  let openSelectedSet = $state<Set<string>>(new Set())
 
-  const filtered = $derived(
-    searchValue === ''
+  const filtered = $derived.by(() => {
+    const q = inputValue.toLowerCase()
+    const matches = q === ''
       ? options
-      : options.filter((o) =>
-          o.label.toLowerCase().includes(searchValue.toLowerCase()),
-        ),
-  )
+      : options.filter((o) => o.label.toLowerCase().includes(q))
+    if (type !== 'multiple' || openSelectedSet.size === 0) return matches
+    const sel: BaseOption[] = []
+    const rest: BaseOption[] = []
+    for (const o of matches) {
+      if (openSelectedSet.has(o.value)) sel.push(o)
+      else rest.push(o)
+    }
+    return [...sel, ...rest]
+  })
 
   const displayLabel = $derived.by(() => {
     if (type === 'multiple') {
@@ -88,13 +99,20 @@
   {type}
   bind:value={value as any}
   bind:open
+  bind:inputValue
   onValueChange={onValueChange as any}
-  onOpenChangeComplete={(o) => { if (!o) searchValue = '' }}
+  onOpenChange={(o) => {
+    if (o) {
+      inputValue = ''
+      openSelectedSet = type === 'multiple' ? new Set(value as string[]) : new Set()
+    }
+  }}
+  onOpenChangeComplete={(o) => { if (!o) inputValue = '' }}
   {disabled}
 >
   <div class="relative">
     <Combobox.Input
-      oninput={(e) => (searchValue = e.currentTarget.value)}
+      oninput={(e) => (inputValue = e.currentTarget.value)}
       onclick={() => { if (!open) open = true }}
       class="flex items-center gap-1 w-full bg-bg text-fg border border-border rounded
         px-2 {itemPy} {textSize} placeholder:text-muted
