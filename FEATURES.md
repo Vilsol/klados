@@ -319,7 +319,6 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `MVP` Sort by any column
 - [x] `v2` Column visibility customization
 - [x] `v2` Saved filters / views
-- [ ] `v2` Keyboard-driven navigation (vim-like bindings optional)
 - [x] `MVP` Command palette (Ctrl+K / Cmd+K)
 - [x] `MVP` Breadcrumb navigation
 - [ ] `v2` Back/forward history
@@ -358,9 +357,6 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 - [x] `v2` Bulk label/annotate
 - [x] `v2` Apply YAML with multiple documents (---)
 - [ ] `v2` Dir view — apply/watch a local manifest directory against the cluster
-
-### Custom Views
-- [ ] `v2` Custom column definitions — user-defined columns per resource type
 
 ## 12. UI / UX
 
@@ -466,7 +462,7 @@ Full-scale feature inventory for a Kubernetes desktop IDE built on Go + Wails 3 
 ### Platform
 - [x] `MVP` Linux (primary)
 - [x] `v2` macOS support
-- [ ] `v2` Windows support
+- [x] `v2` Windows support
 - [ ] `Future` System tray with cluster status
 - [ ] `Future` Native OS notifications for watch alerts (optional)
 - [x] `Future` Multi-window support
