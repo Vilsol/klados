@@ -20,6 +20,7 @@ type Session struct {
 	ActiveTab         int               `json:"activeTab"`
 	SidebarCollapsed  bool              `json:"sidebarCollapsed"`
 	TerminalFontSize  int               `json:"terminalFontSize"`
+	SidebarWidth      int               `json:"sidebarWidth,omitempty"`
 	Window            WindowState       `json:"window"`
 
 	mu       deadlock.Mutex

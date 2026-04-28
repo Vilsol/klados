@@ -16,6 +16,7 @@
   import {buildCRDTree} from "$lib/utils/crdTree";
   import CRDTreeNode from "./CRDTreeNode.svelte";
   import {getLogger} from "$lib/logger";
+  import SidebarResizeHandle from "./SidebarResizeHandle.svelte";
 
   const log = getLogger("sidebar");
 
@@ -272,11 +273,11 @@
 </script>
 
 <aside
-  class="border-r border-border bg-surface shrink-0 overflow-hidden transition-all duration-200"
-  class:w-60={!sessionStore.sidebarCollapsed}
+  class="relative border-r border-border bg-surface shrink-0 overflow-hidden transition-all duration-200"
   class:w-0={sessionStore.sidebarCollapsed}
+  style={sessionStore.sidebarCollapsed ? "" : `width: ${sessionStore.sidebarWidth}px`}
 >
-  <div class="w-60 h-full flex flex-col">
+  <div class="h-full flex flex-col">
     <div class="flex items-center justify-between px-3 py-2 border-b border-border">
       <span class="text-xs font-semibold uppercase tracking-wider text-muted">Resources</span>
       <button
@@ -460,6 +461,9 @@
       {/if}
     </div>
   </div>
+  {#if !sessionStore.sidebarCollapsed}
+    <SidebarResizeHandle />
+  {/if}
 </aside>
 
 {#if sessionStore.sidebarCollapsed}

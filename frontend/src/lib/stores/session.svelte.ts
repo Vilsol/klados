@@ -1,3 +1,12 @@
+export const SIDEBAR_MIN_WIDTH = 180;
+export const SIDEBAR_MAX_WIDTH = 480;
+export const SIDEBAR_DEFAULT_WIDTH = 240;
+
+function clampSidebarWidth(n: number): number {
+  if (!Number.isFinite(n)) return SIDEBAR_DEFAULT_WIDTH;
+  return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, Math.round(n)));
+}
+
 export interface TabState {
   clusterContext: string;
   gvr: string;
@@ -11,6 +20,7 @@ class SessionStore {
   activeTabIndex = $state(0);
   sidebarCollapsed = $state(false);
   terminalFontSize = $state(13);
+  sidebarWidth = $state(SIDEBAR_DEFAULT_WIDTH);
 
   openTab(tab: TabState) {
     const existing = this.tabs.findIndex(
@@ -69,11 +79,26 @@ class SessionStore {
     this.sidebarCollapsed = !this.sidebarCollapsed;
   }
 
-  restore(tabs: TabState[], activeTab: number, sidebarCollapsed: boolean, terminalFontSize?: number) {
+  setSidebarWidth(width: number) {
+    this.sidebarWidth = clampSidebarWidth(width);
+  }
+
+  resetSidebarWidth() {
+    this.sidebarWidth = SIDEBAR_DEFAULT_WIDTH;
+  }
+
+  restore(
+    tabs: TabState[],
+    activeTab: number,
+    sidebarCollapsed: boolean,
+    terminalFontSize?: number,
+    sidebarWidth?: number,
+  ) {
     this.tabs = tabs;
     this.activeTabIndex = activeTab < tabs.length ? activeTab : 0;
     this.sidebarCollapsed = sidebarCollapsed;
     this.terminalFontSize = terminalFontSize ?? 13;
+    this.sidebarWidth = clampSidebarWidth(sidebarWidth ?? SIDEBAR_DEFAULT_WIDTH);
   }
 }
 

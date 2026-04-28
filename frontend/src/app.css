@@ -67,3 +67,8 @@ body {
   translate: -50% 0;
   animation: slide-up 0.15s ease-out;
 }
+
+body[data-resizing="true"] {
+  user-select: none;
+  cursor: col-resize;
+}

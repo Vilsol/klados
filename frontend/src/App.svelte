@@ -106,7 +106,7 @@
             name: t.name ?? "",
             scrollPosition: t.scrollPosition ?? 0,
           }));
-          sessionStore.restore(tabs, sess.activeTab ?? 0, sess.sidebarCollapsed ?? false, sess.terminalFontSize || undefined);
+          sessionStore.restore(tabs, sess.activeTab ?? 0, sess.sidebarCollapsed ?? false, sess.terminalFontSize || undefined, sess.sidebarWidth || undefined);
         }
       } catch {
         // Session restore not available
@@ -322,6 +322,7 @@
     const activeTab = sessionStore.activeTabIndex;
     const sidebarCollapsed = sessionStore.sidebarCollapsed;
     const terminalFontSize = sessionStore.terminalFontSize;
+    const sidebarWidth = sessionStore.sidebarWidth;
     SaveUIState(
       tabs.map((t) => ({
         clusterContext: t.clusterContext,
@@ -333,6 +334,7 @@
       activeTab,
       sidebarCollapsed,
       terminalFontSize,
+      sidebarWidth,
     ).catch(() => {
       /* empty */
     });
