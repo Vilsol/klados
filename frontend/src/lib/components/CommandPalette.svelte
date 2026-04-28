@@ -43,6 +43,23 @@
         });
       }
 
+      for (const r of descriptorRegistry.listDiscoveryGVRs()) {
+        const parts = r.gvr.split(".");
+        const version = parts.at(-2) ?? "";
+        const groupRaw = parts.slice(0, -2).join(".");
+        const groupLabel = groupRaw === "core" ? "core" : (groupRaw || "core");
+        items.push({
+          id: `nav-crd:${ctx}:${r.gvr}`,
+          label: r.kind || parts.at(-1) || r.gvr,
+          subtitle: `${ctx} · ${groupLabel}/${version}`,
+          category: "Custom Resources",
+          action: () => {
+            push(`/c/${encodeURIComponent(ctx)}/${r.gvr}`);
+            open = false;
+          },
+        });
+      }
+
       items.push({
         id: `cluster:overview:${ctx}`,
         label: "Cluster Overview",
@@ -180,15 +197,27 @@
     }
   }
 
+  const CATEGORY_ORDER = ["Navigate", "Custom Resources", "Actions", "Clusters", "Plugins"] as const;
+
   // Group items by category for display
   const grouped = $derived.by(() => {
-    const map = new Map<string, PaletteItem[]>();
+    const byCategory = new Map<string, PaletteItem[]>();
     for (const item of filtered) {
-      const group = map.get(item.category) ?? [];
-      group.push(item);
-      map.set(item.category, group);
+      const arr = byCategory.get(item.category) ?? [];
+      arr.push(item);
+      byCategory.set(item.category, arr);
     }
-    return map;
+    const ordered: [string, PaletteItem[]][] = [];
+    for (const cat of CATEGORY_ORDER) {
+      const arr = byCategory.get(cat);
+      if (arr && arr.length > 0) ordered.push([cat, arr]);
+    }
+    for (const [cat, arr] of byCategory) {
+      if (!CATEGORY_ORDER.includes(cat as (typeof CATEGORY_ORDER)[number])) {
+        ordered.push([cat, arr]);
+      }
+    }
+    return ordered;
   });
 
   // Flat index for keyboard selection

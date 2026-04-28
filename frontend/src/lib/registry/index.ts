@@ -283,6 +283,21 @@ class DescriptorRegistry {
     return Array.from(this.descriptors.values());
   }
 
+  listDiscoveryGVRs(): APIResource[] {
+    const out: APIResource[] = [];
+    for (const [gvr, r] of this.discovery) {
+      if (this.descriptors.has(gvr)) continue;
+      if (this.builtins.has(gvr)) continue;
+      out.push(r);
+    }
+    out.sort((a, b) => {
+      const kindCmp = a.kind.localeCompare(b.kind);
+      if (kindCmp !== 0) return kindCmp;
+      return a.gvr.localeCompare(b.gvr);
+    });
+    return out;
+  }
+
   /** Called by Sidebar after each discovery event to update the set of available GVRs. */
   setAvailableGVRs(gvrs: string[]): void {
     this.availableGVRs = new Set(gvrs);
