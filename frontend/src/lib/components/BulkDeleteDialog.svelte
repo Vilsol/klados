@@ -3,7 +3,7 @@
   import {selectionStore} from "$lib/stores/selection.svelte";
   import {notificationStore} from "$lib/stores/notification.svelte";
   import {Check, X, Loader2} from "lucide-svelte";
-  import {DeleteResource} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
+  import {DeleteResource, ForceDeleteResource} from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {shortcutActions} from "$lib/stores/shortcutActions.svelte";
 
   let {
@@ -17,6 +17,13 @@
   type ItemStatus = "pending" | "deleting" | "success" | "error";
   let statuses = $state<Map<string, {status: ItemStatus; error?: string}>>(new Map());
   let running = $state(false);
+  let force = $state(false);
+
+  $effect(() => {
+    if (!open) {
+      force = false;
+    }
+  });
 
   const selectedItems = $derived(selectionStore.items());
   const gvr = $derived(selectionStore.selectedGVR);
@@ -50,8 +57,9 @@
       statuses = new Map(statuses).set(key, {status: "deleting"});
 
       try {
+        const fn = force ? ForceDeleteResource : DeleteResource;
         // biome-ignore lint/performance/noAwaitInLoops: sequential for per-item status updates
-        await DeleteResource(contextName, gvr, ns, name);
+        await fn(contextName, gvr, ns, name);
         statuses = new Map(statuses).set(key, {status: "success"});
         succeeded.push(key);
       } catch (e: unknown) {
@@ -103,7 +111,20 @@
         {/each}
       </div>
 
-      <div class="flex justify-end gap-2">
+      <label class="flex items-start gap-2 mt-3 text-sm cursor-pointer">
+        <input type="checkbox" bind:checked={force} class="mt-0.5" />
+        <span>
+          <span class="font-medium">Force delete</span>
+          <span class="text-muted">(skip graceful shutdown)</span>
+        </span>
+      </label>
+      {#if force}
+        <p class="mt-2 text-xs text-destructive">
+          Bypasses graceful termination. May leave dangling resources (etcd entries, finalizers). Use only for stuck objects.
+        </p>
+      {/if}
+
+      <div class="flex justify-end gap-2 mt-3">
         <Dialog.Close class="px-3 py-1.5 text-sm rounded border border-border hover:bg-surface-hover transition-colors" disabled={running}
           >Cancel</Dialog.Close
         >
@@ -113,7 +134,11 @@
           disabled={running}
           class="px-3 py-1.5 text-sm rounded bg-destructive text-destructive-fg hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {running ? 'Deleting…' : 'Delete'}
+          {#if running}
+            Deleting…
+          {:else}
+            {force ? 'Force Delete' : 'Delete'} {selectedItems.length} {selectedItems.length === 1 ? 'item' : 'items'}
+          {/if}
         </button>
       </div>
     </Dialog.Content>
