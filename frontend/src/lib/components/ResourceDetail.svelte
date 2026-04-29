@@ -14,6 +14,7 @@
   } from "../../../bindings/github.com/Vilsol/klados/internal/services/resourceservice.js";
   import {GetSchema} from "../../../bindings/github.com/Vilsol/klados/internal/services/schemaservice.js";
   import {notificationStore} from "$lib/stores/notification.svelte.js";
+  import {shortcutStore} from "$lib/stores/shortcuts.svelte.js";
   import {unwrapError} from "$lib/utils/async.js";
   import type {ControllerRef} from "$lib/utils/relationships";
   import {ExternalLink} from "lucide-svelte";
@@ -322,6 +323,7 @@
               onSave={(ctx: string, g: string, ns: string, parsed: Record<string, unknown>) => UpdateResource(ctx, g, ns, parsed)}
               onGetResource={(ctx: string, g: string, ns: string, n: string) => GetResource(ctx, g, ns, n)}
               onGetSchema={(ctx: string, g: string, k: string) => GetSchema(ctx, g, k)}
+              onSetEditorMode={(mode: string) => shortcutStore.setMode(mode as 'normal' | 'editor')}
               onNotify={(msg: string, type: 'info' | 'success' | 'error') => {
                 if (type === 'success') { notificationStore.success(msg); }
                 else if (type === 'error') { notificationStore.error(unwrapError(msg)); }
