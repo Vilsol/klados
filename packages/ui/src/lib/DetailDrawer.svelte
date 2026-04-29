@@ -41,7 +41,7 @@
   }
 
   // Resize state
-  let drawerWidth = $state(640)
+  let drawerWidth = $state(Math.max(280, Math.floor(window.innerWidth / 3)))
   let dragging = $state(false)
   let dragStartX = 0
   let dragStartWidth = 0
