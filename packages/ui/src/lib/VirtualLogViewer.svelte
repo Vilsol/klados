@@ -146,21 +146,28 @@
   })
 
   let searchQuery = $state('')
+  let debouncedQuery = $state('')
   let regexSearch = $state(false)
   let highlight = $state(false)
   let wrap = $state(false)
 
+  $effect(() => {
+    const q = searchQuery
+    const timer = setTimeout(() => { debouncedQuery = q }, 100)
+    return () => clearTimeout(timer)
+  })
+
   let scrollEl = $state<HTMLDivElement | undefined>(undefined)
-  let matchCursor = $state(-1)
+  let matchCursor = $state(0)
   // Non-reactive flags for scroll event coordination
   let wheelScrollCount = 0
   let programmaticScroll = false
   let pendingScrollDelta = 0
 
   const searchPattern = $derived((() => {
-    if (!searchQuery) return null
+    if (!debouncedQuery) return null
     try {
-      return new RegExp(regexSearch ? searchQuery : searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      return new RegExp(regexSearch ? debouncedQuery : debouncedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
     } catch {
       return null
     }
@@ -293,22 +300,22 @@
     return ''
   }
 
+  $effect(() => {
+    if (matchCursor >= matchIndices.length) matchCursor = 0
+  })
+
   function findNext() {
     if (!matchIndices.length) return
-    const next = matchIndices.findIndex(i => i > matchCursor)
-    const idx = next === -1 ? 0 : next
-    matchCursor = matchIndices[idx]
+    matchCursor = (matchCursor + 1) % matchIndices.length
     setSticky(false)
-    scrollToLine(matchCursor, 'start')
+    scrollToLine(matchIndices[matchCursor], 'start')
   }
 
   function findPrev() {
     if (!matchIndices.length) return
-    const prev = [...matchIndices].reverse().findIndex(i => i < matchCursor)
-    const idx = prev === -1 ? matchIndices.length - 1 : matchIndices.length - 1 - prev
-    matchCursor = matchIndices[idx]
+    matchCursor = (matchCursor - 1 + matchIndices.length) % matchIndices.length
     setSticky(false)
-    scrollToLine(matchCursor, 'start')
+    scrollToLine(matchIndices[matchCursor], 'start')
   }
 
   function onCopy(e: ClipboardEvent) {
@@ -356,6 +363,9 @@
         {regexSearch ? 'border-accent text-accent bg-accent/10' : 'border-border text-muted hover:text-fg'}"
     >.*</button>
     <button onclick={findPrev} class="text-xs text-muted hover:text-fg px-1.5 py-1" title="Previous match" aria-label="Previous match">↑</button>
+    <span class="text-xs text-muted tabular-nums select-none min-w-[3rem] text-center" aria-live="polite">
+      {matchIndices.length === 0 ? '0 / 0' : `${matchCursor + 1} / ${matchIndices.length}`}
+    </span>
     <button onclick={findNext} class="text-xs text-muted hover:text-fg px-1.5 py-1" title="Next match" aria-label="Next match">↓</button>
 
     <div class="w-px h-4 bg-border mx-0.5"></div>
