@@ -228,6 +228,70 @@
     virt?.measureElement(el as HTMLDivElement)
   }
 
+  function markMatches(el: HTMLElement, params: { pattern: RegExp | null, isCurrent: boolean }) {
+    function clear() {
+      const marks = el.querySelectorAll('mark')
+      marks.forEach(m => {
+        const text = document.createTextNode(m.textContent ?? '')
+        m.replaceWith(text)
+      })
+      el.normalize()
+    }
+
+    function apply(pattern: RegExp | null, isCurrent: boolean) {
+      clear()
+      if (!pattern) return
+      const flags = pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g'
+      const gPattern = new RegExp(pattern.source, flags)
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          let p: Node | null = node.parentNode
+          while (p && p !== el) {
+            if ((p as Element).tagName === 'MARK') return NodeFilter.FILTER_REJECT
+            p = p.parentNode
+          }
+          return NodeFilter.FILTER_ACCEPT
+        }
+      })
+      const targets: Text[] = []
+      let n: Node | null
+      while ((n = walker.nextNode())) targets.push(n as Text)
+
+      const cls = isCurrent ? 'match active' : 'match'
+      for (const textNode of targets) {
+        const text = textNode.nodeValue ?? ''
+        gPattern.lastIndex = 0
+        const matches = [...text.matchAll(gPattern)]
+        if (matches.length === 0) continue
+        const frag = document.createDocumentFragment()
+        let last = 0
+        for (const m of matches) {
+          const start = m.index ?? 0
+          const end = start + m[0].length
+          if (start > last) frag.appendChild(document.createTextNode(text.slice(last, start)))
+          const mark = document.createElement('mark')
+          mark.className = cls
+          mark.textContent = m[0]
+          frag.appendChild(mark)
+          last = end
+        }
+        if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)))
+        textNode.replaceWith(frag)
+      }
+    }
+
+    apply(params.pattern, params.isCurrent)
+
+    return {
+      update(next: { pattern: RegExp | null, isCurrent: boolean }) {
+        apply(next.pattern, next.isCurrent)
+      },
+      destroy() {
+        clear()
+      }
+    }
+  }
+
   export function prependLines(batch: string[]) {
     const batchUp = new AnsiUp()
     batchUp.use_classes = true
@@ -428,13 +492,14 @@
         <div
           data-index={row.index}
           use:measureEl
+          use:markMatches={{ pattern: searchPattern, isCurrent: matchIndices[matchCursor] === row.index }}
           style:position="absolute"
           style:top="0"
           style:left="0"
           style:min-width="100%"
           style:width="max-content"
           style:transform="translateY({row.start}px)"
-          class="log-row px-3 py-0 {highlight ? levelClass(processedLines[row.index].plain) : ''} {matchIndices.includes(row.index) ? 'search-match' : ''}"
+          class="log-row px-3 py-0 {highlight ? levelClass(processedLines[row.index].plain) : ''} {matchIndices.includes(row.index) ? 'has-match' : ''}"
           style:line-height="{rowHeight}px"
           class:whitespace-pre={!wrap}
           class:whitespace-pre-wrap={wrap}
@@ -489,7 +554,18 @@
   .log-info  { color: #38bdf8; }
   .log-debug { color: #6b7280; }
 
-  .search-match { background: #854d0e55; outline: 1px solid #854d0e; }
+  .has-match { box-shadow: inset 2px 0 0 0 #ca8a04; }
+
+  :global(.log-row mark.match) {
+    background: #854d0e88;
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+  :global(.log-row mark.match.active) {
+    background: #ea580c;
+    color: #1a1a1a;
+  }
 
   :global(.hl-k)   { color: #61afef; }
   :global(.hl-s)   { color: #98c379; }
