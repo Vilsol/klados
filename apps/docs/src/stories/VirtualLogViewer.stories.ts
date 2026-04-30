@@ -20,3 +20,15 @@ export const WithLines: Story = {
 export const WithTimestamps: Story = {
   args: { lineCount: 30, includeErrors: false, showTimestamps: true },
 }
+
+export const LongLines: Story = {
+  args: { lineCount: 30, longLines: true, includeErrors: true },
+}
+
+export const ManyMatches: Story = {
+  args: { lineCount: 80, manyMatches: true, includeErrors: true },
+}
+
+export const Tall: Story = {
+  args: { lineCount: 1000, includeErrors: true },
+}
