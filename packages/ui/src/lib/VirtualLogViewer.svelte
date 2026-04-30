@@ -326,6 +326,14 @@
     virt?.scrollToIndex(0, { align: 'start' })
   }
 
+  export function jumpToBottom() {
+    setSticky(true)
+    if (scrollEl) {
+      programmaticScroll = true
+      scrollEl.scrollTop = scrollEl.scrollHeight
+    }
+  }
+
   // Auto-tail: batched via rAF
   let tailRaf: number | null = null
   $effect(() => {
@@ -539,6 +547,19 @@
         </div>
       {/each}
     </div>
+    {#if !sticky && processedLines.length > 0}
+      <div class="sticky bottom-3 flex justify-end pr-4 pointer-events-none" style:height="0">
+        <button
+          type="button"
+          onclick={jumpToBottom}
+          aria-label="Jump to bottom"
+          title="Jump to bottom"
+          class="pointer-events-auto -translate-y-9 w-9 h-9 rounded-full bg-surface border border-border shadow-md flex items-center justify-center text-fg hover:bg-surface-hover transition-colors"
+        >
+          ↓
+        </button>
+      </div>
+    {/if}
   </div>
 
   <!-- Footer -->
