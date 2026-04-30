@@ -148,6 +148,7 @@
   let searchQuery = $state('')
   let debouncedQuery = $state('')
   let regexSearch = $state(false)
+  let caseSensitive = $state(false)
   let highlight = $state(false)
   let wrap = $state(false)
 
@@ -167,10 +168,16 @@
   const searchPattern = $derived((() => {
     if (!debouncedQuery) return null
     try {
-      return new RegExp(regexSearch ? debouncedQuery : debouncedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      const flags = caseSensitive ? '' : 'i'
+      return new RegExp(regexSearch ? debouncedQuery : debouncedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags)
     } catch {
       return null
     }
+  })())
+
+  const regexInvalid = $derived((() => {
+    if (!regexSearch || !debouncedQuery) return false
+    try { new RegExp(debouncedQuery); return false } catch { return true }
   })())
 
   const matchIndices = $derived(
@@ -353,8 +360,16 @@
       bind:value={searchQuery}
       onkeydown={(e) => e.key === 'Enter' && findNext()}
       placeholder="Search…"
-      class="flex-1 min-w-0 text-xs bg-surface-hover border border-border rounded px-2 py-1 focus:outline-none focus:border-accent"
+      class="flex-1 min-w-0 text-xs bg-surface-hover border rounded px-2 py-1 focus:outline-none {regexInvalid ? 'border-destructive focus:border-destructive' : 'border-border focus:border-accent'}"
     />
+    <button
+      onclick={() => (caseSensitive = !caseSensitive)}
+      title="Match case"
+      aria-label="Match case"
+      aria-pressed={caseSensitive}
+      class="text-xs px-2 py-1 rounded border transition-colors
+        {caseSensitive ? 'border-accent text-accent bg-accent/10' : 'border-border text-muted hover:text-fg'}"
+    >Aa</button>
     <button
       onclick={() => (regexSearch = !regexSearch)}
       title="Toggle regex search"
