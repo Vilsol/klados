@@ -18,7 +18,7 @@ require (
 	github.com/sasha-s/go-deadlock v0.3.9
 	github.com/spf13/cobra v1.10.2
 	github.com/tetratelabs/wazero v1.11.0
-	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
+	github.com/wailsapp/wails/v3 v3.0.0-alpha.83
 	golang.org/x/net v0.52.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.35.3

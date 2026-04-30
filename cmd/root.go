@@ -78,7 +78,8 @@ func Execute(assets embed.FS) {
 			})
 
 			winOpts := application.WebviewWindowOptions{
-				Title: "Klados",
+				Title:           "Klados",
+				DevToolsEnabled: true,
 				Mac: application.MacWindow{
 					InvisibleTitleBarHeight: 50,
 					Backdrop:               application.MacBackdropTranslucent,
