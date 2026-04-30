@@ -158,6 +158,8 @@
     return () => clearTimeout(timer)
   })
 
+  let searchInputEl = $state<HTMLInputElement | undefined>(undefined)
+  let rootEl = $state<HTMLDivElement | undefined>(undefined)
   let scrollEl = $state<HTMLDivElement | undefined>(undefined)
   let matchCursor = $state(0)
   // Non-reactive flags for scroll event coordination
@@ -389,6 +391,33 @@
     scrollToLine(matchIndices[matchCursor], 'start')
   }
 
+  function onSearchKey(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      if (e.shiftKey) findPrev()
+      else findNext()
+      e.preventDefault()
+    } else if (e.key === 'Escape') {
+      searchQuery = ''
+      searchInputEl?.blur()
+      e.preventDefault()
+    }
+  }
+
+  function onRootKey(e: KeyboardEvent) {
+    const isFind = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f'
+    if (isFind) {
+      searchInputEl?.focus()
+      searchInputEl?.select()
+      e.preventDefault()
+      return
+    }
+    if (e.key === 'F3') {
+      if (e.shiftKey) findPrev()
+      else findNext()
+      e.preventDefault()
+    }
+  }
+
   function onCopy(e: ClipboardEvent) {
     const sel = window.getSelection()
     if (!sel || sel.isCollapsed || !e.clipboardData) return
@@ -416,13 +445,14 @@
   }
 </script>
 
-<div class="flex flex-col h-full overflow-hidden">
+<div bind:this={rootEl} onkeydown={onRootKey} class="flex flex-col h-full overflow-hidden">
   <!-- Toolbar -->
   <div class="flex items-center gap-1 px-3 py-1.5 border-b border-border bg-surface shrink-0 flex-wrap">
     <input
+      bind:this={searchInputEl}
       type="text"
       bind:value={searchQuery}
-      onkeydown={(e) => e.key === 'Enter' && findNext()}
+      onkeydown={onSearchKey}
       placeholder="Search…"
       class="flex-1 min-w-0 text-xs bg-surface-hover border rounded px-2 py-1 focus:outline-none {regexInvalid ? 'border-destructive focus:border-destructive' : 'border-border focus:border-accent'}"
     />
