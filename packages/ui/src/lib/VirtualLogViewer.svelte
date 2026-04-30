@@ -151,6 +151,7 @@
   let caseSensitive = $state(false)
   let highlight = $state(false)
   let wrap = $state(false)
+  let filterMode = $state(false)
 
   $effect(() => {
     const q = searchQuery
@@ -191,6 +192,9 @@
       : []
   )
 
+  const visibleIndices = $derived(filterMode && searchPattern ? matchIndices : null)
+  const visibleCount = $derived(visibleIndices ? visibleIndices.length : processedLines.length)
+
   const rowHeight = $derived(Math.round(fontSize * 1.5))
 
   // Stable virtualizer store — created once, updated via setOptions
@@ -219,7 +223,7 @@
 
   // Keep virtualizer in sync with count + wrap mode + font size
   $effect(() => {
-    const count = processedLines.length
+    const count = visibleCount
     const _wrap = wrap
     const rh = rowHeight
     untrack(() => updateVirtOptions(count, rh))
@@ -339,6 +343,10 @@
   $effect(() => {
     const count = processedLines.length
     if (!sticky || count === 0 || !scrollEl) return
+    if (filterMode && searchPattern) {
+      const lastIdx = count - 1
+      if (!searchPattern.test(processedLines[lastIdx]?.plain ?? '')) return
+    }
     untrack(() => {
       if (tailRaf !== null) cancelAnimationFrame(tailRaf)
       tailRaf = requestAnimationFrame(() => {
@@ -495,6 +503,10 @@
       <input type="checkbox" bind:checked={wrap} class="accent-accent" />
       Wrap
     </label>
+    <label class="flex items-center gap-1 text-xs text-muted select-none cursor-pointer" title="Show only matching lines">
+      <input type="checkbox" bind:checked={filterMode} class="accent-accent" />
+      Filter
+    </label>
 
     {#if eofReached}
       <span class="text-xs text-muted italic">EOF</span>
@@ -527,24 +539,28 @@
 
     <div style:height="{$virtualizerStore.getTotalSize()}px" class="relative">
       {#each $virtualizerStore.getVirtualItems() as row (row.index)}
-        <div
-          data-index={row.index}
-          use:measureEl
-          use:markMatches={{ pattern: searchPattern, isCurrent: matchIndices[matchCursor] === row.index }}
-          style:position="absolute"
-          style:top="0"
-          style:left="0"
-          style:min-width="100%"
-          style:width="max-content"
-          style:transform="translateY({row.start}px)"
-          class="log-row px-3 py-0 {highlight ? levelClass(processedLines[row.index].plain) : ''} {matchIndices.includes(row.index) ? 'has-match' : ''}"
-          style:line-height="{rowHeight}px"
-          class:whitespace-pre={!wrap}
-          class:whitespace-pre-wrap={wrap}
-          class:break-all={wrap}
-        >
-          {#if showTimestamps && processedLines[row.index].ts}<span class="text-muted mr-2 select-none">{processedLines[row.index].ts}</span>{/if}{@html processedLines[row.index].html}
-        </div>
+        {@const lineIdx = visibleIndices ? visibleIndices[row.index] : row.index}
+        {@const line = processedLines[lineIdx]}
+        {#if line}
+          <div
+            data-index={lineIdx}
+            use:measureEl
+            use:markMatches={{ pattern: searchPattern, isCurrent: matchIndices[matchCursor] === lineIdx }}
+            style:position="absolute"
+            style:top="0"
+            style:left="0"
+            style:min-width="100%"
+            style:width="max-content"
+            style:transform="translateY({row.start}px)"
+            class="log-row px-3 py-0 {highlight ? levelClass(line.plain) : ''} {!filterMode && matchIndices.includes(lineIdx) ? 'has-match' : ''}"
+            style:line-height="{rowHeight}px"
+            class:whitespace-pre={!wrap}
+            class:whitespace-pre-wrap={wrap}
+            class:break-all={wrap}
+          >
+            {#if showTimestamps && line.ts}<span class="text-muted mr-2 select-none">{line.ts}</span>{/if}{@html line.html}
+          </div>
+        {/if}
       {/each}
     </div>
     {#if !sticky && processedLines.length > 0}
@@ -564,7 +580,13 @@
 
   <!-- Footer -->
   <div class="flex items-center px-3 py-1 border-t border-border bg-surface shrink-0">
-    <span class="text-xs text-muted">{processedLines.length.toLocaleString()} lines{eofReached ? '' : ' (live)'}</span>
+    <span class="text-xs text-muted">
+      {#if filterMode && searchPattern}
+        {matchIndices.length.toLocaleString()} / {processedLines.length.toLocaleString()} lines{eofReached ? '' : ' (live)'}
+      {:else}
+        {processedLines.length.toLocaleString()} lines{eofReached ? '' : ' (live)'}
+      {/if}
+    </span>
   </div>
 </div>
 
