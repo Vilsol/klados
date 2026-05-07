@@ -316,28 +316,36 @@
     }
   });
 
-  // Persist UI state whenever tabs/sidebar/fontSize change
+  // Persist UI state whenever tabs/sidebar/fontSize change.
+  // Debounced so high-frequency changes (sidebar resize drag) don't flood Wails IPC.
+  let saveUITimer: ReturnType<typeof setTimeout> | null = null;
   $effect(() => {
     const tabs = sessionStore.tabs;
     const activeTab = sessionStore.activeTabIndex;
     const sidebarCollapsed = sessionStore.sidebarCollapsed;
     const terminalFontSize = sessionStore.terminalFontSize;
     const sidebarWidth = sessionStore.sidebarWidth;
-    SaveUIState(
-      tabs.map((t) => ({
-        clusterContext: t.clusterContext,
-        gvr: t.gvr,
-        namespace: t.namespace,
-        name: t.name,
-        scrollPosition: t.scrollPosition ?? 0,
-      })),
-      activeTab,
-      sidebarCollapsed,
-      terminalFontSize,
-      sidebarWidth,
-    ).catch(() => {
-      /* empty */
-    });
+    if (saveUITimer !== null) {
+      clearTimeout(saveUITimer);
+    }
+    saveUITimer = setTimeout(() => {
+      saveUITimer = null;
+      SaveUIState(
+        tabs.map((t) => ({
+          clusterContext: t.clusterContext,
+          gvr: t.gvr,
+          namespace: t.namespace,
+          name: t.name,
+          scrollPosition: t.scrollPosition ?? 0,
+        })),
+        activeTab,
+        sidebarCollapsed,
+        terminalFontSize,
+        sidebarWidth,
+      ).catch(() => {
+        /* empty */
+      });
+    }, 150);
   });
 </script>
 
