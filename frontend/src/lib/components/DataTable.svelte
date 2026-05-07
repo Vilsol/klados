@@ -10,7 +10,7 @@
 <script lang="ts" generics="T">
   import {createVirtualizer} from "@tanstack/svelte-virtual";
   import {ArrowUpDown, ArrowUp, ArrowDown} from "lucide-svelte";
-  import type {Snippet} from "svelte";
+  import {untrack, type Snippet} from "svelte";
 
   let {
     items,
@@ -62,13 +62,24 @@
 
   const rowHeight = $derived(compact ? 28 : 36);
 
-  const virtualizer = $derived.by(() => {
+  const virtualizer = createVirtualizer({
+    count: 0,
+    getScrollElement: () => scrollContainer ?? null,
+    estimateSize: () => rowHeight,
+    overscan: 10,
+  });
+
+  $effect(() => {
+    const count = items.length;
     const rh = rowHeight;
-    return createVirtualizer({
-      count: items.length,
-      getScrollElement: () => scrollContainer ?? null,
-      estimateSize: () => rh,
-      overscan: 10,
+    void scrollContainer;
+    untrack(() => {
+      $virtualizer.setOptions({
+        count,
+        getScrollElement: () => scrollContainer ?? null,
+        estimateSize: () => rh,
+        overscan: 10,
+      });
     });
   });
 
