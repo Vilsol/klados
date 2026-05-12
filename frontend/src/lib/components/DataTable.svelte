@@ -211,32 +211,34 @@
         <div style="height: {$virtualizer.getTotalSize()}px; position: relative;">
           {#each $virtualizer.getVirtualItems() as row (row.index)}
             {@const item = items[row.index]}
-            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div
-              class="absolute top-0 left-0 min-w-full flex items-center px-2 transition-colors group
-                {selectedRow?.(item) ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-surface-hover border-l-2 border-transparent'}
-                {onrowclick ? 'cursor-pointer' : ''}"
-              style="transform: translateY({row.start}px); height: {rowHeight}px;"
-              tabindex={onrowclick ? 0 : undefined}
-              onclick={() => onrowclick?.(item)}
-              onkeydown={(e) => { if (e.key === 'Enter') onrowclick?.(item) }}
-              oncontextmenu={oncontextmenu ? (e) => { e.preventDefault(); e.stopPropagation(); oncontextmenu?.(e, item) } : undefined}
-            >
-              <div class="grid flex-1" style="grid-template-columns: {gridTemplateCols}">
-                {#if rowPrefix}
-                  {@render rowPrefix({item})}
-                {/if}
-                {#each visibleColumns as column}
-                  <div class="px-1 truncate text-sm {alignClass(column)}" data-col={column.name}>
-                    {@render cell({item, column})}
-                  </div>
-                {/each}
-                {#if rowSuffix}
-                  {@render rowSuffix({item})}
-                {/if}
+            {#if item}
+              <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div
+                class="absolute top-0 left-0 min-w-full flex items-center px-2 transition-colors group
+                  {selectedRow?.(item) ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-surface-hover border-l-2 border-transparent'}
+                  {onrowclick ? 'cursor-pointer' : ''}"
+                style="transform: translateY({row.start}px); height: {rowHeight}px;"
+                tabindex={onrowclick ? 0 : undefined}
+                onclick={() => onrowclick?.(item)}
+                onkeydown={(e) => { if (e.key === 'Enter') onrowclick?.(item) }}
+                oncontextmenu={oncontextmenu ? (e) => { e.preventDefault(); e.stopPropagation(); oncontextmenu?.(e, item) } : undefined}
+              >
+                <div class="grid flex-1" style="grid-template-columns: {gridTemplateCols}">
+                  {#if rowPrefix}
+                    {@render rowPrefix({item})}
+                  {/if}
+                  {#each visibleColumns as column}
+                    <div class="px-1 truncate text-sm {alignClass(column)}" data-col={column.name}>
+                      {@render cell({item, column})}
+                    </div>
+                  {/each}
+                  {#if rowSuffix}
+                    {@render rowSuffix({item})}
+                  {/if}
+                </div>
               </div>
-            </div>
+            {/if}
           {/each}
         </div>
       {/if}
