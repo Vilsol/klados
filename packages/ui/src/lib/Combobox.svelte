@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Combobox } from 'bits-ui'
   import { ChevronDown, Check, X } from 'lucide-svelte'
+  import { untrack } from 'svelte'
 
   type BaseOption = { value: string; label: string }
 
@@ -93,6 +94,18 @@
     open = false
     onValueChange?.([] as any)
   }
+
+  // Snapshot selected options whenever the dropdown opens, regardless of whether
+  // bits-ui or the parent toggled `open`. onOpenChange only fires for internal
+  // toggles, so it misses opens triggered by Combobox.Input's onclick handler.
+  $effect(() => {
+    if (open) {
+      untrack(() => {
+        inputValue = ''
+        openSelectedSet = type === 'multiple' ? new Set(value as string[]) : new Set()
+      })
+    }
+  })
 </script>
 
 <Combobox.Root
@@ -101,12 +114,6 @@
   bind:open
   bind:inputValue
   onValueChange={onValueChange as any}
-  onOpenChange={(o) => {
-    if (o) {
-      inputValue = ''
-      openSelectedSet = type === 'multiple' ? new Set(value as string[]) : new Set()
-    }
-  }}
   onOpenChangeComplete={(o) => { if (!o) inputValue = '' }}
   {disabled}
 >
