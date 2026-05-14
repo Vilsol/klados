@@ -19,6 +19,9 @@ vi.mock("$lib/stores/columns.svelte", () => ({
     get visibleColumns() {
       return mockVisibleColumns.value;
     },
+    get allColumns() {
+      return mockVisibleColumns.value.map((c) => ({col: c, visible: true}));
+    },
     get sortState() {
       return mockSortState.value;
     },
@@ -28,6 +31,13 @@ vi.mock("$lib/stores/columns.svelte", () => ({
     setSort: mockSetSort,
     resizeColumn: mockResizeColumn,
     autoFitColumn: mockAutoFitColumn,
+    setColumnVisible: vi.fn(),
+    reorderVisible: vi.fn(),
+    setPinned: vi.fn(),
+    isPinned: vi.fn().mockReturnValue(false),
+    pinnedNames: vi.fn().mockReturnValue([]),
+    reset: vi.fn(),
+    setCompact: vi.fn(),
   },
 }));
 
@@ -83,17 +93,30 @@ vi.mock("@klados/ui", () => ({
 
 // Mock virtualizer to return all items (jsdom has no scroll/layout)
 vi.mock("@tanstack/svelte-virtual", () => ({
-  createVirtualizer: ({count}: {count: number}) => ({
-    subscribe: (fn: (v: unknown) => void) => {
-      fn({
-        getTotalSize: () => count * 36,
-        getVirtualItems: () => Array.from({length: count}, (_, i) => ({index: i, start: i * 36, size: 36})),
-      });
-      return () => {
-        /* empty */
-      };
-    },
-  }),
+  createVirtualizer: ({count: initialCount}: {count: number}) => {
+    let currentCount = initialCount;
+    let emit: ((v: unknown) => void) | null = null;
+    const buildValue = () => ({
+      getTotalSize: () => currentCount * 36,
+      getVirtualItems: () =>
+        Array.from({length: currentCount}, (_, i) => ({index: i, start: i * 36, size: 36})),
+      setOptions: (opts: {count?: number}) => {
+        if (opts.count !== undefined && opts.count !== currentCount) {
+          currentCount = opts.count;
+          emit?.(buildValue());
+        }
+      },
+    });
+    return {
+      subscribe: (fn: (v: unknown) => void) => {
+        emit = fn;
+        fn(buildValue());
+        return () => {
+          emit = null;
+        };
+      },
+    };
+  },
 }));
 
 import ResourceList from "$lib/components/ResourceList.svelte";
