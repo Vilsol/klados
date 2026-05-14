@@ -12,6 +12,7 @@
   import {ArrowUpDown, ArrowUp, ArrowDown} from "lucide-svelte";
   import {untrack, type Snippet} from "svelte";
   import {dndzone, type DndEvent} from "svelte-dnd-action";
+  import HeaderContextMenu from "./HeaderContextMenu.svelte";
 
   let {
     items,
@@ -34,6 +35,8 @@
     onsort,
     onresize,
     onreorder,
+    onTogglePin,
+    onHideColumn,
     onrowclick,
     oncontextmenu,
     scrollContainer = $bindable<HTMLDivElement | undefined>(undefined),
@@ -58,12 +61,27 @@
     onsort?: (column: string, direction: "asc" | "desc") => void;
     onresize?: (column: string, width: number) => void;
     onreorder?: (names: string[]) => void;
+    onTogglePin?: (name: string) => void;
+    onHideColumn?: (name: string) => void;
     onrowclick?: (item: T) => void;
     oncontextmenu?: (event: MouseEvent, item: T) => void;
     scrollContainer?: HTMLDivElement;
   } = $props();
 
   let resizing = $state<{name: string; startX: number; startWidth: number} | null>(null);
+  let headerCtxMenu = $state<{x: number; y: number; columnName: string} | null>(null);
+
+  $effect(() => {
+    if (!headerCtxMenu) return;
+    const close = () => {
+      headerCtxMenu = null;
+    };
+    const t = setTimeout(() => window.addEventListener("click", close, {once: true}), 0);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("click", close);
+    };
+  });
 
   const rowHeight = $derived(compact ? 28 : 36);
 
@@ -194,6 +212,7 @@
       type="button"
       data-no-dnd="true"
       onclick={() => toggleSort(col.name)}
+      oncontextmenu={(e) => { e.preventDefault(); headerCtxMenu = {x: e.clientX, y: e.clientY, columnName: col.name}; }}
       class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {compact ? 'py-1' : 'py-2'}"
     >
       {col.name}
@@ -320,3 +339,19 @@
     </div>
   {/if}
 </div>
+
+{#if headerCtxMenu}
+  {@const menu = headerCtxMenu}
+  <HeaderContextMenu
+    x={menu.x}
+    y={menu.y}
+    columnName={menu.columnName}
+    isPinned={pinnedSet.has(menu.columnName)}
+    canHide={menu.columnName !== "Name" && !pinnedSet.has(menu.columnName)}
+    onSort={(dir) => onsort?.(menu.columnName, dir)}
+    onAutoFit={() => autoFit(menu.columnName)}
+    onTogglePin={() => onTogglePin?.(menu.columnName)}
+    onHide={() => onHideColumn?.(menu.columnName)}
+    onClose={() => { headerCtxMenu = null; }}
+  />
+{/if}
