@@ -243,11 +243,17 @@
   });
 
   async function stopForward(id: string) {
+    // Optimistically remove from the sidebar so the click is visually
+    // immediate. A trailing `portforward:{ctx}:updated` event from the
+    // backend's StatusStopped emission would otherwise race with our
+    // post-stop refresh and momentarily re-add the entry.
+    forwards = forwards.filter((f) => f.id !== id);
     try {
       await StopForward(id);
       await loadForwards();
       notificationStore.success("Port forward stopped");
     } catch (e: unknown) {
+      await loadForwards();
       notificationStore.error("Failed to stop port forward", unwrapError(e));
     }
   }

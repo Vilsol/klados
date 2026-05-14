@@ -74,64 +74,85 @@
   let loading = $state(false);
   let dialogOpen = $state(false);
 
+  // Tombstone for just-deleted IDs. The backend emits `updated` events from
+  // the runloop's StatusStopped after StopForward, which can race with our
+  // RemoveSavedPortForward call — without this, a refresh that lands between
+  // the two would resurrect the row.
+  const recentlyDeleted = new Set<string>();
+  // Serialize refresh runs so a burst of `updated` events from a flapping
+  // forward can't produce overlapping writes to `items`.
+  let refreshQueued = false;
+  let refreshRunning = false;
+
   async function refresh() {
     if (!ctxName) {
       return;
     }
+    if (refreshRunning) {
+      refreshQueued = true;
+      return;
+    }
+    refreshRunning = true;
     loading = true;
     try {
-      const [saved, active] = await Promise.all([ListSavedPortForwards(ctxName), ListForwards(ctxName)]);
+      do {
+        refreshQueued = false;
+        const [saved, active] = await Promise.all([ListSavedPortForwards(ctxName), ListForwards(ctxName)]);
 
-      const savedIds = new Set((saved ?? []).map((s) => s?.id).filter(Boolean));
-      const activeMap = new Map<string, (typeof active)[number]>();
-      for (const f of active ?? []) {
-        if (f?.id) {
-          activeMap.set(f.id, f);
+        const savedIds = new Set((saved ?? []).map((s) => s?.id).filter(Boolean));
+        const activeMap = new Map<string, (typeof active)[number]>();
+        for (const f of active ?? []) {
+          if (f?.id) {
+            activeMap.set(f.id, f);
+          }
         }
-      }
 
-      const savedItems = (saved ?? []).map((s) => {
-        const live = activeMap.get(s?.id);
-        return {
-          id: s?.id ?? "",
-          resource: s?.resource ?? "",
-          namespace: s?.namespace ?? "",
-          localPort: live?.localPort || s?.localPort || 0,
-          remotePort: s?.remotePort ?? 0,
-          enabled: s?.enabled ?? false,
-          targetKind: (s?.targetKind ?? "") as TargetKind,
-          targetName: s?.targetName ?? "",
-          targetGVR: s?.targetGVR ?? "",
-          status: live?.status ?? "stopped",
-          error: live?.error ?? "",
-          podName: live?.podName ?? "",
-          isSaved: true,
-          metadata: {name: s?.id ?? "", namespace: s?.namespace ?? ""},
-        };
-      });
+        const savedItems = (saved ?? [])
+          .filter((s) => s?.id && !recentlyDeleted.has(s.id))
+          .map((s) => {
+            const live = activeMap.get(s?.id);
+            return {
+              id: s?.id ?? "",
+              resource: s?.resource ?? "",
+              namespace: s?.namespace ?? "",
+              localPort: live?.localPort || s?.localPort || 0,
+              remotePort: s?.remotePort ?? 0,
+              enabled: s?.enabled ?? false,
+              targetKind: (s?.targetKind ?? "") as TargetKind,
+              targetName: s?.targetName ?? "",
+              targetGVR: s?.targetGVR ?? "",
+              status: live?.status ?? "stopped",
+              error: live?.error ?? "",
+              podName: live?.podName ?? "",
+              isSaved: true,
+              metadata: {name: s?.id ?? "", namespace: s?.namespace ?? ""},
+            };
+          });
 
-      // Include active forwards not yet in saved list (e.g. created before auto-save)
-      const unsavedActive = (active ?? [])
-        .filter((f) => f?.id && !savedIds.has(f.id))
-        .map((f) => ({
-          id: f.id,
-          resource: f.targetName ?? "",
-          namespace: f.namespace ?? "",
-          localPort: f.localPort ?? 0,
-          remotePort: f.remotePort ?? 0,
-          enabled: false,
-          targetKind: (f.targetKind ?? "") as TargetKind,
-          targetName: f.targetName ?? "",
-          targetGVR: f.targetGVR ?? "",
-          status: f.status ?? "active",
-          error: f.error ?? "",
-          podName: f.podName ?? "",
-          isSaved: false,
-          metadata: {name: f.id, namespace: f.namespace ?? ""},
-        }));
+        // Include active forwards not yet in saved list (e.g. created before auto-save).
+        const unsavedActive = (active ?? [])
+          .filter((f) => f?.id && !savedIds.has(f.id) && !recentlyDeleted.has(f.id))
+          .map((f) => ({
+            id: f.id,
+            resource: f.targetName ?? "",
+            namespace: f.namespace ?? "",
+            localPort: f.localPort ?? 0,
+            remotePort: f.remotePort ?? 0,
+            enabled: false,
+            targetKind: (f.targetKind ?? "") as TargetKind,
+            targetName: f.targetName ?? "",
+            targetGVR: f.targetGVR ?? "",
+            status: f.status ?? "active",
+            error: f.error ?? "",
+            podName: f.podName ?? "",
+            isSaved: false,
+            metadata: {name: f.id, namespace: f.namespace ?? ""},
+          }));
 
-      items = [...savedItems, ...unsavedActive];
+        items = [...savedItems, ...unsavedActive];
+      } while (refreshQueued);
     } finally {
+      refreshRunning = false;
       loading = false;
     }
   }
@@ -196,8 +217,9 @@
         icon: Trash2,
         variant: "destructive" as const,
         onClick: async () => {
+          recentlyDeleted.add(item.id);
+          items = items.filter((i) => i.id !== item.id);
           try {
-            // Stop the tunnel first if running, then remove from config
             if (isActive) {
               await StopForward(item.id).catch(() => {
                 /* empty */
@@ -206,8 +228,11 @@
             await RemoveSavedPortForward(ctxName, item.id);
           } catch (e: unknown) {
             notificationStore.error(e instanceof Error ? e.message : String(e));
+          } finally {
+            // Hold the tombstone briefly so any in-flight `updated` events
+            // from the runloop's StatusStopped emission can't resurrect the row.
+            setTimeout(() => recentlyDeleted.delete(item.id), 2000);
           }
-          items = items.filter((i) => i.id !== item.id);
         },
       },
     ];

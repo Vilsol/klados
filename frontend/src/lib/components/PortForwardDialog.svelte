@@ -90,6 +90,10 @@
           unsub();
         };
         const unsub = Events.On(`portforward:${ctx}:${spec.id}`, (e: {data: {status?: string; localPort?: number}}) => {
+          // Guard against re-entry: if a flapping forward fires `active` again
+          // before our unsub takes effect, swallow the duplicate so we don't
+          // open a second browser tab for the same connect.
+          if (done) return;
           const fw = e.data;
           if (fw?.status === "active" && fw?.localPort && fw.localPort > 0) {
             cleanup();

@@ -214,6 +214,10 @@ func (m *Manager) StartForward(spec ForwardSpec) (ForwardSpec, error) {
 func (m *Manager) runLoop(ctx context.Context, entry *forwardEntry) {
 	backoff := time.Second
 	const maxBackoff = 30 * time.Second
+	// Only reset backoff if a tunnel stayed active for at least this long.
+	// Otherwise a flapping connection (onReady fires, tunnel drops immediately)
+	// would loop at 1s forever and spam reconnects.
+	const stableThreshold = 15 * time.Second
 
 	for {
 		conn, err := m.connMgr.GetConnection(entry.spec.ContextName)
@@ -247,10 +251,10 @@ func (m *Manager) runLoop(ctx context.Context, entry *forwardEntry) {
 			}
 		}
 
-		backoff = time.Second
 		slox.Info(m.ctx, "port-forward connecting", "id", entry.spec.ID, "pod", podName, "remotePort", entry.spec.RemotePort)
 		m.updateStatus(entry, StatusReconnecting, podName, "")
 
+		var activeSince time.Time
 		tunnelErr := m.tunnel(ctx, conn, entry.spec.Namespace, podName, entry.spec.LocalPort, entry.spec.RemotePort,
 			func(assignedPort uint16) {
 				m.mu.Lock()
@@ -258,6 +262,7 @@ func (m *Manager) runLoop(ctx context.Context, entry *forwardEntry) {
 					entry.spec.LocalPort = int(assignedPort)
 				}
 				m.mu.Unlock()
+				activeSince = time.Now()
 				slox.Info(m.ctx, "port-forward active", "id", entry.spec.ID, "pod", podName, "localPort", int(assignedPort), "remotePort", entry.spec.RemotePort)
 				m.updateStatus(entry, StatusActive, podName, "")
 			},
@@ -283,6 +288,10 @@ func (m *Manager) runLoop(ctx context.Context, entry *forwardEntry) {
 			m.mu.Unlock()
 			m.emitEvent(fmt.Sprintf("portforward:%s:updated", entry.spec.ContextName), nil)
 			return
+		}
+
+		if !activeSince.IsZero() && time.Since(activeSince) >= stableThreshold {
+			backoff = time.Second
 		}
 
 		slox.Info(m.ctx, "port-forward reconnecting", "id", entry.spec.ID, "backoff", backoff)
