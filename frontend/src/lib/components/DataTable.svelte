@@ -95,7 +95,12 @@
   // via consider/finalize events, so we maintain a local $state mirror synced from the derived
   // `mainColumns`. This keeps the upstream store as source of truth between drags.
   type DnDColumn = DataTableColumn & {id: string};
-  let liveMainColumns = $state<DnDColumn[]>([]);
+  // Initialize synchronously from props (not from the $derived mainColumns) so the first render
+  // has populated body cells before the $effect below has fired.
+  const _initialPinnedSet = new Set(pinnedNames);
+  let liveMainColumns = $state<DnDColumn[]>(
+    visibleColumns.filter((c) => !_initialPinnedSet.has(c.name)).map((c) => ({...c, id: c.name})),
+  );
   $effect(() => {
     liveMainColumns = mainColumns.map((c) => ({...c, id: c.name}));
   });
