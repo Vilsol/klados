@@ -59,6 +59,7 @@ type GVRColumnPrefs struct {
 	Columns map[string]ColumnSettings `json:"columns"`
 	Order   []string                  `json:"order"`
 	Sort    *SortPrefs                `json:"sort,omitempty"`
+	Pinned  []string                  `json:"pinned,omitempty"`
 }
 
 type ClusterPrefs struct {
