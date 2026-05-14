@@ -328,6 +328,9 @@
 
   const tooManyForSparklines = $derived(filtered.length > 200);
 
+  const hasActiveFilters = $derived(searchTerms.length > 0);
+  const emptyMessageText = $derived(hasActiveFilters ? "No resources match these filters" : "No resources found");
+
   // Map ColumnDef[] to DataTableColumn[] with computed alignment
   const dataTableColumns = $derived<DataTableColumn[]>(
     columnStore.visibleColumns.map((c) => ({
@@ -415,7 +418,7 @@
   compact={columnStore.compact}
   {loading}
   {error}
-  emptyMessage="No resources found"
+  emptyMessage={emptyMessageText}
   {prefixGridCols}
   {suffixGridCols}
   bind:scrollContainer
@@ -510,6 +513,18 @@
         aria-label="Refresh"
       >
         <RefreshCw size={14} class={loading ? 'animate-spin' : ''} />
+      </button>
+    {/if}
+  {/snippet}
+
+  {#snippet emptyAction()}
+    {#if hasActiveFilters}
+      <button
+        type="button"
+        onclick={() => { searchQuery = ''; searchTerms = []; }}
+        class="px-3 py-1.5 text-sm border border-border rounded hover:bg-surface-hover transition-colors"
+      >
+        Clear filters
       </button>
     {/if}
   {/snippet}
