@@ -153,3 +153,72 @@ describe("columnStore", () => {
     expect(columnStore.sortState).toEqual({column: "Age", direction: "desc"});
   });
 });
+
+describe("ColumnStore — pinning & reorder", () => {
+  beforeEach(() => {
+    mockGetColumnPrefs.mockReset();
+    mockSetColumnPrefs.mockReset();
+    mockGetDescriptor.mockReturnValue(podDescriptor);
+  });
+
+  it("pins Name by default when no prefs are saved", async () => {
+    mockGetColumnPrefs.mockResolvedValue(null);
+    await columnStore.loadForGVR("core.v1.pods");
+    expect(columnStore.isPinned("Name")).toBe(true);
+    expect(columnStore.pinnedNames()).toEqual(["Name"]);
+  });
+
+  it("setPinned(true) moves the column to the front of visibleColumns", async () => {
+    mockGetColumnPrefs.mockResolvedValue(null);
+    await columnStore.loadForGVR("core.v1.pods");
+    columnStore.setPinned("Status", true);
+    expect(columnStore.visibleColumns[0].name).toBe("Name");
+    expect(columnStore.visibleColumns[1].name).toBe("Status");
+    expect(columnStore.isPinned("Status")).toBe(true);
+  });
+
+  it("setPinned(false) removes the column from the pinned set", async () => {
+    mockGetColumnPrefs.mockResolvedValue({order: ["Name", "Status", "Age"], columns: {}, pinned: ["Name", "Status"]});
+    await columnStore.loadForGVR("core.v1.pods");
+    columnStore.setPinned("Status", false);
+    expect(columnStore.isPinned("Status")).toBe(false);
+    expect(columnStore.pinnedNames()).toEqual(["Name"]);
+  });
+
+  it("reorderVisible(names) replaces visibleColumns and persists", async () => {
+    mockGetColumnPrefs.mockResolvedValue(null);
+    await columnStore.loadForGVR("core.v1.pods");
+    columnStore.reorderVisible(["Name", "Age", "Status"]);
+    expect(columnStore.visibleColumns.map((c) => c.name)).toEqual(["Name", "Age", "Status"]);
+    expect(mockSetColumnPrefs).toHaveBeenCalled();
+  });
+
+  it("reorderVisible ignores names not currently visible AND preserves unnamed visible columns at the end", async () => {
+    mockGetColumnPrefs.mockResolvedValue(null);
+    await columnStore.loadForGVR("core.v1.pods");
+    const before = columnStore.visibleColumns.map((c) => c.name);
+    columnStore.reorderVisible(["Name", "DoesNotExist", "Age"]);
+    // Status was visible but not in the new order — must remain (appended at end)
+    expect(columnStore.visibleColumns.map((c) => c.name)).toEqual(["Name", "Age", "Status"]);
+    expect(before).not.toEqual(columnStore.visibleColumns.map((c) => c.name));
+  });
+
+  it("reorderVisible accepts a partial list (main-grid only) and preserves pinned columns", async () => {
+    mockGetColumnPrefs.mockResolvedValue({order: ["Name", "Status", "Age"], columns: {}, pinned: ["Name"]});
+    await columnStore.loadForGVR("core.v1.pods");
+    // Simulate dndzone passing only the main columns in their new order (excluding pinned)
+    columnStore.reorderVisible(["Age", "Status"]);
+    expect(columnStore.visibleColumns.map((c) => c.name)).toEqual(["Name", "Age", "Status"]);
+  });
+
+  it("setPinned(false) moves the unpinned column to the first non-pinned position", async () => {
+    mockGetColumnPrefs.mockResolvedValue({order: ["Name", "Status", "Age"], columns: {}, pinned: ["Name", "Status"]});
+    await columnStore.loadForGVR("core.v1.pods");
+    // Sanity: Status starts pinned at index 1, Age at index 2
+    expect(columnStore.visibleColumns.map((c) => c.name)).toEqual(["Name", "Status", "Age"]);
+    columnStore.setPinned("Status", false);
+    // After unpinning, Name (pinned) at 0, Status at 1 (first unpinned), Age at 2
+    expect(columnStore.visibleColumns.map((c) => c.name)).toEqual(["Name", "Status", "Age"]);
+    expect(columnStore.isPinned("Status")).toBe(false);
+  });
+});

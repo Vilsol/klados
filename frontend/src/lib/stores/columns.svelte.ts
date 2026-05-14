@@ -14,6 +14,7 @@ class ColumnStore {
   allColumns = $state<{col: ColumnDef; visible: boolean}[]>([]);
   sortState = $state<{column: string; direction: "asc" | "desc"} | null>(null);
   compact = $state<boolean>(false);
+  #pinnedSet = $state<Set<string>>(new Set());
 
   #gvr = "";
   #saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -56,7 +57,18 @@ class ColumnStore {
     }
 
     const visibleSet = new Set(visibleNames);
-    this.visibleColumns = visibleNames.map((name) => poolMap.get(name)).filter((c): c is ColumnDef => c !== undefined);
+
+    // Pinned set: explicit prefs OR default to ["Name"] when no prefs saved at all
+    const explicitPinned = prefs?.pinned ?? [];
+    const pinned = explicitPinned.length > 0
+      ? explicitPinned.filter((n) => visibleSet.has(n))
+      : (prefs === null && visibleSet.has("Name") ? ["Name"] : []);
+    this.#pinnedSet = new Set(pinned);
+
+    // Reorder visibleNames so pinned columns are first (preserving pinned order)
+    const pinnedFirst = [...pinned, ...visibleNames.filter((n) => !this.#pinnedSet.has(n))];
+    this.visibleColumns = pinnedFirst.map((name) => poolMap.get(name)).filter((c): c is ColumnDef => c !== undefined);
+
     this.allColumns = pool.map((c) => ({
       col: poolMap.get(c.name) as ColumnDef,
       visible: visibleSet.has(c.name),
@@ -74,6 +86,9 @@ class ColumnStore {
   setColumnVisible(name: string, visible: boolean): void {
     if (name === "Name") {
       return;
+    }
+    if (!visible && this.#pinnedSet.has(name)) {
+      return; // unpin first
     }
 
     const entry = this.allColumns.find((e) => e.col.name === name);
@@ -151,6 +166,7 @@ class ColumnStore {
         this.allColumns.filter(({col}) => col.width !== undefined).map(({col}) => [col.name, new ColumnSettings({width: col.width})]),
       ),
       sort: this.sortState ? new SortPrefs({column: this.sortState.column, direction: this.sortState.direction}) : null,
+      pinned: [...this.#pinnedSet],
     });
   }
 
@@ -170,6 +186,51 @@ class ColumnStore {
       this.#saveTimer = null;
       SetColumnPrefs(this.#gvr, this.#buildPrefs());
     }, 300);
+  }
+
+  reorderVisible(names: string[]): void {
+    const currentSet = new Set(this.visibleColumns.map((c) => c.name));
+    const namedAndVisible = names.filter((n) => currentSet.has(n));
+    const pinned = [...this.#pinnedSet].filter((n) => currentSet.has(n));
+    const namedRest = namedAndVisible.filter((n) => !this.#pinnedSet.has(n));
+    // Append any visible-but-not-named non-pinned columns at the end (preserving their relative order)
+    const namedSet = new Set(namedAndVisible);
+    const trailing = this.visibleColumns
+      .map((c) => c.name)
+      .filter((n) => !namedSet.has(n) && !this.#pinnedSet.has(n));
+    const finalOrder = [...pinned, ...namedRest, ...trailing];
+    const byName = new Map(this.visibleColumns.map((c) => [c.name, c]));
+    this.visibleColumns = finalOrder.map((n) => byName.get(n)).filter((c): c is ColumnDef => c !== undefined);
+    this.#save();
+  }
+
+  setPinned(name: string, pinned: boolean): void {
+    if (!this.visibleColumns.some((c) => c.name === name)) {
+      return;
+    }
+    const next = new Set(this.#pinnedSet);
+    if (pinned) {
+      next.add(name);
+    } else {
+      next.delete(name);
+    }
+    this.#pinnedSet = next;
+
+    const without = this.visibleColumns.filter((c) => c.name !== name);
+    const col = this.visibleColumns.find((c) => c.name === name);
+    if (col) {
+      const pinnedCount = without.filter((c) => this.#pinnedSet.has(c.name)).length;
+      this.visibleColumns = [...without.slice(0, pinnedCount), col, ...without.slice(pinnedCount)];
+    }
+    this.#save();
+  }
+
+  isPinned(name: string): boolean {
+    return this.#pinnedSet.has(name);
+  }
+
+  pinnedNames(): string[] {
+    return this.visibleColumns.filter((c) => this.#pinnedSet.has(c.name)).map((c) => c.name);
   }
 }
 
