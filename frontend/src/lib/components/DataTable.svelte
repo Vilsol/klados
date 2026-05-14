@@ -15,6 +15,7 @@
   let {
     items,
     visibleColumns,
+    pinnedNames = [],
     sortState = null,
     compact = false,
     loading = false,
@@ -37,6 +38,7 @@
   }: {
     items: T[];
     visibleColumns: DataTableColumn[];
+    pinnedNames?: string[];
     sortState?: {column: string; direction: "asc" | "desc"} | null;
     compact?: boolean;
     loading?: boolean;
@@ -62,6 +64,10 @@
 
   const rowHeight = $derived(compact ? 28 : 36);
 
+  const pinnedSet = $derived(new Set(pinnedNames));
+  const pinnedColumns = $derived(visibleColumns.filter((c) => pinnedSet.has(c.name)));
+  const mainColumns = $derived(visibleColumns.filter((c) => !pinnedSet.has(c.name)));
+
   const virtualizer = createVirtualizer({
     count: 0,
     getScrollElement: () => scrollContainer ?? null,
@@ -83,9 +89,17 @@
     });
   });
 
-  const gridTemplateCols = $derived.by(() => {
+  const pinnedGridCols = $derived.by(() => {
     const parts: string[] = [...prefixGridCols];
-    for (const c of visibleColumns) {
+    for (const c of pinnedColumns) {
+      parts.push(c.width ? `${c.width}px` : "minmax(20px, max-content)");
+    }
+    return parts.join(" ");
+  });
+
+  const mainGridCols = $derived.by(() => {
+    const parts: string[] = [];
+    for (const c of mainColumns) {
       parts.push(c.width ? `${c.width}px` : "minmax(20px, 1fr)");
     }
     parts.push(...suffixGridCols);
@@ -153,6 +167,35 @@
   }
 </script>
 
+{#snippet headerCell(col: DataTableColumn, isLast: boolean)}
+  <div class="relative" data-header-col={col.name}>
+    <button
+      type="button"
+      onclick={() => toggleSort(col.name)}
+      class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {compact ? 'py-1' : 'py-2'}"
+    >
+      {col.name}
+      {#if sortState?.column === col.name}
+        {#if sortState.direction === 'asc'}
+          <ArrowUp size={10} />
+        {:else}
+          <ArrowDown size={10} />
+        {/if}
+      {:else}
+        <ArrowUpDown size={10} class="opacity-30" />
+      {/if}
+    </button>
+    {#if !isLast}
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-border/50 hover:bg-accent/70 z-20"
+        onmousedown={(e) => startResize(e, col)}
+        ondblclick={() => autoFit(col.name)}
+      ></div>
+    {/if}
+  </div>
+{/snippet}
+
 <div class="flex flex-col h-full overflow-hidden isolate">
   {#if toolbar}
     <div class="flex items-center gap-2 px-3 py-2 border-b border-border shrink-0">
@@ -165,43 +208,30 @@
   {:else}
     <div bind:this={scrollContainer} class="flex-1 overflow-auto">
       <div
-        class="grid text-xs font-semibold uppercase tracking-wider text-muted border-b border-border sticky top-0 z-20 bg-bg px-2"
-        style="grid-template-columns: {gridTemplateCols}"
+        class="flex sticky top-0 z-20 bg-bg text-xs font-semibold uppercase tracking-wider text-muted border-b border-border"
       >
-        {#if headerPrefix}
-          {@render headerPrefix()}
-        {/if}
-        {#each visibleColumns as col, i}
-          <div class="relative" data-header-col={col.name}>
-            <button
-              type="button"
-              onclick={() => toggleSort(col.name)}
-              class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {compact ? 'py-1' : 'py-2'}"
-            >
-              {col.name}
-              {#if sortState?.column === col.name}
-                {#if sortState.direction === 'asc'}
-                  <ArrowUp size={10} />
-                {:else}
-                  <ArrowDown size={10} />
-                {/if}
-              {:else}
-                <ArrowUpDown size={10} class="opacity-30" />
-              {/if}
-            </button>
-            {#if i < visibleColumns.length - 1}
-              <!-- svelte-ignore a11y_no_static_element_interactions -->
-              <div
-                class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-border/50 hover:bg-accent/70 z-20"
-                onmousedown={(e) => startResize(e, col)}
-                ondblclick={() => autoFit(col.name)}
-              ></div>
-            {/if}
-          </div>
-        {/each}
-        {#if headerSuffix}
-          {@render headerSuffix()}
-        {/if}
+        <div
+          class="grid sticky left-0 z-30 bg-bg pl-2"
+          style="grid-template-columns: {pinnedGridCols}"
+        >
+          {#if headerPrefix}
+            {@render headerPrefix()}
+          {/if}
+          {#each pinnedColumns as col, i (col.name)}
+            {@render headerCell(col, mainColumns.length === 0 && i === pinnedColumns.length - 1)}
+          {/each}
+        </div>
+        <div
+          class="grid flex-1 pr-2"
+          style="grid-template-columns: {mainGridCols}"
+        >
+          {#each mainColumns as col, i (col.name)}
+            {@render headerCell(col, i === mainColumns.length - 1)}
+          {/each}
+          {#if headerSuffix}
+            {@render headerSuffix()}
+          {/if}
+        </div>
       </div>
       {#if loading}
         <div class="flex items-center justify-center py-12 text-sm text-muted">Loading...</div>
@@ -215,7 +245,7 @@
               <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
               <!-- svelte-ignore a11y_no_static_element_interactions -->
               <div
-                class="absolute top-0 left-0 min-w-full flex items-center px-2 transition-colors group
+                class="absolute top-0 left-0 min-w-full flex items-center transition-colors group
                   {selectedRow?.(item) ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-surface-hover border-l-2 border-transparent'}
                   {onrowclick ? 'cursor-pointer' : ''}"
                 style="transform: translateY({row.start}px); height: {rowHeight}px;"
@@ -224,11 +254,25 @@
                 onkeydown={(e) => { if (e.key === 'Enter') onrowclick?.(item) }}
                 oncontextmenu={oncontextmenu ? (e) => { e.preventDefault(); e.stopPropagation(); oncontextmenu?.(e, item) } : undefined}
               >
-                <div class="grid flex-1" style="grid-template-columns: {gridTemplateCols}">
+                <div
+                  class="grid sticky left-0 z-10 pl-2 h-full items-center
+                    {selectedRow?.(item) ? 'bg-accent/10' : 'bg-bg group-hover:bg-surface-hover'}"
+                  style="grid-template-columns: {pinnedGridCols}"
+                >
                   {#if rowPrefix}
                     {@render rowPrefix({item})}
                   {/if}
-                  {#each visibleColumns as column}
+                  {#each pinnedColumns as column (column.name)}
+                    <div class="px-1 truncate text-sm {alignClass(column)}" data-col={column.name}>
+                      {@render cell({item, column})}
+                    </div>
+                  {/each}
+                </div>
+                <div
+                  class="grid flex-1 pr-2 h-full items-center"
+                  style="grid-template-columns: {mainGridCols}"
+                >
+                  {#each mainColumns as column (column.name)}
                     <div class="px-1 truncate text-sm {alignClass(column)}" data-col={column.name}>
                       {@render cell({item, column})}
                     </div>
