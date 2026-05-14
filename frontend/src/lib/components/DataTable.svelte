@@ -27,6 +27,7 @@
     suffixGridCols = [],
     toolbar,
     cell,
+    emptyAction,
     headerPrefix,
     headerSuffix,
     rowPrefix,
@@ -53,6 +54,7 @@
     suffixGridCols?: string[];
     toolbar?: Snippet;
     cell: Snippet<[{item: T; column: DataTableColumn}]>;
+    emptyAction?: Snippet;
     headerPrefix?: Snippet;
     headerSuffix?: Snippet;
     rowPrefix?: Snippet<[{item: T}]>;
@@ -283,10 +285,33 @@
           {/if}
         </div>
       </div>
-      {#if loading}
-        <div class="flex items-center justify-center py-12 text-sm text-muted">Loading...</div>
+      {#if loading && items.length === 0}
+        <div>
+          {#each Array(8) as _, i}
+            <div
+              class="flex items-center border-b border-border/40"
+              style="height: {rowHeight}px;"
+            >
+              <div class="grid sticky left-0 z-10 pl-2 h-full items-center bg-bg" style="grid-template-columns: {pinnedGridCols}">
+                {#each Array(prefixGridCols.length + pinnedColumns.length) as _2, j}
+                  <div class="px-1"><div class="h-3 rounded bg-surface-hover animate-pulse" style="width: {50 + ((i + j) % 4) * 10}%"></div></div>
+                {/each}
+              </div>
+              <div class="grid flex-1 pr-2 h-full items-center" style="grid-template-columns: {mainGridCols}">
+                {#each Array(liveMainColumns.length + suffixGridCols.length) as _2, j}
+                  <div class="px-1"><div class="h-3 rounded bg-surface-hover animate-pulse" style="width: {40 + ((i + j) % 5) * 10}%"></div></div>
+                {/each}
+              </div>
+            </div>
+          {/each}
+        </div>
       {:else if items.length === 0}
-        <div class="flex items-center justify-center py-12 text-sm text-muted">{emptyMessage}</div>
+        <div class="flex flex-col items-center justify-center py-12 gap-3">
+          <div class="text-sm text-muted">{emptyMessage}</div>
+          {#if emptyAction}
+            {@render emptyAction()}
+          {/if}
+        </div>
       {:else}
         <div style="height: {$virtualizer.getTotalSize()}px; position: relative;">
           {#each $virtualizer.getVirtualItems() as row (row.index)}
