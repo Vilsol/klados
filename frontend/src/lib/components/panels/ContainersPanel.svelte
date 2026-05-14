@@ -78,7 +78,7 @@
           {#if c.ports?.length}
             <div class="flex flex-wrap gap-1 mt-1">
               {#each c.ports as p}
-                <PortButton port={p.containerPort} protocol={p.protocol ?? 'TCP'} name={p.name} onclick={() => pfPort = p.containerPort} />
+                <PortButton port={p.containerPort} hostPort={p.hostPort} protocol={p.protocol ?? 'TCP'} name={p.name} onclick={() => pfPort = p.containerPort} />
               {/each}
             </div>
           {/if}
