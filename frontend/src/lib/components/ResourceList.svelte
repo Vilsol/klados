@@ -18,6 +18,8 @@
   import ColumnPicker from "./ColumnPicker.svelte";
   import ViewOptionsMenu from "./ViewOptionsMenu.svelte";
   import {Eye} from "lucide-svelte";
+  import {itemToYaml} from "$lib/utils/yamlClipboard";
+  import {bottomPanelStore} from "$lib/stores/bottom-panel.svelte";
   import DataTable, {type DataTableColumn} from "./DataTable.svelte";
   import SmartSearch from "./SmartSearch.svelte";
   import SavedFilterDropdown from "./SavedFilterDropdown.svelte";
@@ -126,6 +128,20 @@
   let columnMenuOpen = $state(false);
   let viewMenuOpen = $state(false);
   let exportMenuOpen = $state(false);
+
+  const POD_OWNER_GVRS = new Set([
+    "apps.v1.deployments",
+    "apps.v1.statefulsets",
+    "apps.v1.daemonsets",
+    "apps.v1.replicasets",
+    "batch.v1.jobs",
+    "batch.v1.cronjobs",
+  ]);
+
+  const isPod = $derived(gvr === "core.v1.pods");
+  const isPodOwner = $derived(POD_OWNER_GVRS.has(gvr));
+  const canViewLogs = $derived(isPod || isPodOwner);
+  const canOpenTerminal = $derived(isPod && clusterStore.canMutate());
 
   function getSparklinePoints(itemName: string, metricName: string): {t: number; v: number}[] {
     const metrics = sparklineData[itemName];
@@ -669,6 +685,97 @@
     onclick={(e) => e.stopPropagation()}
     onkeydown={(e) => e.stopPropagation()}
   >
+    <button
+      type="button"
+      class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover"
+      onclick={() => {
+        if (ctxMenu) {
+          const name = ctxMenu.item.metadata?.name as string | undefined;
+          if (name) {
+            navigator.clipboard.writeText(name);
+            notificationStore.push("Copied name", "info");
+          }
+          ctxMenu = null;
+        }
+      }}
+    >Copy name</button>
+    <button
+      type="button"
+      class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover"
+      onclick={() => {
+        if (ctxMenu) {
+          navigator.clipboard.writeText(itemToYaml(ctxMenu.item as unknown as Record<string, unknown>));
+          notificationStore.push("Copied YAML", "info");
+          ctxMenu = null;
+        }
+      }}
+    >Copy YAML</button>
+    <button
+      type="button"
+      class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover"
+      onclick={() => {
+        if (ctxMenu) {
+          const item = ctxMenu.item;
+          bottomPanelStore.addTab({
+            kind: "yaml",
+            resourceKind: (item.kind as unknown as string) ?? "",
+            resourceName: (item.metadata?.name as unknown as string) ?? "",
+            ctxName: contextName,
+            gvr,
+            namespace: (item.metadata?.namespace as unknown as string) ?? "",
+            name: (item.metadata?.name as unknown as string) ?? "",
+            obj: item as unknown as Record<string, unknown>,
+          });
+          ctxMenu = null;
+        }
+      }}
+    >View YAML</button>
+    {#if canViewLogs}
+      <div class="border-t border-border my-1"></div>
+      <button
+        type="button"
+        class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover"
+        onclick={() => {
+          if (ctxMenu) {
+            const item = ctxMenu.item;
+            bottomPanelStore.addTab({
+              kind: isPod ? "logs" : "aggregate-logs",
+              resourceKind: (item.kind as unknown as string) ?? "",
+              resourceName: (item.metadata?.name as unknown as string) ?? "",
+              ctxName: contextName,
+              gvr,
+              namespace: (item.metadata?.namespace as unknown as string) ?? "",
+              name: (item.metadata?.name as unknown as string) ?? "",
+              obj: item as unknown as Record<string, unknown>,
+            });
+            ctxMenu = null;
+          }
+        }}
+      >View logs</button>
+    {/if}
+    {#if canOpenTerminal}
+      <button
+        type="button"
+        class="w-full text-left px-3 py-1.5 text-sm hover:bg-surface-hover"
+        onclick={() => {
+          if (ctxMenu) {
+            const item = ctxMenu.item;
+            bottomPanelStore.addTab({
+              kind: "terminal",
+              resourceKind: (item.kind as unknown as string) ?? "",
+              resourceName: (item.metadata?.name as unknown as string) ?? "",
+              ctxName: contextName,
+              gvr,
+              namespace: (item.metadata?.namespace as unknown as string) ?? "",
+              name: (item.metadata?.name as unknown as string) ?? "",
+              obj: item as unknown as Record<string, unknown>,
+            });
+            ctxMenu = null;
+          }
+        }}
+      >Open terminal</button>
+    {/if}
+    <div class="border-t border-border my-1"></div>
     {#each pluginMenuItems as mi (mi.id)}
       {#if basePluginURL}
         {#await loadPluginComponent(mi.pluginName, mi.component, basePluginURL) then Cmp}
