@@ -15,7 +15,9 @@
   import {columnStore} from "$lib/stores/columns.svelte";
   import {clusterStore} from "$lib/stores/cluster.svelte";
   import {selectionStore} from "$lib/stores/selection.svelte";
-  import ColumnMenu from "./ColumnMenu.svelte";
+  import ColumnPicker from "./ColumnPicker.svelte";
+  import ViewOptionsMenu from "./ViewOptionsMenu.svelte";
+  import {Eye} from "lucide-svelte";
   import DataTable, {type DataTableColumn} from "./DataTable.svelte";
   import SmartSearch from "./SmartSearch.svelte";
   import SavedFilterDropdown from "./SavedFilterDropdown.svelte";
@@ -122,6 +124,7 @@
   let ctxMenu = $state<{x: number; y: number; item: Record<string, KubernetesResource>} | null>(null);
   let ctxMenuEl = $state<HTMLDivElement | null>(null);
   let columnMenuOpen = $state(false);
+  let viewMenuOpen = $state(false);
   let exportMenuOpen = $state(false);
 
   function getSparklinePoints(itemName: string, metricName: string): {t: number; v: number}[] {
@@ -175,6 +178,20 @@
     }
     const close = () => {
       columnMenuOpen = false;
+    };
+    const timer = setTimeout(() => window.addEventListener("click", close, {once: true}), 0);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("click", close);
+    };
+  });
+
+  $effect(() => {
+    if (!viewMenuOpen) {
+      return;
+    }
+    const close = () => {
+      viewMenuOpen = false;
     };
     const timer = setTimeout(() => window.addEventListener("click", close, {once: true}), 0);
     return () => {
@@ -377,6 +394,7 @@
 <DataTable
   items={filtered}
   visibleColumns={dataTableColumns}
+  pinnedNames={columnStore.pinnedNames()}
   sortState={columnStore.sortState}
   compact={columnStore.compact}
   {loading}
@@ -388,6 +406,9 @@
   selectedRow={(item) => selectedName === `${item.metadata?.name ?? ''}/${item.metadata?.namespace ?? ''}`}
   onsort={(col, dir) => columnStore.setSort(col, dir)}
   onresize={(col, width) => columnStore.resizeColumn(col, width)}
+  onreorder={(names) => columnStore.reorderVisible(names)}
+  onTogglePin={(name) => columnStore.setPinned(name, !columnStore.isPinned(name))}
+  onHideColumn={(name) => columnStore.setColumnVisible(name, false)}
   onrowclick={onselect ? (item) => onselect?.(item) : undefined}
   oncontextmenu={(e, item) => { ctxMenu = { x: e.clientX, y: e.clientY, item } }}
 >
@@ -435,15 +456,32 @@
         <Columns3 size={14} />
       </button>
       {#if columnMenuOpen}
-        <ColumnMenu
+        <ColumnPicker
           visibleColumns={columnStore.visibleColumns}
           allColumns={columnStore.allColumns}
-          compact={columnStore.compact}
+          pinnedNames={columnStore.pinnedNames()}
           onToggle={(name, visible) => columnStore.setColumnVisible(name, visible)}
-          onMove={(name, dir) => columnStore.moveColumn(name, dir)}
           onReset={() => columnStore.reset()}
+        />
+      {/if}
+    </div>
+    <div class="relative">
+      <button
+        type="button"
+        onclick={() => viewMenuOpen = !viewMenuOpen}
+        class="p-1 rounded hover:bg-surface-hover transition-colors"
+        title="View options"
+        aria-label="View options"
+      >
+        <Eye size={14} />
+      </button>
+      {#if viewMenuOpen}
+        <ViewOptionsMenu
+          compact={columnStore.compact}
           onCompactChange={(v) => columnStore.setCompact(v)}
-          {gvr} {sparklineGvrs} {sparklineColumns} {onSparklineToggle}
+          hasSparklines={sparklineGvrs.includes(gvr)}
+          {sparklineColumns}
+          {onSparklineToggle}
         />
       {/if}
     </div>
