@@ -54,6 +54,11 @@
               ({prefs.sort.direction})
             </div>
           {/if}
+          {#if prefs?.pinned && prefs.pinned.length > 0}
+            <div class="text-xs text-muted-foreground">
+              Pinned: {#each prefs.pinned as p, i}<span class="text-fg font-mono">{p}</span>{#if i < prefs.pinned.length - 1}, {/if}{/each}
+            </div>
+          {/if}
         </div>
       </div>
     {/each}
