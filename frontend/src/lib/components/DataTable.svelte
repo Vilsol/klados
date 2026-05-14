@@ -11,6 +11,7 @@
   import {createVirtualizer} from "@tanstack/svelte-virtual";
   import {ArrowUpDown, ArrowUp, ArrowDown} from "lucide-svelte";
   import {untrack, type Snippet} from "svelte";
+  import {dndzone, type DndEvent} from "svelte-dnd-action";
 
   let {
     items,
@@ -32,6 +33,7 @@
     selectedRow,
     onsort,
     onresize,
+    onreorder,
     onrowclick,
     oncontextmenu,
     scrollContainer = $bindable<HTMLDivElement | undefined>(undefined),
@@ -55,6 +57,7 @@
     selectedRow?: (item: T) => boolean;
     onsort?: (column: string, direction: "asc" | "desc") => void;
     onresize?: (column: string, width: number) => void;
+    onreorder?: (names: string[]) => void;
     onrowclick?: (item: T) => void;
     oncontextmenu?: (event: MouseEvent, item: T) => void;
     scrollContainer?: HTMLDivElement;
@@ -67,6 +70,24 @@
   const pinnedSet = $derived(new Set(pinnedNames));
   const pinnedColumns = $derived(visibleColumns.filter((c) => pinnedSet.has(c.name)));
   const mainColumns = $derived(visibleColumns.filter((c) => !pinnedSet.has(c.name)));
+
+  // svelte-dnd-action requires items with an `id` field; the library mutates the items array
+  // via consider/finalize events, so we maintain a local $state mirror synced from the derived
+  // `mainColumns`. This keeps the upstream store as source of truth between drags.
+  type DnDColumn = DataTableColumn & {id: string};
+  let liveMainColumns = $state<DnDColumn[]>([]);
+  $effect(() => {
+    liveMainColumns = mainColumns.map((c) => ({...c, id: c.name}));
+  });
+
+  function handleDndConsider(e: CustomEvent<DndEvent<DnDColumn>>) {
+    liveMainColumns = e.detail.items;
+  }
+
+  function handleDndFinalize(e: CustomEvent<DndEvent<DnDColumn>>) {
+    liveMainColumns = e.detail.items;
+    onreorder?.(e.detail.items.map((c) => c.name));
+  }
 
   const virtualizer = createVirtualizer({
     count: 0,
@@ -99,7 +120,7 @@
 
   const mainGridCols = $derived.by(() => {
     const parts: string[] = [];
-    for (const c of mainColumns) {
+    for (const c of liveMainColumns) {
       parts.push(c.width ? `${c.width}px` : "minmax(20px, 1fr)");
     }
     parts.push(...suffixGridCols);
@@ -171,6 +192,7 @@
   <div class="relative" data-header-col={col.name}>
     <button
       type="button"
+      data-no-dnd="true"
       onclick={() => toggleSort(col.name)}
       class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {compact ? 'py-1' : 'py-2'}"
     >
@@ -188,6 +210,7 @@
     {#if !isLast}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
+        data-no-dnd="true"
         class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-border/50 hover:bg-accent/70 z-20"
         onmousedown={(e) => startResize(e, col)}
         ondblclick={() => autoFit(col.name)}
@@ -224,9 +247,17 @@
         <div
           class="grid flex-1 pr-2"
           style="grid-template-columns: {mainGridCols}"
+          use:dndzone={{
+            items: liveMainColumns,
+            type: "table-columns",
+            flipDurationMs: 150,
+            dropTargetStyle: {outline: "2px dashed currentColor"},
+          }}
+          onconsider={handleDndConsider}
+          onfinalize={handleDndFinalize}
         >
-          {#each mainColumns as col, i (col.name)}
-            {@render headerCell(col, i === mainColumns.length - 1)}
+          {#each liveMainColumns as col, i (col.id)}
+            {@render headerCell(col, i === liveMainColumns.length - 1)}
           {/each}
           {#if headerSuffix}
             {@render headerSuffix()}
@@ -272,7 +303,7 @@
                   class="grid flex-1 pr-2 h-full items-center"
                   style="grid-template-columns: {mainGridCols}"
                 >
-                  {#each mainColumns as column (column.name)}
+                  {#each liveMainColumns as column (column.id)}
                     <div class="px-1 truncate text-sm {alignClass(column)}" data-col={column.name}>
                       {@render cell({item, column})}
                     </div>
