@@ -120,7 +120,11 @@
   <div class="relative">
     <Combobox.Input
       oninput={(e) => (inputValue = e.currentTarget.value)}
-      onclick={() => { if (!open) open = true }}
+      onfocus={() => { inputValue = '' }}
+      onclick={() => {
+        inputValue = ''
+        if (!open) open = true
+      }}
       class="flex items-center gap-1 w-full bg-bg text-fg border border-border rounded
         px-2 {itemPy} {textSize} placeholder:text-muted
         hover:bg-surface-hover focus:outline-none focus:ring-1 focus:ring-accent
