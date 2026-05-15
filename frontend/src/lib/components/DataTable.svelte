@@ -244,7 +244,12 @@
     </div>
     {#if !isLast}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <!-- draggable={false}: HTML5 native drag fires `dragstart` based on which ancestor
+           has draggable=true regardless of mousedown propagation, so stopPropagation alone
+           does not suppress drag from this handle. Setting draggable=false excludes the
+           subtree from the drag source lookup. -->
       <div
+        draggable={false}
         class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-border/50 hover:bg-accent/70 z-20"
         onmousedown={(e) => { e.stopPropagation(); startResize(e, col); }}
         ondblclick={() => autoFit(col.name)}
@@ -343,7 +348,7 @@
                 oncontextmenu={oncontextmenu ? (e) => { e.preventDefault(); e.stopPropagation(); oncontextmenu?.(e, item) } : undefined}
               >
                 <div
-                  class="grid sticky left-0 z-10 pl-2 h-full items-center
+                  class="grid sticky left-0 z-10 pl-2 h-full items-center transition-colors
                     {selectedRow?.(item) ? 'bg-accent/10' : 'bg-bg group-hover:bg-surface-hover'}"
                   style="grid-template-columns: {pinnedGridCols}"
                 >
