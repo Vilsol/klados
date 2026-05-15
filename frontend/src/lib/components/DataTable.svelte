@@ -149,9 +149,14 @@
   const mainGridCols = $derived.by(() => {
     const parts: string[] = [];
     for (const c of liveMainColumns) {
-      parts.push(c.width ? `${c.width}px` : "minmax(20px, 1fr)");
+      // Same reason as pinnedGridCols: separate header/body grids cannot rely on `1fr`
+      // for unsaved widths without a single column ballooning to absorb the entire
+      // remaining row when other columns have saved fixed widths. Default to 200px;
+      // the trailing `1fr` spacer below soaks up extra row width instead.
+      parts.push(c.width ? `${c.width}px` : "200px");
     }
     parts.push(...suffixGridCols);
+    parts.push("1fr");
     return parts.join(" ");
   });
 
@@ -301,6 +306,7 @@
           {#if headerSuffix}
             {@render headerSuffix()}
           {/if}
+          <div></div>
         </div>
       </div>
       {#if loading && items.length === 0}
@@ -319,6 +325,7 @@
                 {#each Array(liveMainColumns.length + suffixGridCols.length) as _2, j}
                   <div class="px-1"><div class="h-3 rounded bg-surface-hover animate-pulse" style="width: {40 + ((i + j) % 5) * 10}%"></div></div>
                 {/each}
+                <div></div>
               </div>
             </div>
           {/each}
@@ -373,6 +380,7 @@
                   {#if rowSuffix}
                     {@render rowSuffix({item})}
                   {/if}
+                  <div></div>
                 </div>
               </div>
             {/if}
