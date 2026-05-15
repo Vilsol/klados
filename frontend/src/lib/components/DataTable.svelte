@@ -138,7 +138,10 @@
   const pinnedGridCols = $derived.by(() => {
     const parts: string[] = [...prefixGridCols];
     for (const c of pinnedColumns) {
-      parts.push(c.width ? `${c.width}px` : "minmax(20px, max-content)");
+      // Default to a fixed pixel width when unsaved: header and body are separate grids,
+      // so any content-based sizing (`max-content`, `auto`) would diverge between them
+      // (header text is shorter than body content) and break column alignment.
+      parts.push(c.width ? `${c.width}px` : "200px");
     }
     return parts.join(" ");
   });
@@ -215,12 +218,18 @@
 
 {#snippet headerCell(col: DataTableColumn, isLast: boolean)}
   <div class="relative" data-header-col={col.name}>
-    <button
-      type="button"
-      data-no-dnd="true"
+    <!-- Using <div role="button"> instead of <button> because HTML5 native drag-and-drop
+         does not initiate from <button> elements (the browser treats button mousedown
+         specially and the dragstart event never fires on the parent draggable container). -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      role="button"
+      tabindex="0"
       onclick={() => toggleSort(col.name)}
+      onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort(col.name); } }}
       oncontextmenu={(e) => { e.preventDefault(); headerCtxMenu = {x: e.clientX, y: e.clientY, columnName: col.name}; }}
-      class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full {compact ? 'py-1' : 'py-2'}"
+      class="flex items-center gap-1 px-1 hover:text-fg transition-colors text-left w-full cursor-grab active:cursor-grabbing select-none {compact ? 'py-1' : 'py-2'}"
     >
       {col.name}
       {#if sortState?.column === col.name}
@@ -232,13 +241,12 @@
       {:else}
         <ArrowUpDown size={10} class="opacity-30" />
       {/if}
-    </button>
+    </div>
     {#if !isLast}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
-        data-no-dnd="true"
         class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-border/50 hover:bg-accent/70 z-20"
-        onmousedown={(e) => startResize(e, col)}
+        onmousedown={(e) => { e.stopPropagation(); startResize(e, col); }}
         ondblclick={() => autoFit(col.name)}
       ></div>
     {/if}
@@ -257,7 +265,7 @@
   {:else}
     <div bind:this={scrollContainer} class="flex-1 overflow-auto">
       <div
-        class="flex sticky top-0 z-20 bg-bg text-xs font-semibold uppercase tracking-wider text-muted border-b border-border"
+        class="flex sticky top-0 z-20 bg-bg text-xs font-semibold uppercase tracking-wider text-muted border-b border-border min-w-full"
       >
         <div
           class="grid sticky left-0 z-30 bg-bg pl-2"

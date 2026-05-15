@@ -148,7 +148,7 @@ describe("ResourceList", () => {
       },
     });
 
-    const headerButtons = container.querySelectorAll(".grid button");
+    const headerButtons = container.querySelectorAll('.grid [role="button"]');
     const first = headerButtons[0] as HTMLElement;
     expect(first.className).not.toContain("sticky");
     expect(first.className).not.toContain("shadow");
