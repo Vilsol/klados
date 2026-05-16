@@ -357,6 +357,22 @@
         </div>
       {:else}
         <div style="height: {$virtualizer.getTotalSize()}px; position: relative;">
+          <!-- Continuous column dividers: a single element spanning the full body height
+               so the dotted pattern is unbroken (per-row borders restart the pattern at
+               each row boundary, leaving visible gaps). pointer-events:none lets row
+               clicks and hovers pass through. -->
+          <div class="absolute inset-0 flex pointer-events-none min-w-full z-20">
+            <div class="grid sticky left-0 pl-2 h-full" style="grid-template-columns: {pinnedGridCols}">
+              {#each Array(prefixGridCols.length + pinnedColumns.length) as _}
+                <div class="border-r border-dotted border-fg/25"></div>
+              {/each}
+            </div>
+            <div class="grid flex-1 pr-2 h-full" style="grid-template-columns: {mainGridCols}">
+              {#each Array(liveMainColumns.length + suffixGridCols.length) as _, j}
+                <div class="border-r border-dotted border-fg/25" class:border-r-0={j === liveMainColumns.length + suffixGridCols.length - 1}></div>
+              {/each}
+            </div>
+          </div>
           {#each $virtualizer.getVirtualItems() as row (row.index)}
             {@const item = items[row.index]}
             {#if item}
