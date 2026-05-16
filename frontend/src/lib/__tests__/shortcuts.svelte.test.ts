@@ -84,6 +84,17 @@ describe("ShortcutStore", () => {
     expect(action).not.toHaveBeenCalled();
   });
 
+  it("unbound shortcut (keys: '') never fires", () => {
+    const action = vi.fn();
+    store.register({id: "test", keys: "", action, description: "Unbound"});
+    // Some platforms (WebKitGTK) fire Shift keydown with shiftKey=false, producing
+    // an empty combo. Either way an unbound shortcut must not match.
+    store.dispatch(makeKeyEvent({shiftKey: false, key: "Shift"}));
+    store.dispatch(makeKeyEvent({shiftKey: true, key: "Shift"}));
+    store.dispatch(makeKeyEvent({key: ""}));
+    expect(action).not.toHaveBeenCalled();
+  });
+
   it("re-registering same id replaces shortcut", () => {
     const action1 = vi.fn();
     const action2 = vi.fn();

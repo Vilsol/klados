@@ -79,6 +79,15 @@ export class ShortcutStore {
   dispatch(e: KeyboardEvent) {
     const combo = buildKeyCombo(e);
 
+    // A modifier-only keydown (e.g. pressing Shift alone) can produce an empty
+    // combo on some platforms — WebKitGTK fires the initial Shift keydown with
+    // e.shiftKey=false, and since the key itself is filtered out as a modifier,
+    // parts ends up empty. An empty combo cannot represent a real shortcut, so
+    // bailing out here also stops it from matching unbound (keys: "") shortcuts.
+    if (combo === "") {
+      return;
+    }
+
     if (this.focusMode === "terminal") {
       // Only the escape chord exits terminal capture mode
       if (combo === "Control+Shift+Escape") {
@@ -109,7 +118,12 @@ export class ShortcutStore {
     }
 
     for (const def of this._shortcuts) {
-      if (combo !== this.getEffectiveKeys(def)) {
+      const effective = this.getEffectiveKeys(def);
+      if (effective === "") {
+        // Unbound shortcut — opt-in only, never matches.
+        continue;
+      }
+      if (combo !== effective) {
         continue;
       }
       const modes = def.modes ?? ["normal"];
