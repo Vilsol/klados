@@ -141,7 +141,7 @@
       // Default to a fixed pixel width when unsaved: header and body are separate grids,
       // so any content-based sizing (`max-content`, `auto`) would diverge between them
       // (header text is shorter than body content) and break column alignment.
-      parts.push(c.width ? `${c.width}px` : "200px");
+      parts.push(c.width ? `${c.width}px` : "400px");
     }
     return parts.join(" ");
   });
@@ -210,6 +210,28 @@
     resizing = null;
   }
 
+  // Svelte 5 delegates `mousedown` to a single root listener, so an `onmousedown={...}`
+  // attribute fires LATER than svelte-dnd-action's directly-attached bubble listener on
+  // the parent draggable. `stopPropagation` from the attribute therefore can't suppress
+  // the drag. This action attaches `mousedown` directly via addEventListener so we can
+  // stop propagation before the dnd handler on the parent sees it.
+  function resizeHandle(node: HTMLElement, col: DataTableColumn) {
+    let current = col;
+    const onDown = (e: MouseEvent) => {
+      e.stopPropagation();
+      startResize(e, current);
+    };
+    node.addEventListener("mousedown", onDown);
+    return {
+      update(next: DataTableColumn) {
+        current = next;
+      },
+      destroy() {
+        node.removeEventListener("mousedown", onDown);
+      },
+    };
+  }
+
   function autoFit(name: string) {
     const cells = scrollContainer?.querySelectorAll(`[data-col="${name}"]`);
     if (!cells) return;
@@ -249,14 +271,12 @@
     </div>
     {#if !isLast}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <!-- draggable={false}: HTML5 native drag fires `dragstart` based on which ancestor
-           has draggable=true regardless of mousedown propagation, so stopPropagation alone
-           does not suppress drag from this handle. Setting draggable=false excludes the
-           subtree from the drag source lookup. -->
+      <!-- mousedown attached via use:resizeHandle to bypass Svelte 5 event delegation,
+           which would otherwise run after svelte-dnd-action's drag-start listener. -->
       <div
         draggable={false}
         class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-border/50 hover:bg-accent/70 z-20"
-        onmousedown={(e) => { e.stopPropagation(); startResize(e, col); }}
+        use:resizeHandle={col}
         ondblclick={() => autoFit(col.name)}
       ></div>
     {/if}
