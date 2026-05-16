@@ -45,6 +45,7 @@
 
   let inputValue = $state('')
   let open = $state(false)
+  let inputRef = $state<HTMLInputElement | null>(null)
   // Snapshot of which options were selected at the moment the dropdown opened.
   // We pin ordering to this snapshot so that toggling options doesn't make
   // items jump mid-interaction.
@@ -98,11 +99,17 @@
   // Snapshot selected options whenever the dropdown opens, regardless of whether
   // bits-ui or the parent toggled `open`. onOpenChange only fires for internal
   // toggles, so it misses opens triggered by Combobox.Input's onclick handler.
+  // bits-ui's toggleItem also fills inputValue with the item's label after every
+  // selection; we additionally null the DOM input.value so it can't carry over to
+  // the next open even if Svelte hasn't propagated the state assignment yet.
   $effect(() => {
     if (open) {
       untrack(() => {
         inputValue = ''
         openSelectedSet = type === 'multiple' ? new Set(value as string[]) : new Set()
+        if (inputRef) {
+          inputRef.value = ''
+        }
       })
     }
   })
@@ -114,15 +121,21 @@
   bind:open
   bind:inputValue
   onValueChange={onValueChange as any}
+  onOpenChange={(o) => { if (!o) inputValue = '' }}
   onOpenChangeComplete={(o) => { if (!o) inputValue = '' }}
   {disabled}
 >
   <div class="relative">
     <Combobox.Input
+      bind:ref={inputRef}
       oninput={(e) => (inputValue = e.currentTarget.value)}
-      onfocus={() => { inputValue = '' }}
-      onclick={() => {
+      onfocus={(e) => {
         inputValue = ''
+        ;(e.currentTarget as HTMLInputElement).value = ''
+      }}
+      onclick={(e) => {
+        inputValue = ''
+        ;(e.currentTarget as HTMLInputElement).value = ''
         if (!open) open = true
       }}
       class="flex items-center gap-1 w-full bg-bg text-fg border border-border rounded
