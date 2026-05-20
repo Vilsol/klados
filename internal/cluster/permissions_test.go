@@ -77,3 +77,60 @@ func TestCanMutate_WildcardVerb(t *testing.T) {
 	}
 	testza.AssertTrue(t, perms.CanMutate())
 }
+
+// managerWithFakeConn returns a Manager seeded with a single connection
+// backed by the provided fake clientset.
+func managerWithFakeConn(client *fake.Clientset, contextName string) *Manager {
+	m := &Manager{
+		connections: map[string]*Connection{
+			contextName: {Clientset: client},
+		},
+		discoveredResources: map[string][]APIResource{},
+	}
+	return m
+}
+
+func TestCheckAccess_Allowed(t *testing.T) {
+	client := fake.NewSimpleClientset()
+	client.PrependReactor("create", "selfsubjectaccessreviews", func(action k8stesting.Action) (bool, runtime.Object, error) {
+		return true, &authv1.SelfSubjectAccessReview{
+			Status: authv1.SubjectAccessReviewStatus{Allowed: true},
+		}, nil
+	})
+
+	mgr := managerWithFakeConn(client, "ctx1")
+	allowed, err := mgr.CheckAccess(context.Background(), "ctx1", "ns1", "create", "", "secrets")
+	testza.AssertNoError(t, err)
+	testza.AssertTrue(t, allowed)
+}
+
+func TestCheckAccess_Denied(t *testing.T) {
+	client := fake.NewSimpleClientset()
+	client.PrependReactor("create", "selfsubjectaccessreviews", func(action k8stesting.Action) (bool, runtime.Object, error) {
+		return true, &authv1.SelfSubjectAccessReview{
+			Status: authv1.SubjectAccessReviewStatus{Allowed: false, Reason: "no"},
+		}, nil
+	})
+
+	mgr := managerWithFakeConn(client, "ctx1")
+	allowed, err := mgr.CheckAccess(context.Background(), "ctx1", "ns1", "delete", "", "secrets")
+	testza.AssertNoError(t, err)
+	testza.AssertFalse(t, allowed)
+}
+
+func TestCheckAccess_ErrorPropagates(t *testing.T) {
+	client := fake.NewSimpleClientset()
+	client.PrependReactor("create", "selfsubjectaccessreviews", func(action k8stesting.Action) (bool, runtime.Object, error) {
+		return true, nil, errors.NewForbidden(schema.GroupResource{Resource: "selfsubjectaccessreviews"}, "", nil)
+	})
+
+	mgr := managerWithFakeConn(client, "ctx1")
+	_, err := mgr.CheckAccess(context.Background(), "ctx1", "ns1", "create", "", "secrets")
+	testza.AssertNotNil(t, err)
+}
+
+func TestCheckAccess_UnknownContext(t *testing.T) {
+	mgr := managerWithFakeConn(fake.NewSimpleClientset(), "ctx1")
+	_, err := mgr.CheckAccess(context.Background(), "missing", "ns", "get", "", "pods")
+	testza.AssertNotNil(t, err)
+}

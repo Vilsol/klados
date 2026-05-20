@@ -22,6 +22,7 @@ type ClusterService struct {
 	appService       *AppService
 	session          *session.Session
 	volumeBrowserSvc *VolumeBrowserService
+	helmSvc          *HelmService
 	ctx              context.Context
 }
 
@@ -35,6 +36,11 @@ func NewClusterService(appSvc *AppService, sess *session.Session) *ClusterServic
 //wails:ignore
 func (c *ClusterService) SetVolumeBrowserService(svc *VolumeBrowserService) {
 	c.volumeBrowserSvc = svc
+}
+
+//wails:ignore
+func (c *ClusterService) SetHelmService(svc *HelmService) {
+	c.helmSvc = svc
 }
 
 func (c *ClusterService) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
@@ -66,6 +72,10 @@ func (c *ClusterService) Connect(contextName string) error {
 
 	if c.volumeBrowserSvc != nil {
 		c.volumeBrowserSvc.OnClusterConnected(contextName)
+	}
+
+	if c.helmSvc != nil {
+		go c.helmSvc.OnClusterConnected(c.ctx, contextName)
 	}
 
 	return nil

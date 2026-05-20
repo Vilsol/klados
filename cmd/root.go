@@ -48,6 +48,8 @@ func Execute(assets embed.FS) {
 			metricsSvc := services.NewMetricsService(appSvc)
 			pluginSvc := services.NewPluginService(appSvc, resourceSvc)
 			windowSvc := services.NewWindowService()
+			helmSvc := services.NewHelmService(appSvc, resourceSvc)
+			clusterSvc.SetHelmService(helmSvc)
 			appSvc.SetPluginService(pluginSvc)
 			metricsSvc.SetPluginService(pluginSvc)
 
@@ -68,6 +70,7 @@ func Execute(assets embed.FS) {
 					application.NewService(metricsSvc),
 					application.NewService(pluginSvc),
 					application.NewService(windowSvc),
+					application.NewService(helmSvc),
 				},
 				Assets: application.AssetOptions{
 					Handler: application.AssetFileServerFS(assets),
