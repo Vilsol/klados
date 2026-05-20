@@ -6,7 +6,7 @@ node = "25.8.1"
 "aqua:tinygo-org/tinygo" = "latest"
 pnpm = "latest"
 jj = "latest"
-go = "1.25.7"
+go = "1.26.0"
 
 [tasks."generate:plugin-types"]
 description = "Generate Go + TypeScript types from JSON Schemas"
