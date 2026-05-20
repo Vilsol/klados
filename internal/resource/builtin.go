@@ -3,6 +3,7 @@ package resource
 import (
 	"fmt"
 
+	"github.com/Vilsol/klados/internal/helm"
 	"github.com/Vilsol/klados/internal/resource/enrichers"
 )
 
@@ -719,6 +720,29 @@ var builtinDescriptors = []*Descriptor{
 		DetailPanels: []string{"overview", "labels", "events", "yaml"},
 		Actions:      []Action{{Name: "delete", Label: "Delete"}},
 	},
+	{
+		Group: "helm", Version: "v1", Resource: "releases", Kind: "HelmRelease",
+		IsVirtual:  true,
+		GroupLabel: "Helm",
+		Columns: []Column{
+			{Name: "Name", Expr: "metadata.name", RenderType: RenderText},
+			{Name: "Namespace", Expr: "metadata.namespace", RenderType: RenderText, Width: 150},
+			{Name: "Status", Expr: "status.statusDisplay", RenderType: RenderBadge, Width: 110},
+			{Name: "Revision", Expr: "status.revisionDisplay", RenderType: RenderText, Width: 90},
+			{Name: "Chart", Expr: "status.chartDisplay", RenderType: RenderText},
+			{Name: "App Version", Expr: "status.appVersion", RenderType: RenderText, Width: 110},
+			{Name: "Last Deployed", Expr: "status.lastDeployedDisplay", RenderType: RenderAge, Width: 110},
+		},
+		OverviewFields: []OverviewField{
+			{Label: "Namespace", Expr: "metadata.namespace", RenderType: RenderText},
+			{Label: "Status", Expr: "status.statusDisplay", RenderType: RenderBadge},
+			{Label: "Revision", Expr: "status.revisionDisplay", RenderType: RenderText},
+			{Label: "Chart", Expr: "status.chartDisplay", RenderType: RenderText},
+			{Label: "App Version", Expr: "status.appVersion", RenderType: RenderText},
+			{Label: "Last Deployed", Expr: "status.lastDeployedDisplay", RenderType: RenderAge},
+		},
+		DetailPanels: []string{"helm-overview", "helm-values", "helm-manifest", "helm-history", "helm-notes", "helm-resources", "helm-hooks"},
+	},
 }
 
 func BuiltinDescriptors() []*Descriptor {
@@ -765,6 +789,7 @@ func RegisterBuiltin(reg *Registry, enricherReg *EnricherRegistry, drainSvc enri
 	enricherReg.Register("admissionregistration.k8s.io.v1.mutatingwebhookconfigurations", webhookEnricher)
 	enricherReg.Register("admissionregistration.k8s.io.v1.validatingwebhookconfigurations", webhookEnricher)
 	enricherReg.Register("scheduling.k8s.io.v1.priorityclasses", &enrichers.PriorityClassEnricher{})
+	enricherReg.Register("helm.v1.releases", &helm.Enricher{})
 
 	return nil
 }

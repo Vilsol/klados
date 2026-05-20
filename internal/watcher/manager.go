@@ -17,7 +17,39 @@ import (
 	"github.com/Vilsol/klados/internal/resource"
 )
 
-const gracePeriod = 30 * time.Second
+// gracePeriod is the delay between a StopWatch call and the actual teardown.
+// It's a var (not a const) so tests can shorten it via GracePeriodForTest /
+// SetGracePeriodForTest.
+var gracePeriod = 30 * time.Second
+
+// GracePeriodForTest returns the current grace period. Test-only helper.
+func GracePeriodForTest() time.Duration { return gracePeriod }
+
+// SetGracePeriodForTest overrides the grace period. Test-only helper.
+func SetGracePeriodForTest(d time.Duration) { gracePeriod = d }
+
+// Synthetic event types used by virtual watch sources to bracket a full
+// snapshot replacement (e.g. after a transport reconnect). The frontend
+// ResourceStore consumes these to replace items[] atomically.
+const (
+	EventSyncStart = "SYNC_START"
+	EventSyncEnd   = "SYNC_END"
+)
+
+// WatchOptions are optional knobs accepted by StartWatch. Zero-value means
+// "behave exactly as before".
+type WatchOptions struct {
+	// FieldSelector is forwarded into metav1.ListOptions.FieldSelector when
+	// constructing the dynamic watch. Ignored for virtual sources.
+	FieldSelector string
+}
+
+// VirtualWatchSource produces watch events for a synthetic GVR. The source
+// owns its own goroutines and emits via the WatchManager's emitter; it
+// returns a stop function the manager will invoke during teardown.
+type VirtualWatchSource interface {
+	Watch(ctx context.Context, contextName, namespace, resourceVersion string, emit func(string, any)) (stop func(), err error)
+}
 
 type watchKey struct {
 	contextName string
@@ -28,6 +60,9 @@ type watchKey struct {
 type watchState struct {
 	cancel     context.CancelFunc
 	graceTimer *time.Timer
+	// stopVirtual is set when a virtual source is providing this watch. The
+	// manager invokes it on teardown to release the source's resources.
+	stopVirtual func()
 }
 
 type WatchEvent struct {
@@ -46,6 +81,7 @@ type WatchManager struct {
 	emitEvent   func(string, any)
 	ctx         context.Context
 	watches     map[watchKey]*watchState
+	virtuals    map[string]VirtualWatchSource
 }
 
 func NewWatchManager(mgr ConnectionProvider, enricherReg *resource.EnricherRegistry, emit func(string, any), ctx context.Context) *WatchManager {
@@ -55,10 +91,25 @@ func NewWatchManager(mgr ConnectionProvider, enricherReg *resource.EnricherRegis
 		emitEvent:   emit,
 		ctx:         ctx,
 		watches:     make(map[watchKey]*watchState),
+		virtuals:    make(map[string]VirtualWatchSource),
 	}
 }
 
-func (m *WatchManager) StartWatch(contextName, gvr, namespace, resourceVersion string) error {
+// RegisterVirtual associates a VirtualWatchSource with a GVR. StartWatch will
+// delegate to the source instead of the dynamic Kubernetes client when the
+// GVR matches. Must be called before StartWatch.
+func (m *WatchManager) RegisterVirtual(gvr string, src VirtualWatchSource) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.virtuals[gvr] = src
+}
+
+func (m *WatchManager) StartWatch(contextName, gvr, namespace, resourceVersion string, opts ...WatchOptions) error {
+	var opt WatchOptions
+	if len(opts) > 0 {
+		opt = opts[0]
+	}
+
 	key := watchKey{contextName, gvr, namespace}
 
 	m.mu.Lock()
@@ -72,7 +123,25 @@ func (m *WatchManager) StartWatch(contextName, gvr, namespace, resourceVersion s
 		return nil
 	}
 
-	slox.Debug(m.ctx, "watch started", "context", contextName, "gvr", gvr, "namespace", namespace, "rv", resourceVersion)
+	slox.Debug(m.ctx, "watch started", "context", contextName, "gvr", gvr, "namespace", namespace, "rv", resourceVersion, "fieldSelector", opt.FieldSelector)
+
+	// Virtual dispatch — bypasses the dynamic client entirely.
+	if src, ok := m.virtuals[gvr]; ok {
+		ctx, cancel := context.WithCancel(context.Background())
+		eventName := fmt.Sprintf("watch:%s:%s:%s", contextName, gvr, namespace)
+		stop, err := src.Watch(ctx, contextName, namespace, resourceVersion, func(name string, payload any) {
+			if name == "" {
+				name = eventName
+			}
+			m.emitEvent(name, payload)
+		})
+		if err != nil {
+			cancel()
+			return err
+		}
+		m.watches[key] = &watchState{cancel: cancel, stopVirtual: stop}
+		return nil
+	}
 
 	conn, err := m.clusterMgr.GetConnection(contextName)
 	if err != nil {
@@ -99,7 +168,7 @@ func (m *WatchManager) StartWatch(contextName, gvr, namespace, resourceVersion s
 	ctx, cancel := context.WithCancel(context.Background())
 	m.watches[key] = &watchState{cancel: cancel}
 
-	go m.runWatch(ctx, ri, enrichers, eventName, resyncName, key, contextName, resourceVersion)
+	go m.runWatch(ctx, ri, enrichers, eventName, resyncName, key, contextName, resourceVersion, opt.FieldSelector)
 	return nil
 }
 
@@ -112,6 +181,7 @@ func (m *WatchManager) runWatch(
 	key watchKey,
 	contextName string,
 	initialRV string,
+	fieldSelector string,
 ) {
 	currentRV := initialRV
 	for {
@@ -124,6 +194,7 @@ func (m *WatchManager) runWatch(
 		wi, err := ri.Watch(ctx, metav1.ListOptions{
 			ResourceVersion:     currentRV,
 			AllowWatchBookmarks: true,
+			FieldSelector:       fieldSelector,
 		})
 		if err != nil {
 			if k8serrors.IsGone(err) {
@@ -226,6 +297,9 @@ func (m *WatchManager) StopWatch(contextName, gvr, namespace string) {
 		defer m.mu.Unlock()
 		if s, ok := m.watches[key]; ok && s.graceTimer != nil {
 			slox.Debug(m.ctx, "watch stopped", "context", contextName, "gvr", gvr)
+			if s.stopVirtual != nil {
+				s.stopVirtual()
+			}
 			s.cancel()
 			delete(m.watches, key)
 		}
@@ -239,6 +313,9 @@ func (m *WatchManager) StopAll() {
 	for key, state := range m.watches {
 		if state.graceTimer != nil {
 			state.graceTimer.Stop()
+		}
+		if state.stopVirtual != nil {
+			state.stopVirtual()
 		}
 		state.cancel()
 		delete(m.watches, key)

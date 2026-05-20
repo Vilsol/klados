@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
@@ -22,16 +23,44 @@ type ConnectionProvider interface {
 	GetConnection(contextName string) (*cluster.Connection, error)
 }
 
+// VirtualBackend implements List/Get for a synthetic GVR that isn't backed by
+// the dynamic Kubernetes client (e.g. Helm releases). Engine dispatches to a
+// registered backend before falling through to the dynamic path.
+type VirtualBackend interface {
+	List(ctx context.Context, contextName, namespace string) ([]map[string]any, string, error)
+	Get(ctx context.Context, contextName, namespace, name string) (map[string]any, error)
+}
+
 type ResourceEngine struct {
 	clusterMgr  ConnectionProvider
 	enricherReg *EnricherRegistry
+
+	virtMu   sync.RWMutex
+	virtuals map[string]VirtualBackend
 }
 
 func NewResourceEngine(mgr ConnectionProvider, enricherReg *EnricherRegistry) *ResourceEngine {
 	return &ResourceEngine{
 		clusterMgr:  mgr,
 		enricherReg: enricherReg,
+		virtuals:    make(map[string]VirtualBackend),
 	}
+}
+
+// RegisterVirtual associates a VirtualBackend with a GVR. Subsequent calls to
+// List/Get for that GVR are dispatched to the backend before any dynamic
+// client path. Safe for concurrent use.
+func (e *ResourceEngine) RegisterVirtual(gvr string, backend VirtualBackend) {
+	e.virtMu.Lock()
+	defer e.virtMu.Unlock()
+	e.virtuals[gvr] = backend
+}
+
+func (e *ResourceEngine) lookupVirtual(gvr string) (VirtualBackend, bool) {
+	e.virtMu.RLock()
+	defer e.virtMu.RUnlock()
+	b, ok := e.virtuals[gvr]
+	return b, ok
 }
 
 func ParseGVR(gvr string) (schema.GroupVersionResource, error) {
@@ -86,6 +115,27 @@ func (e *ResourceEngine) enrich(contextName, gvr string, item *unstructured.Unst
 
 func (e *ResourceEngine) List(ctx context.Context, contextName, gvr, namespace string) ([]map[string]any, string, error) {
 	t0 := time.Now()
+
+	if backend, ok := e.lookupVirtual(gvr); ok {
+		items, rv, err := backend.List(ctx, contextName, namespace)
+		if err != nil {
+			return nil, "", err
+		}
+		// Virtual backends still pass through the enricher chain.
+		for i := range items {
+			u := &unstructured.Unstructured{Object: items[i]}
+			e.enrich(contextName, gvr, u)
+			items[i] = u.Object
+		}
+		slox.Debug(ctx, "ResourceEngine.List (virtual)",
+			"gvr", gvr,
+			"namespace", namespace,
+			"items", len(items),
+			"rv", rv,
+			"total_ms", time.Since(t0).Milliseconds(),
+		)
+		return items, rv, nil
+	}
 
 	client, err := e.client(ctx, contextName, gvr, namespace)
 	if err != nil {
@@ -142,6 +192,16 @@ func (e *ResourceEngine) ListRaw(ctx context.Context, contextName, gvr, namespac
 }
 
 func (e *ResourceEngine) Get(ctx context.Context, contextName, gvr, namespace, name string) (map[string]any, error) {
+	if backend, ok := e.lookupVirtual(gvr); ok {
+		obj, err := backend.Get(ctx, contextName, namespace, name)
+		if err != nil {
+			return nil, err
+		}
+		u := &unstructured.Unstructured{Object: obj}
+		e.enrich(contextName, gvr, u)
+		return u.Object, nil
+	}
+
 	client, err := e.client(ctx, contextName, gvr, namespace)
 	if err != nil {
 		return nil, err

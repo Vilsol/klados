@@ -8,6 +8,7 @@ import (
 	"github.com/MarvinJWendt/testza"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -194,6 +195,136 @@ func TestResourceEngine_ScaleViaMergePatch_UnknownContext(t *testing.T) {
 	engine := resource.NewResourceEngine(&errorProvider{}, enricherReg)
 
 	err := engine.ScaleViaMergePatch(context.Background(), "ctx", "apps.v1.deployments", "default", "my-deploy", 3)
+	testza.AssertNotNil(t, err)
+}
+
+type fakeVirtualBackend struct {
+	items    []map[string]any
+	rv       string
+	listErr  error
+	getObj   map[string]any
+	getErr   error
+	gotCtx   string
+	gotNS    string
+	gotName  string
+	listCall int
+}
+
+func (f *fakeVirtualBackend) List(_ context.Context, contextName, namespace string) ([]map[string]any, string, error) {
+	f.listCall++
+	f.gotCtx = contextName
+	f.gotNS = namespace
+	if f.listErr != nil {
+		return nil, "", f.listErr
+	}
+	return f.items, f.rv, nil
+}
+
+func (f *fakeVirtualBackend) Get(_ context.Context, contextName, namespace, name string) (map[string]any, error) {
+	f.gotCtx = contextName
+	f.gotNS = namespace
+	f.gotName = name
+	if f.getErr != nil {
+		return nil, f.getErr
+	}
+	return f.getObj, nil
+}
+
+type tagEnricher struct{ tag string }
+
+func (e *tagEnricher) Enrich(_ string, u *unstructured.Unstructured) error {
+	status, _, _ := unstructured.NestedMap(u.Object, "status")
+	if status == nil {
+		status = map[string]any{}
+	}
+	status["enrichTag"] = e.tag
+	u.Object["status"] = status
+	return nil
+}
+
+func TestResourceEngine_List_VirtualDispatch(t *testing.T) {
+	enricherReg := resource.NewEnricherRegistry()
+	engine := resource.NewResourceEngine(&fakeProvider{}, enricherReg)
+
+	backend := &fakeVirtualBackend{
+		items: []map[string]any{
+			{"metadata": map[string]any{"name": "rel-a", "namespace": "ns1"}},
+			{"metadata": map[string]any{"name": "rel-b", "namespace": "ns1"}},
+		},
+		rv: "rv-42",
+	}
+	engine.RegisterVirtual("helm.v1.releases", backend)
+
+	items, rv, err := engine.List(context.Background(), "my-ctx", "helm.v1.releases", "ns1")
+	testza.AssertNoError(t, err)
+	testza.AssertEqual(t, 2, len(items))
+	testza.AssertEqual(t, "rv-42", rv)
+	testza.AssertEqual(t, "my-ctx", backend.gotCtx)
+	testza.AssertEqual(t, "ns1", backend.gotNS)
+	testza.AssertEqual(t, 1, backend.listCall)
+}
+
+func TestResourceEngine_List_VirtualAppliesEnrichers(t *testing.T) {
+	enricherReg := resource.NewEnricherRegistry()
+	enricherReg.Register("helm.v1.releases", &tagEnricher{tag: "v"})
+	engine := resource.NewResourceEngine(&fakeProvider{}, enricherReg)
+
+	backend := &fakeVirtualBackend{
+		items: []map[string]any{{"metadata": map[string]any{"name": "rel-a"}}},
+		rv:    "rv",
+	}
+	engine.RegisterVirtual("helm.v1.releases", backend)
+
+	items, _, err := engine.List(context.Background(), "ctx", "helm.v1.releases", "")
+	testza.AssertNoError(t, err)
+	testza.AssertEqual(t, 1, len(items))
+	status, _ := items[0]["status"].(map[string]any)
+	testza.AssertEqual(t, "v", status["enrichTag"])
+}
+
+func TestResourceEngine_Get_VirtualDispatch(t *testing.T) {
+	enricherReg := resource.NewEnricherRegistry()
+	enricherReg.Register("helm.v1.releases", &tagEnricher{tag: "g"})
+	engine := resource.NewResourceEngine(&fakeProvider{}, enricherReg)
+
+	backend := &fakeVirtualBackend{
+		getObj: map[string]any{"metadata": map[string]any{"name": "rel-x", "namespace": "ns"}},
+	}
+	engine.RegisterVirtual("helm.v1.releases", backend)
+
+	obj, err := engine.Get(context.Background(), "ctx", "helm.v1.releases", "ns", "rel-x")
+	testza.AssertNoError(t, err)
+	testza.AssertEqual(t, "rel-x", backend.gotName)
+	status, _ := obj["status"].(map[string]any)
+	testza.AssertEqual(t, "g", status["enrichTag"])
+}
+
+func TestResourceEngine_Virtuals_NoConflict(t *testing.T) {
+	enricherReg := resource.NewEnricherRegistry()
+	engine := resource.NewResourceEngine(&fakeProvider{}, enricherReg)
+
+	a := &fakeVirtualBackend{items: []map[string]any{{"metadata": map[string]any{"name": "a"}}}, rv: "1"}
+	b := &fakeVirtualBackend{items: []map[string]any{{"metadata": map[string]any{"name": "b1"}}, {"metadata": map[string]any{"name": "b2"}}}, rv: "2"}
+	engine.RegisterVirtual("helm.v1.releases", a)
+	engine.RegisterVirtual("flux.v1.releases", b)
+
+	itemsA, rvA, err := engine.List(context.Background(), "ctx", "helm.v1.releases", "")
+	testza.AssertNoError(t, err)
+	testza.AssertEqual(t, 1, len(itemsA))
+	testza.AssertEqual(t, "1", rvA)
+
+	itemsB, rvB, err := engine.List(context.Background(), "ctx", "flux.v1.releases", "")
+	testza.AssertNoError(t, err)
+	testza.AssertEqual(t, 2, len(itemsB))
+	testza.AssertEqual(t, "2", rvB)
+}
+
+func TestResourceEngine_List_VirtualBackendError(t *testing.T) {
+	enricherReg := resource.NewEnricherRegistry()
+	engine := resource.NewResourceEngine(&fakeProvider{}, enricherReg)
+
+	engine.RegisterVirtual("helm.v1.releases", &fakeVirtualBackend{listErr: fmt.Errorf("boom")})
+	_, _, err := engine.List(context.Background(), "ctx", "helm.v1.releases", "")
 	testza.AssertNotNil(t, err)
 }
 

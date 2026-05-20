@@ -128,6 +128,86 @@ func TestClusterScopedDescriptorsHaveNoNamespaceColumn(t *testing.T) {
 	}
 }
 
+func TestDescriptor_VirtualFields_RoundTrip(t *testing.T) {
+	d := &resource.Descriptor{
+		Group: "helm", Version: "v1", Resource: "releases",
+		IsVirtual:  true,
+		GroupLabel: "Helm",
+		Available:  true,
+		Columns:    []resource.Column{{Name: "Name", Expr: "metadata.name", RenderType: resource.RenderText}},
+	}
+	data, err := json.Marshal(d)
+	testza.AssertNoError(t, err)
+
+	var out resource.Descriptor
+	testza.AssertNoError(t, json.Unmarshal(data, &out))
+	testza.AssertTrue(t, out.IsVirtual)
+	testza.AssertEqual(t, "Helm", out.GroupLabel)
+	testza.AssertTrue(t, out.Available)
+}
+
+func TestRegistry_Register_SetsAvailableByDefault(t *testing.T) {
+	reg, err := resource.NewRegistry()
+	testza.AssertNoError(t, err)
+
+	d := &resource.Descriptor{Group: "", Version: "v1", Resource: "pods"}
+	testza.AssertNoError(t, reg.Register(d))
+
+	got, ok := reg.Get("core.v1.pods")
+	testza.AssertTrue(t, ok)
+	testza.AssertTrue(t, got.Available)
+}
+
+func TestRegistry_SetAvailable(t *testing.T) {
+	reg, err := resource.NewRegistry()
+	testza.AssertNoError(t, err)
+
+	d := &resource.Descriptor{Group: "helm", Version: "v1", Resource: "releases", IsVirtual: true}
+	testza.AssertNoError(t, reg.Register(d))
+
+	reg.SetAvailable("helm.v1.releases", false)
+	got, _ := reg.Get("helm.v1.releases")
+	testza.AssertFalse(t, got.Available)
+
+	reg.SetAvailable("helm.v1.releases", true)
+	got, _ = reg.Get("helm.v1.releases")
+	testza.AssertTrue(t, got.Available)
+
+	// no-op on unknown GVR
+	reg.SetAvailable("does.not.exist", false)
+}
+
+func TestRegistry_SetAvailable_Concurrent(t *testing.T) {
+	reg, err := resource.NewRegistry()
+	testza.AssertNoError(t, err)
+	testza.AssertNoError(t, reg.Register(&resource.Descriptor{Group: "helm", Version: "v1", Resource: "releases"}))
+
+	done := make(chan struct{})
+	go func() {
+		for i := 0; i < 1000; i++ {
+			reg.SetAvailable("helm.v1.releases", i%2 == 0)
+		}
+		close(done)
+	}()
+	for i := 0; i < 1000; i++ {
+		_, _ = reg.Get("helm.v1.releases")
+	}
+	<-done
+}
+
+func TestBuiltin_HelmReleases_Registered(t *testing.T) {
+	var found *resource.Descriptor
+	for _, d := range resource.BuiltinDescriptors() {
+		if d.GVR() == "helm.v1.releases" {
+			found = d
+			break
+		}
+	}
+	testza.AssertNotNil(t, found)
+	testza.AssertTrue(t, found.IsVirtual)
+	testza.AssertEqual(t, "Helm", found.GroupLabel)
+}
+
 func TestRegistry_Register_OverviewField_CEL_Error(t *testing.T) {
 	reg, err := resource.NewRegistry()
 	testza.AssertNoError(t, err)

@@ -2,6 +2,7 @@ package resource
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/google/cel-go/cel"
 )
@@ -55,6 +56,22 @@ type Descriptor struct {
 	DetailPanels   []string        `json:"detailPanels,omitempty"`
 	Actions        []Action        `json:"actions,omitempty"`
 	ClusterScoped  bool            `json:"clusterScoped,omitempty"`
+	// IsVirtual marks a descriptor as backed by a VirtualBackend rather than
+	// the dynamic Kubernetes client. Engine and WatchManager dispatch to a
+	// registered virtual source when this is true.
+	IsVirtual bool `json:"isVirtual,omitempty"`
+	// GroupLabel is a synthetic sidebar group label (e.g. "Helm"). Optional.
+	GroupLabel string `json:"groupLabel,omitempty"`
+	// Available signals whether the descriptor is currently usable on the
+	// active cluster. Defaults to true; toggled by the registry via
+	// SetAvailable for capability-gated entries (e.g. Helm releases when no
+	// helm secrets are present yet).
+	//
+	// Read this field via Registry.IsAvailable(gvr) — direct access races with
+	// concurrent SetAvailable calls. The JSON tag is preserved so the field
+	// serializes correctly when the Registry snapshots descriptors for the
+	// frontend under its own lock.
+	Available bool `json:"available"`
 }
 
 func (d *Descriptor) GVR() string {
@@ -66,6 +83,7 @@ func (d *Descriptor) GVR() string {
 }
 
 type Registry struct {
+	mu          sync.RWMutex
 	descriptors map[string]*Descriptor
 	celEnv      *cel.Env
 }
@@ -98,8 +116,34 @@ func (r *Registry) Register(d *Descriptor) error {
 			return fmt.Errorf("overview field %q expr %q: %w", f.Label, f.Expr, issues.Err())
 		}
 	}
+	if !d.Available {
+		d.Available = true
+	}
+	r.mu.Lock()
 	r.descriptors[d.GVR()] = d
+	r.mu.Unlock()
 	return nil
+}
+
+// SetAvailable toggles the Available flag for a registered descriptor. Safe
+// for concurrent use. No-op if the GVR isn't registered.
+func (r *Registry) SetAvailable(gvr string, available bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if d, ok := r.descriptors[gvr]; ok {
+		d.Available = available
+	}
+}
+
+// IsAvailable returns the current Available flag for the registered
+// descriptor. Returns false if the GVR isn't registered. This is the
+// race-free way to read availability — direct access to Descriptor.Available
+// races with SetAvailable.
+func (r *Registry) IsAvailable(gvr string) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	d, ok := r.descriptors[gvr]
+	return ok && d.Available
 }
 
 // Validate checks all CEL expressions in d without storing it.
@@ -120,14 +164,32 @@ func (r *Registry) Validate(d *Descriptor) error {
 }
 
 func (r *Registry) Get(gvr string) (*Descriptor, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	d, ok := r.descriptors[gvr]
 	return d, ok
 }
 
 func (r *Registry) List() []*Descriptor {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	out := make([]*Descriptor, 0, len(r.descriptors))
 	for _, d := range r.descriptors {
 		out = append(out, d)
+	}
+	return out
+}
+
+// Snapshot returns a value-copy of every registered descriptor under the
+// registry's read lock. Use this when serializing descriptors to the frontend
+// or any other consumer that needs a stable read of dynamic fields like
+// Available without racing concurrent SetAvailable calls.
+func (r *Registry) Snapshot() []Descriptor {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	out := make([]Descriptor, 0, len(r.descriptors))
+	for _, d := range r.descriptors {
+		out = append(out, *d)
 	}
 	return out
 }
