@@ -1,0 +1,14 @@
+apiVersion: v1
+data:
+  release: SDRzSUFBQUFBQUFDLzNTUFVXdkVJQkNFLzhzOG0yQlMyaEovUitsRFg4cFdONXhVbzhUTlFRbjU3eVdHWEkvQ2dRL3VPTTUrczJLaXlERDRZaUVvK0dsTU1DdEdQeGY1ZEp4RCttRUhnMTczTDQzdUd0MjlhVzNxK1lCQ29JZTI3dlhQNXJqWTJXZnhhWUtCY0JFb0ZDRlpDZ3h1L3pjRmU2Rlpkb0xJUW82RTl2c2RZM01ZRks0OGx5T3VhL3YyQ1FxVTgvdE5ITnFoSGZiQWtPdzN6TFNFb0NBY2N5RGhjZ3BYQ3NzK3JadENzUmVPZEw0Y1UweE9mTjJ0ZFczMXYvL293NW0yM1RFOXE4cGNNbG11QlVkYWdtRDdEUUFBLy84aDFsTEVid0VBQUE9PQ==
+kind: Secret
+metadata:
+  labels:
+    name: beta
+    owner: helm
+    status: deployed
+    version: "5"
+  name: sh.helm.release.v1.beta.v5
+  namespace: default
+  resourceVersion: rv-beta-5
+type: helm.sh/release.v1

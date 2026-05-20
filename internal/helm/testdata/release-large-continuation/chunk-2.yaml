@@ -1,0 +1,14 @@
+apiVersion: v1
+data:
+  release: enUwd3hIcG83M0RoT0s5Z3ZDU1BBbm5TM2lRTDhlMDdRclp6cnpRZFhKT1N4ekYxZGUxcnIxKy84RGsvSlcyZjJQcVZLWE9pU3pYaWhNVkw5Zy9Bd0FBLy8rb1M1NVFjd0VBQUE9PQ==
+kind: Secret
+metadata:
+  labels:
+    name: chunky
+    owner: helm
+    status: deployed
+    version: "1"
+  name: sh.helm.release.v1.chunky.v1.2
+  namespace: default
+  resourceVersion: rv-chunky-1
+type: helm.sh/release.v1
