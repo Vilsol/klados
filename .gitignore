@@ -13,6 +13,7 @@ node_modules
 
 # Claude Code settings (machine-specific)
 .claude/settings.json
+.claude/scheduled_tasks.lock
 
 # Wolf runtime/session state
 .wolf/
@@ -36,4 +37,8 @@ examples/plugin-node-annotator/dist/
 frontend/scroll-debug.log
 terminal.md
 coverage.out
-klados
+/klados
+
+# Nix build symlinks
+/result
+/result-*
