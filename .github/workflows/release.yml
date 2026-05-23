@@ -8,6 +8,14 @@ on:
 permissions:
   contents: write
 
+# Exposed to all steps so mise/aqua/gh can make authenticated GitHub API calls
+# (avoids unauthenticated rate-limit 401s when fetching tool releases).
+# MISE_DISABLE_TOOLS skips tools that aren't needed to build the app
+# (tinygo: plugin dev only; jj: local VCS tooling).
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  MISE_DISABLE_TOOLS: tinygo,jj
+
 jobs:
   build-linux:
     name: Build Linux (amd64)

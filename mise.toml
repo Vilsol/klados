@@ -2,6 +2,7 @@
 "go:github.com/wailsapp/wails/v3/cmd/wails3" = "v3.0.0-alpha.92"
 # GitHub: github.com/omissis/go-jsonschema — Go module path is atombender (not yet updated in their go.mod)
 "go:github.com/atombender/go-jsonschema" = "latest"
+"go:github.com/go-task/task/v3/cmd/task" = "latest"
 node = "25.8.1"
 "aqua:tinygo-org/tinygo" = "latest"
 pnpm = "latest"
