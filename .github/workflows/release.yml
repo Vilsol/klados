@@ -94,13 +94,7 @@ jobs:
           cache: true
 
       - name: Install NSIS
-        shell: bash
-        run: |
-          choco install nsis --no-progress -y
-          # Chocolatey's PATH update via PowerShell hooks doesn't propagate
-          # to bash subshells in later steps. Append to $GITHUB_PATH so
-          # `task` finds makensis.exe.
-          echo "C:\Program Files (x86)\NSIS" >> "$GITHUB_PATH"
+        uses: negrutiu/nsis-install@v3
 
       - name: Build & package
         run: mise exec -- task windows:package
