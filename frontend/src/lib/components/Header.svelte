@@ -49,7 +49,15 @@
 </script>
 
 <header class="flex items-center px-4 border-b border-border bg-surface shrink-0 gap-4 {isMac ? 'pl-24 h-[50px]' : 'h-12'}">
-  <span class="font-semibold text-sm tracking-wide">Klados</span>
+  <div class="flex items-center gap-2">
+    <svg viewBox="0 0 256 256" class="h-5 w-5 shrink-0" aria-hidden="true">
+      <rect x="26" y="26" width="204" height="204" rx="46" fill="none" stroke="#3b82f6" stroke-width="18"/>
+      <circle cx="128" cy="128" r="54" fill="#ec9a17"/>
+      <circle cx="128" cy="128" r="31" fill="#ffce42"/>
+      <circle cx="128" cy="128" r="13" fill="#ffeeb0"/>
+    </svg>
+    <span class="font-semibold text-sm tracking-wide">Klados</span>
+  </div>
 
   <div class="flex items-center gap-2 ml-4">
     {#if ctx}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Klados logo">
+  <title>Klados</title>
+  <rect x="26" y="26" width="204" height="204" rx="46" fill="none" stroke="#3b82f6" stroke-width="18"/>
+  <circle cx="128" cy="128" r="54" fill="#ec9a17"/>
+  <circle cx="128" cy="128" r="31" fill="#ffce42"/>
+  <circle cx="128" cy="128" r="13" fill="#ffeeb0"/>
+</svg>
